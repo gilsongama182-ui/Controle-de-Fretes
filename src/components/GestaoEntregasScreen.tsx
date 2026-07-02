@@ -7,6 +7,7 @@ import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
+import { formatNfe } from '../lib/formatNfe';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -37,6 +38,8 @@ export default function GestaoEntregasScreen({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [ufFilter, setUfFilter] = useState('');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
   const [detailedMode, setDetailedMode] = useState(true); // default to detailed/wide table
   const [currentPage, setCurrentPage] = useState(1);
   const [linesPerPage, setLinesPerPage] = useState(10);
@@ -82,8 +85,16 @@ export default function GestaoEntregasScreen({
       result = result.filter(d => d.uf === ufFilter);
     }
 
+    // Período (Data do Pedido)
+    if (dateFrom) {
+      result = result.filter(d => d.dataPedido >= dateFrom);
+    }
+    if (dateTo) {
+      result = result.filter(d => d.dataPedido <= dateTo);
+    }
+
     return result;
-  }, [deliveries, searchTerm, statusFilter, ufFilter]);
+  }, [deliveries, searchTerm, statusFilter, ufFilter, dateFrom, dateTo]);
 
   // Pagination logic
   const paginatedDeliveries = useMemo(() => {
@@ -243,6 +254,37 @@ export default function GestaoEntregasScreen({
                   <option value="MG">Minas Gerais</option>
                   <option value="PR">Paraná</option>
                 </select>
+
+                {/* Filtro por período (Data do Pedido) */}
+                <div className="flex items-center gap-1.5 px-3 py-1.5 border border-outline-variant rounded-lg bg-white">
+                  <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Período</span>
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={(e) => setDateFrom(e.target.value)}
+                    max={dateTo || undefined}
+                    className="text-xs outline-none bg-transparent"
+                    aria-label="Data do pedido - de"
+                  />
+                  <span className="text-outline text-xs">até</span>
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={(e) => setDateTo(e.target.value)}
+                    min={dateFrom || undefined}
+                    className="text-xs outline-none bg-transparent"
+                    aria-label="Data do pedido - até"
+                  />
+                  {(dateFrom || dateTo) && (
+                    <button
+                      type="button"
+                      onClick={() => { setDateFrom(''); setDateTo(''); }}
+                      className="text-[10px] font-bold text-error hover:underline ml-1"
+                    >
+                      Limpar
+                    </button>
+                  )}
+                </div>
               </div>
 
               {/* View layout mode toggle */}
@@ -381,7 +423,7 @@ export default function GestaoEntregasScreen({
                     {paginatedDeliveries.length > 0 ? (
                       paginatedDeliveries.map((del) => (
                         <tr key={del.id} className="hover:bg-primary/5 transition-colors group">
-                          <td className="px-5 py-4 font-mono text-sm text-primary font-bold">{del.nfe}</td>
+                          <td className="px-5 py-4 font-mono text-sm text-primary font-bold">{formatNfe(del.nfe)}</td>
                           <td className="px-5 py-4 font-bold text-sm text-on-surface">{del.cliente}</td>
                           <td className="px-5 py-4 text-sm font-semibold">{del.uf}</td>
                           <td className="px-5 py-4 text-sm font-medium">{formatDateBR(del.previsao)}</td>

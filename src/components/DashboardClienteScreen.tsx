@@ -3,6 +3,7 @@ import { Search, Download } from 'lucide-react';
 import { Delivery, User } from '../types';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
+import { formatNfe } from '../lib/formatNfe';
 import ClienteHeader from './layout/ClienteHeader';
 
 interface DashboardClienteProps {
@@ -85,7 +86,8 @@ export default function DashboardClienteScreen({
               <button
                 onClick={() => exportDeliveriesToCsv(
                   searchTerm.trim() ? filteredDeliveries : deliveries,
-                  `minhas-entregas-${new Date().toISOString().split('T')[0]}.csv`
+                  `minhas-entregas-${new Date().toISOString().split('T')[0]}.csv`,
+                  ['valorCobranca', 'valorPagamento', 'codigoRastreio']
                 )}
                 className="flex items-center justify-center gap-2 h-11 px-4 border border-outline text-primary font-sans text-xs font-semibold uppercase tracking-wider rounded-lg hover:bg-primary/5 transition-colors whitespace-nowrap shadow-sm w-full sm:w-auto"
               >
@@ -149,7 +151,7 @@ export default function DashboardClienteScreen({
                   {filteredDeliveries.length > 0 ? (
                     filteredDeliveries.map((del) => (
                       <tr key={del.id} className="hover:bg-surface-container-low/50 transition-colors">
-                        <td className="px-6 py-4 font-mono text-xs font-bold text-primary">{del.nfe}</td>
+                        <td className="px-6 py-4 font-mono text-xs font-bold text-primary">{formatNfe(del.nfe)}</td>
                         <td className="px-6 py-4 font-bold text-sm text-on-surface">{del.nomeRazaoSocial}</td>
                         <td className="px-6 py-4 text-sm text-on-surface-variant">{del.municipio}, {del.uf}</td>
                         <td className="px-6 py-4">

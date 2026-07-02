@@ -141,7 +141,7 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
                       required
                       value={nfe}
                       onChange={(e) => setNfe(e.target.value)}
-                      placeholder="Ex: 112.983-01"
+                      placeholder="Ex: 112983-01"
                       className="w-full p-2.5 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
