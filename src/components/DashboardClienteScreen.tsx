@@ -145,6 +145,7 @@ export default function DashboardClienteScreen({
                     <th className="px-6 py-4">CIDADE/UF</th>
                     <th className="px-6 py-4">STATUS</th>
                     <th className="px-6 py-4">PREVISÃO</th>
+                    <th className="px-6 py-4">DATA DE ENTREGA</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant">
@@ -165,11 +166,12 @@ export default function DashboardClienteScreen({
                           </span>
                         </td>
                         <td className="px-6 py-4 text-sm text-on-surface-variant font-medium">{formatDateBR(del.previsao)}</td>
+                        <td className="px-6 py-4 text-sm text-on-surface-variant font-medium">{del.dataEntrega ? formatDateBR(del.dataEntrega) : '—'}</td>
                       </tr>
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={5} className="text-center py-8 text-sm text-secondary">
+                      <td colSpan={6} className="text-center py-8 text-sm text-secondary">
                         Nenhuma entrega encontrada para a sua busca.
                       </td>
                     </tr>

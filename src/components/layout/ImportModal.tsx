@@ -23,6 +23,7 @@ function buildMockImportedDelivery(): NewDeliveryInput {
     dataPedido: new Date().toISOString().split('T')[0],
     dataExpedicao: new Date().toISOString().split('T')[0],
     previsao: 'A definir',
+    dataEntrega: '',
     enderecoCompleto: 'Av. Beira Rio, 99',
     bairroDistrito: 'Porto',
     cep: '90000-000',

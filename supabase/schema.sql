@@ -28,6 +28,7 @@ create table if not exists public.deliveries (
   data_pedido date not null,
   data_expedicao date,
   previsao text,
+  data_entrega date,        -- data real de entrega (preenchida quando status = ENTREGUE)
   endereco_completo text not null,
   bairro_distrito text,
   cep text,

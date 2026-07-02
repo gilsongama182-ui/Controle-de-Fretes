@@ -57,6 +57,7 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       dataPedido: new Date().toISOString().split('T')[0],
       dataExpedicao: new Date().toISOString().split('T')[0],
       previsao: 'Hoje, 18:00',
+      dataEntrega: '',
       enderecoCompleto: endereco || 'Rua das Logísticas, 1000',
       bairroDistrito: 'Distrito Industrial',
       cep: '04500-100',

@@ -15,6 +15,7 @@ interface DeliveryRow {
   data_pedido: string;
   data_expedicao: string | null;
   previsao: string | null;
+  data_entrega: string | null;
   endereco_completo: string;
   bairro_distrito: string | null;
   cep: string | null;
@@ -41,6 +42,7 @@ function fromRow(row: DeliveryRow): Delivery {
     dataPedido: row.data_pedido,
     dataExpedicao: row.data_expedicao ?? '',
     previsao: row.previsao ?? '',
+    dataEntrega: row.data_entrega ?? '',
     enderecoCompleto: row.endereco_completo,
     bairroDistrito: row.bairro_distrito ?? '',
     cep: row.cep ?? '',
@@ -67,6 +69,7 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.dataPedido !== undefined) row.data_pedido = input.dataPedido;
   if (input.dataExpedicao !== undefined) row.data_expedicao = input.dataExpedicao || null;
   if (input.previsao !== undefined) row.previsao = input.previsao;
+  if (input.dataEntrega !== undefined) row.data_entrega = input.dataEntrega || null;
   if (input.enderecoCompleto !== undefined) row.endereco_completo = input.enderecoCompleto;
   if (input.bairroDistrito !== undefined) row.bairro_distrito = input.bairroDistrito;
   if (input.cep !== undefined) row.cep = input.cep;

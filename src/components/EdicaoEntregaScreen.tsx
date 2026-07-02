@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { ActivePage, Delivery, DeliveryStatus, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
+import { formatNfe } from '../lib/formatNfe';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -37,7 +38,8 @@ export default function EdicaoEntregaScreen({
   const [status, setStatus] = useState<DeliveryStatus>(delivery?.status ?? 'EM ROTA');
   const [ocorrencia, setOcorrencia] = useState(delivery?.ocorrencia ?? '');
   const [previsao, setPrevisao] = useState(delivery?.previsao ?? '');
-  const [nfe, setNfe] = useState(delivery?.nfe ?? '');
+  const [nfe, setNfe] = useState(formatNfe(delivery?.nfe));
+  const [dataEntrega, setDataEntrega] = useState(delivery?.dataEntrega ?? '');
   const [remetente, setRemetente] = useState(delivery?.remetente ?? '');
   const [remetenteCnpj, setRemetenteCnpj] = useState(delivery?.remetenteCnpj ?? '');
   const [cliente, setCliente] = useState(delivery?.cliente ?? '');
@@ -81,6 +83,7 @@ export default function EdicaoEntregaScreen({
         status,
         ocorrencia,
         previsao,
+        dataEntrega,
         cliente,
         nomeRazaoSocial: razaoSocial,
         cnpjCpf,
@@ -398,6 +401,17 @@ export default function EdicaoEntregaScreen({
                     value={previsao}
                     onChange={(e) => setPrevisao(e.target.value)}
                     placeholder="Hoje, 18:00"
+                    className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+                  />
+                </div>
+
+                {/* Actual Delivery Date */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Data de Entrega</label>
+                  <input
+                    type="date"
+                    value={dataEntrega}
+                    onChange={(e) => setDataEntrega(e.target.value)}
                     className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
                   />
                 </div>

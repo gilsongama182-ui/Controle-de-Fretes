@@ -12,6 +12,7 @@ export interface Delivery {
   dataPedido: string; // YYYY-MM-DD
   dataExpedicao: string; // YYYY-MM-DD
   previsao: string; // YYYY-MM-DD or readable string
+  dataEntrega: string; // YYYY-MM-DD, data real de entrega (vazio se ainda não entregue)
   enderecoCompleto: string;
   bairroDistrito: string;
   cep: string;
