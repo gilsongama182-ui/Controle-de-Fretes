@@ -188,26 +188,28 @@ export default function DashboardClienteScreen({
             {chartData.length === 0 ? (
               <p className="text-sm text-secondary text-center py-8">Sem dados suficientes para o gráfico.</p>
             ) : (
-              <div className="space-y-2.5">
-                {chartData.map((row) => (
-                  <div
-                    key={row.label}
-                    title={`${row.count} entrega(s)`}
-                    onClick={!selectedUf ? () => setSelectedUf(row.label) : undefined}
-                    className={`flex items-center gap-3 group ${!selectedUf ? 'cursor-pointer' : ''}`}
-                  >
-                    <span className="w-24 sm:w-32 shrink-0 text-xs font-semibold text-on-surface-variant text-right truncate">
-                      {row.label}
-                    </span>
-                    <span className="flex-1 h-6 bg-surface-container rounded-full overflow-hidden">
-                      <span
-                        className={`h-full block rounded-full bg-primary transition-all ${!selectedUf ? 'group-hover:bg-primary-container' : ''}`}
-                        style={{ width: chartMax > 0 ? `${(row.count / chartMax) * 100}%` : '0%' }}
-                      ></span>
-                    </span>
-                    <span className="w-6 shrink-0 text-xs font-bold text-primary text-left">{row.count}</span>
-                  </div>
-                ))}
+              <div className="overflow-x-auto">
+                <div className="flex items-end gap-4 sm:gap-6 px-2 pt-6 min-w-max">
+                  {chartData.map((row) => (
+                    <div
+                      key={row.label}
+                      title={`${row.count} entrega(s)`}
+                      onClick={!selectedUf ? () => setSelectedUf(row.label) : undefined}
+                      className={`flex flex-col items-center gap-2 group w-14 ${!selectedUf ? 'cursor-pointer' : ''}`}
+                    >
+                      <span className="text-xs font-bold text-primary">{row.count}</span>
+                      <div className="w-10 sm:w-12 h-36 bg-surface-container rounded-t-lg overflow-hidden flex items-end">
+                        <span
+                          className={`w-full block rounded-t-lg bg-primary transition-all ${!selectedUf ? 'group-hover:bg-primary-container' : ''}`}
+                          style={{ height: chartMax > 0 ? `${(row.count / chartMax) * 100}%` : '0%' }}
+                        ></span>
+                      </div>
+                      <span className="text-xs font-semibold text-on-surface-variant text-center truncate w-full">
+                        {row.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
