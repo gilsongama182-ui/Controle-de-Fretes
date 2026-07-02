@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Download } from 'lucide-react';
+import { Search, Download, ArrowLeft } from 'lucide-react';
 import { Delivery, User } from '../types';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
@@ -19,6 +19,7 @@ export default function DashboardClienteScreen({
 }: DashboardClienteProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAll, setShowAll] = useState(false);
+  const [selectedUf, setSelectedUf] = useState<string | null>(null);
 
   // Filter deliveries based on search input (NF-e or Client)
   const filteredDeliveries = useMemo(() => {
@@ -52,6 +53,35 @@ export default function DashboardClienteScreen({
       pctDelayed: `${pctDelayed}%`
     };
   }, [deliveries]);
+
+  // Entregas por UF (nível 1 do gráfico)
+  const ufBreakdown = useMemo(() => {
+    const counts = new Map<string, number>();
+    deliveries.forEach((d) => {
+      if (!d.uf) return;
+      counts.set(d.uf, (counts.get(d.uf) ?? 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count);
+  }, [deliveries]);
+
+  // Top 10 cidades da UF selecionada (nível 2, drill-down)
+  const cityBreakdown = useMemo(() => {
+    if (!selectedUf) return [];
+    const counts = new Map<string, number>();
+    deliveries.forEach((d) => {
+      if (d.uf !== selectedUf || !d.municipio) return;
+      counts.set(d.municipio, (counts.get(d.municipio) ?? 0) + 1);
+    });
+    return Array.from(counts.entries())
+      .map(([label, count]) => ({ label, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 10);
+  }, [deliveries, selectedUf]);
+
+  const chartData = selectedUf ? cityBreakdown : ufBreakdown;
+  const chartMax = chartData.length > 0 ? Math.max(...chartData.map((r) => r.count)) : 0;
 
   return (
     <div className="bg-surface text-on-surface font-sans min-h-screen flex flex-col">
@@ -128,6 +158,58 @@ export default function DashboardClienteScreen({
               </div>
             </div>
 
+          </div>
+
+          {/* Entregas por UF, com drill-down para top 10 cidades */}
+          <div className="bg-white rounded-xl border border-outline-variant shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4 gap-4">
+              <div>
+                <h2 className="font-headline text-lg font-bold text-primary">
+                  {selectedUf ? `Top cidades em ${selectedUf}` : 'Entregas por UF'}
+                </h2>
+                <p className="text-xs text-secondary mt-0.5">
+                  {selectedUf
+                    ? 'As 10 cidades com mais entregas neste estado.'
+                    : 'Clique em um estado para ver o detalhamento por cidade.'}
+                </p>
+              </div>
+              {selectedUf && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedUf(null)}
+                  className="shrink-0 flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Voltar para UF</span>
+                </button>
+              )}
+            </div>
+
+            {chartData.length === 0 ? (
+              <p className="text-sm text-secondary text-center py-8">Sem dados suficientes para o gráfico.</p>
+            ) : (
+              <div className="space-y-2.5">
+                {chartData.map((row) => (
+                  <div
+                    key={row.label}
+                    title={`${row.count} entrega(s)`}
+                    onClick={!selectedUf ? () => setSelectedUf(row.label) : undefined}
+                    className={`flex items-center gap-3 group ${!selectedUf ? 'cursor-pointer' : ''}`}
+                  >
+                    <span className="w-24 sm:w-32 shrink-0 text-xs font-semibold text-on-surface-variant text-right truncate">
+                      {row.label}
+                    </span>
+                    <span className="flex-1 h-6 bg-surface-container rounded-full overflow-hidden">
+                      <span
+                        className={`h-full block rounded-full bg-primary transition-all ${!selectedUf ? 'group-hover:bg-primary-container' : ''}`}
+                        style={{ width: chartMax > 0 ? `${(row.count / chartMax) * 100}%` : '0%' }}
+                      ></span>
+                    </span>
+                    <span className="w-6 shrink-0 text-xs font-bold text-primary text-left">{row.count}</span>
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Recent Deliveries list card */}
