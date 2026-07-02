@@ -42,14 +42,18 @@ export default function GestaoEntregasScreen({
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
 
-  // Computed metrics for active data
+  // Computed metrics for active data (todos derivados do array real de entregas)
   const metrics = useMemo(() => {
-    const total = deliveries.length + 1274;
+    const total = deliveries.length;
+    const deliveredCount = deliveries.filter(d => d.status === 'ENTREGUE').length;
     const delayedCount = deliveries.filter(d => d.status === 'EM ATRASO').length;
-    return {
-      total,
-      delayedCount: delayedCount > 0 ? delayedCount : 24
-    };
+    const todayStr = new Date().toISOString().split('T')[0];
+    const dueTodayCount = deliveries.filter(d =>
+      d.previsao === todayStr || d.previsao.toLowerCase().includes('hoje')
+    ).length;
+    const pctSuccess = total > 0 ? ((deliveredCount / total) * 100).toFixed(1) : '0.0';
+
+    return { total, delayedCount, dueTodayCount, pctSuccess };
   }, [deliveries]);
 
   // Apply filters to deliveries
@@ -154,8 +158,8 @@ export default function GestaoEntregasScreen({
                 <Truck className="text-primary w-4 h-4" />
               </div>
               <p className="text-2xl font-bold text-primary">{metrics.total}</p>
-              <p className="text-xs text-on-tertiary-container font-semibold mt-1">
-                +12% vs ontem
+              <p className="text-xs text-on-surface-variant mt-1">
+                Total de registros na base
               </p>
             </div>
 
@@ -165,9 +169,9 @@ export default function GestaoEntregasScreen({
                 <span className="text-[10px] font-bold text-on-surface-variant tracking-wider uppercase">Taxa de Sucesso</span>
                 <CheckCircle className="text-on-tertiary-container w-4 h-4" />
               </div>
-              <p className="text-2xl font-bold text-primary">96.4%</p>
+              <p className="text-2xl font-bold text-primary">{metrics.pctSuccess}%</p>
               <div className="w-full bg-surface-container rounded-full h-1.5 mt-2">
-                <div className="bg-on-tertiary-container h-1.5 rounded-full" style={{ width: '96.4%' }}></div>
+                <div className="bg-on-tertiary-container h-1.5 rounded-full" style={{ width: `${metrics.pctSuccess}%` }}></div>
               </div>
             </div>
 
@@ -178,7 +182,9 @@ export default function GestaoEntregasScreen({
                 <AlertTriangle className="text-error w-4 h-4" />
               </div>
               <p className="text-2xl font-bold text-primary">{metrics.delayedCount}</p>
-              <p className="text-xs text-error font-semibold mt-1">Ação imediata requerida</p>
+              <p className="text-xs text-error font-semibold mt-1">
+                {metrics.delayedCount > 0 ? 'Ação imediata requerida' : 'Nenhuma entrega em atraso'}
+              </p>
             </div>
 
             {/* Today's forecast */}
@@ -187,8 +193,8 @@ export default function GestaoEntregasScreen({
                 <span className="text-[10px] font-bold text-on-surface-variant tracking-wider uppercase">Previsão Hoje</span>
                 <Clock className="text-secondary w-4 h-4" />
               </div>
-              <p className="text-2xl font-bold text-primary">452</p>
-              <p className="text-xs text-on-surface-variant mt-1">Volume moderado</p>
+              <p className="text-2xl font-bold text-primary">{metrics.dueTodayCount}</p>
+              <p className="text-xs text-on-surface-variant mt-1">Com previsão para hoje</p>
             </div>
 
           </div>

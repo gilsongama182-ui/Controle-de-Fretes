@@ -34,21 +34,24 @@ export default function DashboardOperadorScreen({
 
   // Computed metrics based on the shared deliveries array
   const metrics = useMemo(() => {
-    const total = deliveries.length + 1274; // keep base similar to mockup
+    const total = deliveries.length;
     const deliveredCount = deliveries.filter(d => d.status === 'ENTREGUE').length;
     const enRouteCount = deliveries.filter(d => d.status === 'EM ROTA').length;
     const delayedCount = deliveries.filter(d => d.status === 'EM ATRASO').length;
+    const failedCount = deliveries.filter(d => d.status === 'FALHA').length;
 
-    // Proportions
-    const pctDelivered = ((deliveredCount / deliveries.length) * 100).toFixed(1);
-    const pctEnRoute = ((enRouteCount / deliveries.length) * 100).toFixed(1);
-    const pctDelayed = ((delayedCount / deliveries.length) * 100).toFixed(1);
+    // Proporções reais sobre o total de entregas (0 quando não há dados)
+    const pct = (n: number) => (total > 0 ? ((n / total) * 100).toFixed(1) : '0.0');
+    const pctOnTrack = total > 0 ? (((total - delayedCount - failedCount) / total) * 100).toFixed(1) : '0.0';
+    const pctOffTrack = total > 0 ? (((delayedCount + failedCount) / total) * 100).toFixed(1) : '0.0';
 
     return {
       total,
-      pctDelivered: isNaN(Number(pctDelivered)) ? '85.4%' : `${pctDelivered}%`,
-      pctEnRoute: isNaN(Number(pctEnRoute)) ? '12.2%' : `${pctEnRoute}%`,
-      pctDelayed: isNaN(Number(pctDelayed)) ? '2.4%' : `${pctDelayed}%`,
+      enRouteCount,
+      pctDelivered: `${pct(deliveredCount)}%`,
+      pctEnRoute: `${pct(enRouteCount)}%`,
+      pctOnTrack: `${pctOnTrack}%`,
+      pctOffTrack: `${pctOffTrack}%`,
     };
   }, [deliveries]);
 
@@ -122,9 +125,7 @@ export default function DashboardOperadorScreen({
               </div>
               <div className="mt-4">
                 <h4 className="font-headline text-3xl font-bold text-primary">{metrics.total}</h4>
-                <div className="flex items-center gap-1 text-on-tertiary-container text-xs font-bold mt-1">
-                  <span>+12% vs ontem</span>
-                </div>
+                <p className="text-xs text-secondary mt-1">Total de registros na base</p>
               </div>
             </div>
 
@@ -152,11 +153,11 @@ export default function DashboardOperadorScreen({
               </div>
               <div className="mt-4">
                 <h4 className="font-headline text-3xl font-bold text-primary">{metrics.pctEnRoute}</h4>
-                <p className="text-xs text-secondary mt-1">156 veículos ativos</p>
+                <p className="text-xs text-secondary mt-1">{metrics.enRouteCount} entrega(s) em rota</p>
               </div>
             </div>
 
-            {/* 4. % No Prazo */}
+            {/* 4. % No Prazo (proxy: fora de EM ATRASO / FALHA) */}
             <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm border-l-4 border-l-primary flex flex-col justify-between">
               <div className="flex justify-between items-start">
                 <span className="text-xs font-semibold tracking-wider text-secondary uppercase">Dentro do Prazo</span>
@@ -165,14 +166,14 @@ export default function DashboardOperadorScreen({
                 </div>
               </div>
               <div className="mt-4">
-                <h4 className="font-headline text-3xl font-bold text-primary">94.8%</h4>
+                <h4 className="font-headline text-3xl font-bold text-primary">{metrics.pctOnTrack}</h4>
                 <div className="w-full bg-surface-container rounded-full h-1.5 mt-2 overflow-hidden">
-                  <div className="bg-primary h-full rounded-full" style={{ width: '94.8%' }}></div>
+                  <div className="bg-primary h-full rounded-full" style={{ width: metrics.pctOnTrack }}></div>
                 </div>
               </div>
             </div>
 
-            {/* 5. % Fora do Prazo */}
+            {/* 5. % Fora do Prazo (EM ATRASO + FALHA) */}
             <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm border-l-4 border-l-error flex flex-col justify-between">
               <div className="flex justify-between items-start">
                 <span className="text-xs font-semibold tracking-wider text-secondary uppercase">Fora do Prazo</span>
@@ -181,10 +182,8 @@ export default function DashboardOperadorScreen({
                 </div>
               </div>
               <div className="mt-4">
-                <h4 className="font-headline text-3xl font-bold text-error">5.2%</h4>
-                <div className="flex items-center gap-1 text-error text-xs font-bold mt-1">
-                  <span>-2% v.m.</span>
-                </div>
+                <h4 className="font-headline text-3xl font-bold text-error">{metrics.pctOffTrack}</h4>
+                <p className="text-xs text-secondary mt-1">Em atraso ou com falha</p>
               </div>
             </div>
 
