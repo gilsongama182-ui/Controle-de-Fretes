@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { Search, Download } from 'lucide-react';
 import { Delivery, User } from '../types';
+import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import ClienteHeader from './layout/ClienteHeader';
 
 interface DashboardClienteProps {
@@ -79,9 +80,12 @@ export default function DashboardClienteScreen({
                 <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
               </div>
 
-              {/* Export report */}
+              {/* Export report: exporta a busca ativa, ou todas as entregas do cliente se não houver busca */}
               <button
-                onClick={() => alert('Relatório de entregas do cliente exportado como PDF.')}
+                onClick={() => exportDeliveriesToCsv(
+                  searchTerm.trim() ? filteredDeliveries : deliveries,
+                  `minhas-entregas-${new Date().toISOString().split('T')[0]}.csv`
+                )}
                 className="flex items-center justify-center gap-2 h-11 px-4 border border-outline text-primary font-sans text-xs font-semibold uppercase tracking-wider rounded-lg hover:bg-primary/5 transition-colors whitespace-nowrap shadow-sm w-full sm:w-auto"
               >
                 <Download className="w-4 h-4" />

@@ -1,13 +1,13 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
-import { User } from '../types';
+import { User, ProfileType } from '../types';
 
 interface ProfileRow {
   id: string;
   name: string;
   email: string;
-  profile_type: 'cliente' | 'operador';
+  profile_type: ProfileType;
   document: string;
 }
 
@@ -31,9 +31,11 @@ interface AuthContextValue {
   session: Session | null;
   profile: User | null;
   loading: boolean;
+  profileError: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signUp: (email: string, password: string, meta: SignUpMeta) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined);
@@ -42,7 +44,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
+  const [profileError, setProfileError] = useState(false);
 
+  // Se a conta existe no auth mas não tem linha em profiles (ex: falha pontual
+  // da trigger de signup), não fica presa numa tela sem feedback nenhum.
   const loadProfile = useCallback(async (userId: string) => {
     const { data, error } = await supabase
       .from('profiles')
@@ -52,9 +57,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     if (error) {
       setProfile(null);
+      setProfileError(true);
       return;
     }
     setProfile(fromProfileRow(data as ProfileRow));
+    setProfileError(false);
   }, []);
 
   useEffect(() => {
@@ -108,8 +115,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabase.auth.signOut();
   };
 
+  const refreshProfile = async () => {
+    if (session?.user) await loadProfile(session.user.id);
+  };
+
   return (
-    <AuthContext.Provider value={{ session, profile, loading, signIn, signUp, signOut }}>
+    <AuthContext.Provider value={{ session, profile, loading, profileError, signIn, signUp, signOut, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

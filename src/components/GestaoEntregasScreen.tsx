@@ -5,6 +5,7 @@ import {
 } from 'lucide-react';
 import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
+import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -105,6 +106,7 @@ export default function GestaoEntregasScreen({
         onNovaEntrega={() => setIsNewDeliveryOpen(true)}
         onImportar={() => setIsImportOpen(true)}
         onLogout={onLogout}
+        onUsuarios={user.profileType === 'master' ? () => onNavigate('usuarios') : undefined}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -126,7 +128,7 @@ export default function GestaoEntregasScreen({
 
             <div className="flex gap-2">
               <button
-                onClick={() => alert('Lista completa de entregas exportada como planilha Excel.')}
+                onClick={() => exportDeliveriesToCsv(filteredDeliveries, `gestao-entregas-${new Date().toISOString().split('T')[0]}.csv`)}
                 className="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface-variant rounded-lg font-bold text-sm hover:bg-surface-container transition-all shadow-sm bg-white"
               >
                 <Download className="w-4 h-4" />

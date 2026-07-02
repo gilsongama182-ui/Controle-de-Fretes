@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Truck, FileUp, Download, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
 import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
+import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -72,6 +73,7 @@ export default function DashboardOperadorScreen({
         onNovaEntrega={() => setIsNewDeliveryOpen(true)}
         onImportar={() => setIsImportOpen(true)}
         onLogout={onLogout}
+        onUsuarios={user.profileType === 'master' ? () => onNavigate('usuarios') : undefined}
       />
 
       {/* Main Content Area */}
@@ -91,7 +93,7 @@ export default function DashboardOperadorScreen({
 
             <div className="flex gap-2">
               <button
-                onClick={() => alert('Relatório consolidado exportado com sucesso.')}
+                onClick={() => exportDeliveriesToCsv(deliveries, `relatorio-entregas-${new Date().toISOString().split('T')[0]}.csv`)}
                 className="flex items-center gap-2 px-4 py-2 bg-surface border border-outline-variant rounded-lg text-on-surface hover:bg-surface-container-high transition-colors font-bold text-sm shadow-sm"
               >
                 <Download className="w-4 h-4" />

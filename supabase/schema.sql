@@ -11,7 +11,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
   email text not null,
-  profile_type text not null check (profile_type in ('cliente', 'operador')),
+  profile_type text not null check (profile_type in ('cliente', 'operador', 'master')),
   document text not null,
   created_at timestamptz not null default now()
 );
@@ -99,13 +99,6 @@ create trigger on_auth_user_created
 alter table public.profiles enable row level security;
 alter table public.deliveries enable row level security;
 
--- profiles: cada usuário só lê o próprio perfil
-drop policy if exists profiles_select_own on public.profiles;
-create policy profiles_select_own
-  on public.profiles
-  for select
-  using (id = auth.uid());
-
 -- Função auxiliar: papel do usuário logado
 create or replace function public.current_profile_type()
 returns text
@@ -117,14 +110,28 @@ as $$
   select profile_type from public.profiles where id = auth.uid();
 $$;
 
--- deliveries: operador vê tudo; cliente vê só entregas cujo CNPJ/CPF
+-- profiles: cada usuário lê o próprio perfil; master lê todos (tela de Usuários)
+drop policy if exists profiles_select_own on public.profiles;
+create policy profiles_select_own
+  on public.profiles
+  for select
+  using (id = auth.uid() or public.current_profile_type() = 'master');
+
+-- profiles: master pode alterar o papel de qualquer usuário
+drop policy if exists profiles_update_master on public.profiles;
+create policy profiles_update_master
+  on public.profiles
+  for update
+  using (public.current_profile_type() = 'master');
+
+-- deliveries: operador/master veem tudo; cliente vê só entregas cujo CNPJ/CPF
 -- (normalizado, sem pontuação) bate com o document do seu perfil.
 drop policy if exists deliveries_select on public.deliveries;
 create policy deliveries_select
   on public.deliveries
   for select
   using (
-    public.current_profile_type() = 'operador'
+    public.current_profile_type() in ('operador', 'master')
     or regexp_replace(cnpj_cpf, '\D', '', 'g') = (
       select regexp_replace(document, '\D', '', 'g')
       from public.profiles
@@ -132,21 +139,21 @@ create policy deliveries_select
     )
   );
 
--- deliveries: apenas operador cria/edita/remove
+-- deliveries: apenas operador/master criam/editam/removem
 drop policy if exists deliveries_insert on public.deliveries;
 create policy deliveries_insert
   on public.deliveries
   for insert
-  with check (public.current_profile_type() = 'operador');
+  with check (public.current_profile_type() in ('operador', 'master'));
 
 drop policy if exists deliveries_update on public.deliveries;
 create policy deliveries_update
   on public.deliveries
   for update
-  using (public.current_profile_type() = 'operador');
+  using (public.current_profile_type() in ('operador', 'master'));
 
 drop policy if exists deliveries_delete on public.deliveries;
 create policy deliveries_delete
   on public.deliveries
   for delete
-  using (public.current_profile_type() = 'operador');
+  using (public.current_profile_type() in ('operador', 'master'));

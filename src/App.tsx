@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Truck } from 'lucide-react';
+import { Truck, AlertTriangle } from 'lucide-react';
 import { ActivePage, Delivery } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import {
@@ -17,6 +17,7 @@ import DashboardOperadorScreen from './components/DashboardOperadorScreen';
 import DashboardClienteScreen from './components/DashboardClienteScreen';
 import GestaoEntregasScreen from './components/GestaoEntregasScreen';
 import EdicaoEntregaScreen from './components/EdicaoEntregaScreen';
+import UsuariosScreen from './components/UsuariosScreen';
 
 function LoadingScreen() {
   return (
@@ -29,8 +30,30 @@ function LoadingScreen() {
   );
 }
 
+function ProfileErrorScreen({ onRetry, onLogout }: { onRetry: () => void; onLogout: () => void }) {
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-center gap-4 bg-surface p-6 text-center">
+      <div className="w-14 h-14 bg-error-container/30 flex items-center justify-center rounded-xl">
+        <AlertTriangle className="text-error w-8 h-8" />
+      </div>
+      <div>
+        <p className="text-sm font-bold text-on-surface">Não foi possível carregar seu perfil.</p>
+        <p className="text-xs text-on-surface-variant mt-1">Sua conta existe, mas os dados do perfil não foram encontrados. Tente novamente ou fale com o suporte.</p>
+      </div>
+      <div className="flex gap-2">
+        <button onClick={onRetry} className="px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-bold">
+          Tentar novamente
+        </button>
+        <button onClick={onLogout} className="px-4 py-2 border border-outline-variant text-secondary rounded-lg text-sm font-bold">
+          Sair
+        </button>
+      </div>
+    </div>
+  );
+}
+
 function AppShell() {
-  const { session, profile, loading, signOut } = useAuth();
+  const { session, profile, loading, profileError, signOut, refreshProfile } = useAuth();
   const [activePage, setActivePage] = useState<ActivePage>('login');
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
@@ -56,7 +79,7 @@ function AppShell() {
     if (lastHandledSessionId.current === sessionId) return; // já redirecionado nesta sessão
 
     lastHandledSessionId.current = sessionId;
-    setActivePage(profile.profileType === 'operador' ? 'dashboard-operador' : 'dashboard-cliente');
+    setActivePage(profile.profileType === 'cliente' ? 'dashboard-cliente' : 'dashboard-operador');
   }, [loading, session, profile]);
 
   // Busca as entregas do Supabase assim que a sessão + perfil estão prontos
@@ -100,6 +123,9 @@ function AppShell() {
   };
 
   if (loading) return <LoadingScreen />;
+  if (session && profileError) {
+    return <ProfileErrorScreen onRetry={refreshProfile} onLogout={handleLogout} />;
+  }
 
   switch (activePage) {
     case 'cadastro':
@@ -153,6 +179,18 @@ function AppShell() {
           user={profile}
           delivery={selectedDelivery}
           onUpdateDelivery={handleUpdateDelivery}
+          onAddDelivery={handleAddDelivery}
+          onImportDelivery={handleAddDelivery}
+        />
+      );
+
+    case 'usuarios':
+      if (!profile) return <LoadingScreen />;
+      return (
+        <UsuariosScreen
+          onNavigate={setActivePage}
+          onLogout={handleLogout}
+          user={profile}
           onAddDelivery={handleAddDelivery}
           onImportDelivery={handleAddDelivery}
         />

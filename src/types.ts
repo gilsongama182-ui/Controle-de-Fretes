@@ -23,18 +23,21 @@ export interface Delivery {
   codigoRastreio: string;
 }
 
+export type ProfileType = 'cliente' | 'operador' | 'master';
+
 export interface User {
   id: string; // uuid do auth.users / profiles
   name: string;
   email: string;
-  profileType: 'cliente' | 'operador';
+  profileType: ProfileType;
   document: string;
 }
 
-export type ActivePage = 
+export type ActivePage =
   | 'login'
   | 'cadastro'
   | 'dashboard-operador'
   | 'dashboard-cliente'
   | 'gestao-entregas'
-  | 'edicao-entrega';
+  | 'edicao-entrega'
+  | 'usuarios';

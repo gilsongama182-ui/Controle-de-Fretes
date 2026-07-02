@@ -109,6 +109,7 @@ export default function EdicaoEntregaScreen({
         onNovaEntrega={() => setIsNewDeliveryOpen(true)}
         onImportar={() => setIsImportOpen(true)}
         onLogout={onLogout}
+        onUsuarios={user.profileType === 'master' ? () => onNavigate('usuarios') : undefined}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

@@ -8,9 +8,10 @@ interface SidebarProps {
   onNovaEntrega: () => void;
   onImportar: () => void;
   onLogout: () => void;
+  onUsuarios?: () => void;
 }
 
-export default function Sidebar({ activePage, onNavigate, onNovaEntrega, onImportar, onLogout }: SidebarProps) {
+export default function Sidebar({ activePage, onNavigate, onNovaEntrega, onImportar, onLogout, onUsuarios }: SidebarProps) {
   const navItemClass = (page: ActivePage) =>
     `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-colors ${
       activePage === page
@@ -39,8 +40,8 @@ export default function Sidebar({ activePage, onNavigate, onNovaEntrega, onImpor
         </button>
 
         <button
-          onClick={() => alert('Filtro de usuários logísticos simulado.')}
-          className="w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 rounded-lg text-left text-sm transition-colors"
+          onClick={onUsuarios ?? (() => alert('Filtro de usuários logísticos simulado.'))}
+          className={onUsuarios ? navItemClass('usuarios') : 'w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 rounded-lg text-left text-sm transition-colors'}
         >
           <Users className="w-5 h-5" />
           <span>Usuários</span>
