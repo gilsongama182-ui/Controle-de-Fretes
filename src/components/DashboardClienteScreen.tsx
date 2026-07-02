@@ -2,6 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { Search, Download } from 'lucide-react';
 import { Delivery, User } from '../types';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
+import { formatDateBR } from '../lib/formatDate';
 import ClienteHeader from './layout/ClienteHeader';
 
 interface DashboardClienteProps {
@@ -161,7 +162,7 @@ export default function DashboardClienteScreen({
                             {del.status}
                           </span>
                         </td>
-                        <td className="px-6 py-4 text-sm text-on-surface-variant font-medium">{del.previsao}</td>
+                        <td className="px-6 py-4 text-sm text-on-surface-variant font-medium">{formatDateBR(del.previsao)}</td>
                       </tr>
                     ))
                   ) : (

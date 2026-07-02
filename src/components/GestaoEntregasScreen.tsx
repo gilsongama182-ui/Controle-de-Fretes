@@ -6,6 +6,7 @@ import {
 import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
+import { formatDateBR } from '../lib/formatDate';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -296,9 +297,9 @@ export default function GestaoEntregasScreen({
                     {paginatedDeliveries.length > 0 ? (
                       paginatedDeliveries.map((del) => (
                         <tr key={del.id} className="hover:bg-primary/5 transition-colors group">
-                          <td className="px-4 py-4 font-mono text-xs">{del.dataPedido}</td>
+                          <td className="px-4 py-4 font-mono text-xs">{formatDateBR(del.dataPedido)}</td>
                           <td className="px-4 py-4 font-bold text-sm text-primary">{del.cliente}</td>
-                          <td className="px-4 py-4 font-mono text-xs">{del.dataExpedicao}</td>
+                          <td className="px-4 py-4 font-mono text-xs">{formatDateBR(del.dataExpedicao)}</td>
                           <td className="px-4 py-4 text-xs text-on-surface">{del.nomeRazaoSocial}</td>
                           <td className="px-4 py-4 font-mono text-xs">{del.cnpjCpf}</td>
                           <td className="px-4 py-4 text-xs max-w-[200px] truncate">{del.enderecoCompleto}</td>
@@ -379,7 +380,7 @@ export default function GestaoEntregasScreen({
                           <td className="px-5 py-4 font-mono text-sm text-primary font-bold">{del.nfe}</td>
                           <td className="px-5 py-4 font-bold text-sm text-on-surface">{del.cliente}</td>
                           <td className="px-5 py-4 text-sm font-semibold">{del.uf}</td>
-                          <td className="px-5 py-4 text-sm font-medium">{del.previsao}</td>
+                          <td className="px-5 py-4 text-sm font-medium">{formatDateBR(del.previsao)}</td>
                           <td className="px-5 py-4">
                             <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
                               del.status === 'ENTREGUE' ? 'bg-green-100 text-green-800' :

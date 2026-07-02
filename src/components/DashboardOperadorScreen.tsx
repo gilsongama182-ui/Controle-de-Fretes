@@ -3,6 +3,7 @@ import { Truck, FileUp, Download, CheckCircle, Clock, AlertTriangle } from 'luci
 import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
+import { formatDateBR } from '../lib/formatDate';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -233,7 +234,7 @@ export default function DashboardOperadorScreen({
                             {del.status}
                           </span>
                         </td>
-                        <td className="px-5 py-4 text-sm text-on-surface-variant font-medium">{del.previsao}</td>
+                        <td className="px-5 py-4 text-sm text-on-surface-variant font-medium">{formatDateBR(del.previsao)}</td>
                       </tr>
                     ))}
                   </tbody>
