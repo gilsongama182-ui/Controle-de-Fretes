@@ -38,6 +38,8 @@ export default function EdicaoEntregaScreen({
   const [ocorrencia, setOcorrencia] = useState(delivery?.ocorrencia ?? '');
   const [previsao, setPrevisao] = useState(delivery?.previsao ?? '');
   const [nfe, setNfe] = useState(delivery?.nfe ?? '');
+  const [remetente, setRemetente] = useState(delivery?.remetente ?? '');
+  const [remetenteCnpj, setRemetenteCnpj] = useState(delivery?.remetenteCnpj ?? '');
   const [cliente, setCliente] = useState(delivery?.cliente ?? '');
   const [razaoSocial, setRazaoSocial] = useState(delivery?.nomeRazaoSocial ?? '');
   const [cnpjCpf, setCnpjCpf] = useState(delivery?.cnpjCpf ?? '');
@@ -74,6 +76,8 @@ export default function EdicaoEntregaScreen({
     try {
       await onUpdateDelivery(delivery.id, {
         nfe,
+        remetente,
+        remetenteCnpj,
         status,
         ocorrencia,
         previsao,
@@ -153,9 +157,42 @@ export default function EdicaoEntregaScreen({
                   <span>Informações Principais da NF-e</span>
                 </h2>
 
-                {/* SECTION 1: DADOS DE EMISSÃO */}
+                {/* SECTION 1: REMETENTE */}
                 <div className="space-y-4">
-                  <h3 className="text-xs font-bold text-secondary tracking-widest uppercase">1. Dados de Emissão</h3>
+                  <h3 className="text-xs font-bold text-secondary tracking-widest uppercase">1. Remetente (contratante do frete)</h3>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">Nome do Remetente</label>
+                      <input
+                        type="text"
+                        required
+                        value={remetente}
+                        onChange={(e) => setRemetente(e.target.value)}
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-semibold"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">CNPJ do Remetente</label>
+                      <input
+                        type="text"
+                        required
+                        value={remetenteCnpj}
+                        onChange={(e) => setRemetenteCnpj(e.target.value)}
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-mono"
+                      />
+                    </div>
+
+                  </div>
+                  <p className="text-[11px] text-on-surface-variant">
+                    Precisa bater com o documento cadastrado na conta do cliente para ele conseguir ver esta entrega.
+                  </p>
+                </div>
+
+                {/* SECTION 2: DADOS DE EMISSÃO */}
+                <div className="space-y-4 pt-4 border-t border-outline-variant/30">
+                  <h3 className="text-xs font-bold text-secondary tracking-widest uppercase">2. Dados de Emissão</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
                     <div className="space-y-1">
@@ -191,9 +228,9 @@ export default function EdicaoEntregaScreen({
                   </div>
                 </div>
 
-                {/* SECTION 2: DESTINATÁRIO */}
+                {/* SECTION 3: DESTINATÁRIO */}
                 <div className="space-y-4 pt-4 border-t border-outline-variant/30">
-                  <h3 className="text-xs font-bold text-secondary tracking-widest uppercase">2. Destinatário</h3>
+                  <h3 className="text-xs font-bold text-secondary tracking-widest uppercase">3. Destinatário</h3>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
 
                     <div className="space-y-1">
@@ -229,11 +266,11 @@ export default function EdicaoEntregaScreen({
                   </div>
                 </div>
 
-                {/* SECTION 3: ENDEREÇO DE ENTREGA */}
+                {/* SECTION 4: ENDEREÇO DE ENTREGA */}
                 <div className="space-y-4 pt-4 border-t border-outline-variant/30">
                   <h3 className="text-xs font-bold text-secondary tracking-widest uppercase flex items-center gap-1.5">
                     <MapPin className="w-4 h-4 text-secondary" />
-                    <span>3. Endereço de Entrega</span>
+                    <span>4. Endereço de Entrega</span>
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">

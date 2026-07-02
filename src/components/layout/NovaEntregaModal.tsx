@@ -9,6 +9,8 @@ interface NovaEntregaModalProps {
 }
 
 export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntregaModalProps) {
+  const [remetente, setRemetente] = useState('');
+  const [remetenteCnpj, setRemetenteCnpj] = useState('');
   const [nfe, setNfe] = useState('');
   const [cliente, setCliente] = useState('');
   const [razaoSocial, setRazaoSocial] = useState('');
@@ -22,6 +24,8 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
   if (!open) return null;
 
   const resetForm = () => {
+    setRemetente('');
+    setRemetenteCnpj('');
     setNfe('');
     setCliente('');
     setRazaoSocial('');
@@ -34,8 +38,8 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!nfe || !cliente) {
-      alert('Por favor, preencha a NF-e e o Nome do Cliente.');
+    if (!nfe || !cliente || !remetente || !remetenteCnpj) {
+      alert('Por favor, preencha Remetente, CNPJ do Remetente, NF-e e o Nome do Cliente.');
       return;
     }
 
@@ -45,6 +49,8 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
     const newDel: NewDeliveryInput = {
       codigo: `#HM-${randomIdNumber}`,
       nfe,
+      remetente,
+      remetenteCnpj,
       cliente,
       nomeRazaoSocial: razaoSocial || `${cliente} S.A.`,
       cnpjCpf: cnpjCpf || '00.000.000/0001-00',
@@ -100,6 +106,34 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
 
               <div className="relative mt-6 flex-1 px-4 sm:px-6">
                 <form onSubmit={handleSubmit} className="space-y-4">
+                  <div className="grid grid-cols-2 gap-2 pb-3 border-b border-outline-variant/30">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-on-surface block">Remetente (contratante do frete)</label>
+                      <input
+                        type="text"
+                        required
+                        value={remetente}
+                        onChange={(e) => setRemetente(e.target.value)}
+                        placeholder="Ex: WLOGIS Cliente Ltda"
+                        className="w-full p-2.5 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-on-surface block">CNPJ do Remetente</label>
+                      <input
+                        type="text"
+                        required
+                        value={remetenteCnpj}
+                        onChange={(e) => setRemetenteCnpj(e.target.value)}
+                        placeholder="Ex: 11.111.111/0001-11"
+                        className="w-full p-2.5 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <p className="col-span-2 text-[11px] text-on-surface-variant">
+                      Precisa bater com o documento cadastrado na conta do cliente para ele conseguir ver esta entrega.
+                    </p>
+                  </div>
+
                   <div className="space-y-1">
                     <label className="text-xs font-semibold text-on-surface block">NF-e (Nota Fiscal)</label>
                     <input

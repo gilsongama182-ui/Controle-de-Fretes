@@ -15,6 +15,8 @@ function buildMockImportedDelivery(): NewDeliveryInput {
   return {
     codigo: `#HM-${randomNum}`,
     nfe: `112.${Math.floor(100 + Math.random() * 900)}-${Math.floor(10 + Math.random() * 90)}`,
+    remetente: 'Importado via planilha',
+    remetenteCnpj: '12.000.111/0001-22',
     cliente: 'Importado Sul Ltda',
     nomeRazaoSocial: 'Importadora Sul Brasileira LTDA',
     cnpjCpf: '12.000.111/0001-22',

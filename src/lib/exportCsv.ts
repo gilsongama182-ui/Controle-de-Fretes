@@ -3,7 +3,9 @@ import { Delivery } from '../types';
 const HEADERS: { key: keyof Delivery; label: string }[] = [
   { key: 'codigo', label: 'Código' },
   { key: 'nfe', label: 'NF-e' },
-  { key: 'cliente', label: 'Cliente' },
+  { key: 'remetente', label: 'Remetente' },
+  { key: 'remetenteCnpj', label: 'CNPJ Remetente' },
+  { key: 'cliente', label: 'Cliente (Destinatário)' },
   { key: 'nomeRazaoSocial', label: 'Nome / Razão Social' },
   { key: 'cnpjCpf', label: 'CNPJ / CPF' },
   { key: 'dataPedido', label: 'Data do Pedido' },

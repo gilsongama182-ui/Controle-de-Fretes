@@ -7,6 +7,8 @@ interface DeliveryRow {
   id: string;
   codigo: string;
   nfe: string;
+  remetente: string | null;
+  remetente_cnpj: string | null;
   cliente: string;
   nome_razao_social: string;
   cnpj_cpf: string;
@@ -31,6 +33,8 @@ function fromRow(row: DeliveryRow): Delivery {
     id: row.id,
     codigo: row.codigo,
     nfe: row.nfe,
+    remetente: row.remetente ?? '',
+    remetenteCnpj: row.remetente_cnpj ?? '',
     cliente: row.cliente,
     nomeRazaoSocial: row.nome_razao_social,
     cnpjCpf: row.cnpj_cpf,
@@ -55,6 +59,8 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   const row: Record<string, unknown> = {};
   if (input.codigo !== undefined) row.codigo = input.codigo;
   if (input.nfe !== undefined) row.nfe = input.nfe;
+  if (input.remetente !== undefined) row.remetente = input.remetente;
+  if (input.remetenteCnpj !== undefined) row.remetente_cnpj = input.remetenteCnpj;
   if (input.cliente !== undefined) row.cliente = input.cliente;
   if (input.nomeRazaoSocial !== undefined) row.nome_razao_social = input.nomeRazaoSocial;
   if (input.cnpjCpf !== undefined) row.cnpj_cpf = input.cnpjCpf;

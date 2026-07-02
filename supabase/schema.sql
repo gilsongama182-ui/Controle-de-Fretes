@@ -20,7 +20,9 @@ create table if not exists public.deliveries (
   id uuid primary key default gen_random_uuid(),
   codigo text unique not null,
   nfe text not null,
-  cliente text not null,
+  remetente text,          -- quem contrata o frete (vincula a conta cliente)
+  remetente_cnpj text,
+  cliente text not null,   -- destinatário: quem recebe a carga
   nome_razao_social text not null,
   cnpj_cpf text not null,
   data_pedido date not null,
@@ -124,15 +126,15 @@ create policy profiles_update_master
   for update
   using (public.current_profile_type() = 'master');
 
--- deliveries: operador/master veem tudo; cliente vê só entregas cujo CNPJ/CPF
--- (normalizado, sem pontuação) bate com o document do seu perfil.
+-- deliveries: operador/master veem tudo; cliente vê só entregas cujo CNPJ do
+-- REMETENTE (normalizado, sem pontuação) bate com o document do seu perfil.
 drop policy if exists deliveries_select on public.deliveries;
 create policy deliveries_select
   on public.deliveries
   for select
   using (
     public.current_profile_type() in ('operador', 'master')
-    or regexp_replace(cnpj_cpf, '\D', '', 'g') = (
+    or regexp_replace(coalesce(remetente_cnpj, ''), '\D', '', 'g') = (
       select regexp_replace(document, '\D', '', 'g')
       from public.profiles
       where id = auth.uid()

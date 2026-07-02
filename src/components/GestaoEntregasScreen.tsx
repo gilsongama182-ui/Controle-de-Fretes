@@ -273,9 +273,11 @@ export default function GestaoEntregasScreen({
             <div className="overflow-x-auto">
               {detailedMode ? (
                 /* DENSE WIDE TABLE WITH HORIZONTAL SCROLL */
-                <table className="w-full text-left border-collapse min-w-[2000px]">
+                <table className="w-full text-left border-collapse min-w-[2300px]">
                   <thead className="bg-surface-container-low border-b border-outline-variant text-xs font-bold uppercase tracking-wider text-on-surface-variant sticky top-0">
                     <tr>
+                      <th className="px-4 py-3">Remetente</th>
+                      <th className="px-4 py-3">CNPJ Remetente</th>
                       <th className="px-4 py-3">Data Pedido</th>
                       <th className="px-4 py-3">Cliente</th>
                       <th className="px-4 py-3">Data Expedição</th>
@@ -297,6 +299,8 @@ export default function GestaoEntregasScreen({
                     {paginatedDeliveries.length > 0 ? (
                       paginatedDeliveries.map((del) => (
                         <tr key={del.id} className="hover:bg-primary/5 transition-colors group">
+                          <td className="px-4 py-4 text-xs font-semibold text-secondary">{del.remetente}</td>
+                          <td className="px-4 py-4 font-mono text-xs">{del.remetenteCnpj}</td>
                           <td className="px-4 py-4 font-mono text-xs">{formatDateBR(del.dataPedido)}</td>
                           <td className="px-4 py-4 font-bold text-sm text-primary">{del.cliente}</td>
                           <td className="px-4 py-4 font-mono text-xs">{formatDateBR(del.dataExpedicao)}</td>
@@ -352,7 +356,7 @@ export default function GestaoEntregasScreen({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={15} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={17} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega corresponde aos filtros de busca aplicados.
                         </td>
                       </tr>

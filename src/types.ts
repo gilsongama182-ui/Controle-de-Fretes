@@ -4,9 +4,11 @@ export interface Delivery {
   id: string; // uuid (chave real no banco)
   codigo: string; // e.g., "#HM-9241" (código de exibição)
   nfe: string; // e.g., "112.983-01"
-  cliente: string; // short client name
-  nomeRazaoSocial: string; // full company name
-  cnpjCpf: string;
+  remetente: string; // quem contrata o frete (vincula a conta cliente)
+  remetenteCnpj: string;
+  cliente: string; // destinatário: short name de quem recebe a carga
+  nomeRazaoSocial: string; // full company name (destinatário)
+  cnpjCpf: string; // CNPJ/CPF do destinatário
   dataPedido: string; // YYYY-MM-DD
   dataExpedicao: string; // YYYY-MM-DD
   previsao: string; // YYYY-MM-DD or readable string
