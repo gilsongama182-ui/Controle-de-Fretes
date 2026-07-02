@@ -323,7 +323,7 @@ export default function GestaoEntregasScreen({
                       <th className="px-4 py-3">Data Pedido</th>
                       <th className="px-4 py-3">Data Expedição</th>
                       <th className="px-4 py-3">Data de Entrega</th>
-                      <th className="px-4 py-3">Nome / Razão Social</th>
+                      <th className="px-4 py-3">Destinatário</th>
                       <th className="px-4 py-3">CNPJ / CPF</th>
                       <th className="px-4 py-3">Endereço</th>
                       <th className="px-4 py-3">Bairro / Distrito</th>
