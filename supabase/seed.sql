@@ -1,4 +1,4 @@
--- Hemmersbach Logistics — dados de exemplo (opcional, fictícios)
+-- WLOGIS — dados de exemplo (opcional, fictícios)
 -- Rode depois de schema.sql, no SQL Editor do painel Supabase.
 
 insert into public.deliveries

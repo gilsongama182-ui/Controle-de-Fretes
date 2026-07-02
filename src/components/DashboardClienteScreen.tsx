@@ -193,7 +193,7 @@ export default function DashboardClienteScreen({
       {/* Footer */}
       <footer className="w-full py-6 px-6 bg-surface-container-highest border-t border-outline-variant flex flex-col sm:flex-row justify-between items-center gap-2 text-xs text-on-surface-variant">
         <div>
-          © 2024 Hemmersbach Logistics - Suporte: suporte@hemmersbach.com
+          © 2024 WLOGIS - Suporte: suporte@wlogis.com.br
         </div>
         <div className="flex gap-4">
           <a className="hover:text-primary hover:underline" href="#privacy">Política de Privacidade</a>

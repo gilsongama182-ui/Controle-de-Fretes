@@ -12,7 +12,7 @@ export default function ClienteHeader({ profile, onLogout }: ClienteHeaderProps)
     <header className="sticky top-0 z-50 flex justify-between items-center w-full px-6 h-16 bg-surface border-b border-outline-variant">
       <div className="flex items-center gap-2">
         <span className="font-headline text-lg font-bold text-primary">
-          Acompanhamento Entregas Hemmersbach
+          Acompanhamento Entregas WLOGIS
         </span>
       </div>
 

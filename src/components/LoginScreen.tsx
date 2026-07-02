@@ -52,7 +52,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
             <div className="w-16 h-16 bg-primary flex items-center justify-center rounded-xl shadow-lg mb-4">
               <Truck className="text-on-primary w-10 h-10" />
             </div>
-            <h1 className="font-headline text-4xl font-bold text-primary tracking-tight">Hemmersbach</h1>
+            <h1 className="font-headline text-4xl font-bold text-primary tracking-tight">WLOGIS</h1>
             <p className="font-sans text-xs font-semibold text-secondary uppercase tracking-[0.2em] mt-1">
               Logistics Core System
             </p>
@@ -179,7 +179,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
           {/* Footer Info */}
           <footer className="mt-8 text-center">
             <p className="text-[11px] font-semibold text-outline uppercase tracking-wider">
-              © 2024 Hemmersbach Logistics • Global Operations
+              © 2024 WLOGIS • Global Operations
             </p>
           </footer>
         </main>
@@ -192,7 +192,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
               className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
               referrerPolicy="no-referrer"
               src="https://lh3.googleusercontent.com/aida-public/AB6AXuBD7WQkZu74qG44uBzfGqeD-qLx6YHgxc_ZlRV0clRSMX6wY7qJ-XZu9xgyDsZYbxAaXmzeafPl9wPhlLdrhrD1gloifjlgfROdSSSoGjj64SZK5_q6UIJZkbRBbYi3D3yYKj_40IbF4xpyYCqBafYw_1n1xPBXUsJLMyKFqni8rpp0Hx8NUL7pwzhWa-CG-QSNNJ1JXoYPNSK72JbtKHm7i-Lf-bRZwjXgHfyz-FUgKWAlEPbZjOuevA"
-              alt="Hemmersbach modern logistics hub at dusk"
+              alt="WLOGIS modern logistics hub at dusk"
             />
             <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white z-20">
               <h3 className="font-headline text-2xl font-bold mb-1">Precisão em cada entrega.</h3>

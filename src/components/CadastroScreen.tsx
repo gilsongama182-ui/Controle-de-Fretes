@@ -49,7 +49,7 @@ export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
       {/* Header / Brand */}
       <header className="mb-8 text-center max-w-[640px] w-full">
         <h1 className="font-headline text-3xl font-semibold text-primary tracking-tight mb-2">
-          Acompanhamento Entregas Hemmersbach
+          Acompanhamento Entregas WLOGIS
         </h1>
         <p className="font-sans text-sm text-secondary">
           Crie sua conta para acessar o ecossistema logístico.
@@ -294,7 +294,7 @@ export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
       {/* Footer Credits */}
       <footer className="mt-8 text-center w-full max-w-[640px]">
         <p className="text-[11px] font-semibold text-on-surface-variant uppercase tracking-wider">
-          © 2024 Hemmersbach Logistics - Suporte: suporte@hemmersbach.com
+          © 2024 WLOGIS - Suporte: suporte@wlogis.com.br
         </p>
       </footer>
     </div>

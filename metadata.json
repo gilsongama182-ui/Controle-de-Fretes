@@ -1,6 +1,6 @@
 {
-  "name": "Hemmersbach Logistics",
-  "description": "Sistema integrado de acompanhamento de entregas e gestão de frotas para operadores e clientes da Hemmersbach Logistics.",
+  "name": "WLOGIS",
+  "description": "Sistema integrado de acompanhamento de entregas e gestão de frotas para operadores e clientes da WLOGIS.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

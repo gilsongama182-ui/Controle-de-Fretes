@@ -189,11 +189,9 @@ export default function DashboardOperadorScreen({
 
           </div>
 
-          {/* Dashboard Body divided into columns */}
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-
-            {/* Left 2 columns: Recent Deliveries table */}
-            <div className="lg:col-span-2 bg-white border border-outline-variant rounded-xl overflow-hidden shadow-sm flex flex-col">
+          {/* Recent Deliveries table */}
+          <div>
+            <div className="bg-white border border-outline-variant rounded-xl overflow-hidden shadow-sm flex flex-col">
               <div className="p-5 flex justify-between items-center border-b border-outline-variant">
                 <h4 className="font-headline text-lg font-bold text-primary">Entregas Recentes</h4>
                 <button
@@ -242,88 +240,15 @@ export default function DashboardOperadorScreen({
                 </table>
               </div>
             </div>
-
-            {/* Right column: Widgets */}
-            <div className="space-y-6">
-
-              {/* Delivery Efficiency Bar Chart */}
-              <div className="bg-white border border-outline-variant rounded-xl p-5 shadow-sm">
-                <h4 className="font-headline text-lg font-bold text-primary mb-4">Eficiência de Entrega</h4>
-                <div className="h-44 w-full flex items-end justify-between gap-3 px-2 pt-4">
-
-                  {/* SEG bar */}
-                  <div className="w-full bg-primary/20 rounded-t-lg relative group transition-all" style={{ height: '60%' }}>
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">SEG</div>
-                    <span className="absolute bottom-[-24px] left-1/2 -translate-x-1/2 text-[10px] font-bold text-secondary">SEG</span>
-                  </div>
-
-                  {/* TER bar */}
-                  <div className="w-full bg-primary/40 rounded-t-lg relative group transition-all" style={{ height: '75%' }}>
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">TER</div>
-                    <span className="absolute bottom-[-24px] left-1/2 -translate-x-1/2 text-[10px] font-bold text-secondary">TER</span>
-                  </div>
-
-                  {/* QUA bar */}
-                  <div className="w-full bg-primary/30 rounded-t-lg relative group transition-all" style={{ height: '65%' }}>
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">QUA</div>
-                    <span className="absolute bottom-[-24px] left-1/2 -translate-x-1/2 text-[10px] font-bold text-secondary">QUA</span>
-                  </div>
-
-                  {/* QUI bar */}
-                  <div className="w-full bg-primary rounded-t-lg relative group transition-all" style={{ height: '90%' }}>
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">QUI</div>
-                    <span className="absolute bottom-[-24px] left-1/2 -translate-x-1/2 text-[10px] font-bold text-secondary">QUI</span>
-                  </div>
-
-                  {/* SEX bar */}
-                  <div className="w-full bg-primary/50 rounded-t-lg relative group transition-all" style={{ height: '80%' }}>
-                    <div className="absolute -top-7 left-1/2 -translate-x-1/2 bg-primary text-on-primary text-[9px] px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity">SEX</div>
-                    <span className="absolute bottom-[-24px] left-1/2 -translate-x-1/2 text-[10px] font-bold text-secondary">SEX</span>
-                  </div>
-
-                </div>
-
-                <div className="mt-10 space-y-2 border-t border-outline-variant/30 pt-3">
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-secondary">Média Semanal</span>
-                    <span className="font-bold text-primary">78%</span>
-                  </div>
-                  <div className="flex justify-between items-center text-sm">
-                    <span className="text-secondary">Destaque</span>
-                    <span className="font-bold text-on-tertiary-container">Quinta-feira (+15%)</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Map summary overlay widget */}
-              <div className="relative overflow-hidden rounded-xl border border-outline-variant h-64 shadow-sm group">
-                <div
-                  className="absolute inset-0 z-0 bg-cover bg-center transition-transform duration-700 group-hover:scale-105"
-                  style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuDvMrRbhNEbTGMaQHtieGaWPfrhO92Mea7Xmfl96paanePzS12SLX_rWLuUrxhvUohzkzYXx0yp-kWGzONZOnrCDOq9I2YgXUr6gmJn-xD8vKdEM0RrLitBby-kpaEqNmnD2NdTv4XEjRoYRSBFpjQQEIkOO2iqilRiTaetTASTDObEpTbxruwUga8_X9ThUbIzY0Cbb-ldzNFe2xa6Me1Yo5x6IETa7EcRITyS9bNGSbgG5n4Dmx_Y-Q')" }}
-                ></div>
-                <div className="absolute inset-0 bg-gradient-to-t from-primary/90 to-transparent z-10"></div>
-                <div className="absolute bottom-0 left-0 p-6 z-20 text-white w-full">
-                  <h5 className="font-headline text-lg font-bold">Cobertura Nacional</h5>
-                  <p className="text-xs opacity-90 mb-3">14 Centros de Distribuição ativos</p>
-                  <button
-                    onClick={() => alert('Visualizador de Mapa Operacional Interativo em desenvolvimento.')}
-                    className="w-full bg-white text-primary py-2 rounded-lg font-bold text-sm hover:bg-surface transition-colors"
-                  >
-                    Abrir Mapa Operacional
-                  </button>
-                </div>
-              </div>
-
-            </div>
           </div>
         </main>
 
         {/* Footer Area */}
         <footer className="w-full py-4 px-6 bg-surface-container-highest border-t border-outline-variant flex flex-col sm:flex-row justify-between items-center gap-2 mt-auto text-xs text-on-surface-variant">
           <div>
-            © 2024 Hemmersbach Logistics - Suporte:{' '}
-            <a className="font-bold hover:text-primary" href="mailto:suporte@hemmersbach.com">
-              suporte@hemmersbach.com
+            © 2024 WLOGIS - Suporte:{' '}
+            <a className="font-bold hover:text-primary" href="mailto:suporte@wlogis.com.br">
+              suporte@wlogis.com.br
             </a>
           </div>
           <div className="flex gap-4">

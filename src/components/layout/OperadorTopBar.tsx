@@ -13,7 +13,7 @@ export default function OperadorTopBar({ profile, searchValue, onSearchChange }:
     <header className="sticky top-0 z-30 flex justify-between items-center w-full px-6 h-16 bg-surface border-b border-outline-variant">
       <div className="flex items-center gap-4">
         <h2 className="font-headline text-lg font-bold text-primary truncate">
-          Acompanhamento Entregas Hemmersbach
+          Acompanhamento Entregas WLOGIS
         </h2>
       </div>
 

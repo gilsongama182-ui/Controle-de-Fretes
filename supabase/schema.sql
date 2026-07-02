@@ -1,4 +1,4 @@
--- Hemmersbach Logistics — schema, RLS e trigger de perfil
+-- WLOGIS — schema, RLS e trigger de perfil
 -- Rode este script inteiro no SQL Editor do painel Supabase (Project > SQL Editor > New query).
 
 create extension if not exists pgcrypto;

@@ -1,6 +1,6 @@
-# Hemmersbach Logistics
+# WLOGIS
 
-Sistema integrado de acompanhamento de entregas e gestão de frotas para operadores e clientes da Hemmersbach Logistics. React 19 + Vite + TypeScript + Tailwind CSS, com autenticação e dados persistidos no Supabase.
+Sistema integrado de acompanhamento de entregas e gestão de frotas para operadores e clientes da WLOGIS. React 19 + Vite + TypeScript + Tailwind CSS, com autenticação e dados persistidos no Supabase.
 
 ## Stack
 

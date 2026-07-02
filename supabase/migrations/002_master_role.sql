@@ -1,4 +1,4 @@
--- Hemmersbach Logistics — adiciona o papel "master" (administrador)
+-- WLOGIS — adiciona o papel "master" (administrador)
 -- Rode no SQL Editor do painel Supabase (depois de schema.sql já aplicado).
 
 -- 1) Permite 'master' como profile_type
