@@ -208,7 +208,7 @@ export default function DashboardOperadorScreen({
                   <thead className="bg-surface-container border-b border-outline-variant">
                     <tr>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">Nº PEDIDO</th>
-                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">CLIENTE</th>
+                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">DESTINATÁRIO</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">CIDADE/UF</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">STATUS</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">PREVISÃO</th>
