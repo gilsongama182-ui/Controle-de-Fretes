@@ -411,7 +411,7 @@ export default function GestaoEntregasScreen({
                   <thead className="bg-surface-container-low border-b border-outline-variant text-xs font-bold uppercase tracking-wider text-on-surface-variant sticky top-0">
                     <tr>
                       <th className="px-5 py-3">NF</th>
-                      <th className="px-5 py-3">Cliente</th>
+                      <th className="px-5 py-3">Destinatário</th>
                       <th className="px-5 py-3">UF</th>
                       <th className="px-5 py-3">Previsão</th>
                       <th className="px-5 py-3">Status</th>
