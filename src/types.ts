@@ -1,7 +1,8 @@
 export type DeliveryStatus = 'ENTREGUE' | 'EM ROTA' | 'EM ATRASO' | 'FALHA';
 
 export interface Delivery {
-  id: string; // e.g., "#HM-9241"
+  id: string; // uuid (chave real no banco)
+  codigo: string; // e.g., "#HM-9241" (código de exibição)
   nfe: string; // e.g., "112.983-01"
   cliente: string; // short client name
   nomeRazaoSocial: string; // full company name
@@ -23,6 +24,7 @@ export interface Delivery {
 }
 
 export interface User {
+  id: string; // uuid do auth.users / profiles
   name: string;
   email: string;
   profileType: 'cliente' | 'operador';

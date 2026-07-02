@@ -1,13 +1,14 @@
 import React, { useState } from 'react';
-import { User as UserIcon, Shield, Lock, Eye, EyeOff, Mail, ArrowRight, Truck } from 'lucide-react';
-import { ActivePage, User } from '../types';
+import { User as UserIcon, Shield, Lock, Eye, EyeOff, Mail, ArrowRight, Truck, AlertCircle } from 'lucide-react';
+import { ActivePage } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 interface CadastroScreenProps {
   onNavigate: (page: ActivePage) => void;
-  onLogin: (user: User) => void;
 }
 
-export default function CadastroScreen({ onNavigate, onLogin }: CadastroScreenProps) {
+export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
+  const { signUp } = useAuth();
   const [profileType, setProfileType] = useState<'cliente' | 'operador'>('cliente');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -16,27 +17,31 @@ export default function CadastroScreen({ onNavigate, onLogin }: CadastroScreenPr
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
+
     if (!agreeTerms) {
-      alert('Você precisa aceitar os Termos de Serviço e Políticas de Privacidade.');
+      setErrorMessage('Você precisa aceitar os Termos de Serviço e Políticas de Privacidade.');
       return;
     }
-    setIsSubmitting(true);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      const newUser: User = {
-        name,
-        email,
-        profileType,
-        document: document || (profileType === 'operador' ? '00.000.000/0001-00' : '000.000.000-00'),
-      };
-      onLogin(newUser);
-      // Directs to appropriate dashboard
-      onNavigate(profileType === 'operador' ? 'dashboard-operador' : 'dashboard-cliente');
-    }, 1500);
+    setIsSubmitting(true);
+    const { error } = await signUp(email, password, {
+      name,
+      profileType,
+      document: document || (profileType === 'operador' ? '00.000.000/0001-00' : '000.000.000-00'),
+    });
+    setIsSubmitting(false);
+
+    if (error) {
+      setErrorMessage(error.message);
+      return;
+    }
+    // Em caso de sucesso, o App.tsx redireciona automaticamente
+    // com base na sessão + perfil restaurados pelo AuthContext.
   };
 
   return (
@@ -54,14 +59,21 @@ export default function CadastroScreen({ onNavigate, onLogin }: CadastroScreenPr
       {/* Main Registration Card */}
       <main className="w-full max-w-[640px] bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
-          
+
+          {errorMessage && (
+            <div className="flex items-center gap-2 rounded-lg bg-error-container/20 border border-error/30 px-3 py-2 text-xs font-semibold text-error">
+              <AlertCircle className="w-4 h-4 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+          )}
+
           {/* Section 1: Profile Selection */}
           <section>
             <h2 className="text-xs font-semibold text-on-surface-variant uppercase tracking-widest mb-4">
               Selecione seu perfil
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
+
               {/* Cliente Profile */}
               <label className="relative cursor-pointer block group">
                 <input
@@ -135,7 +147,7 @@ export default function CadastroScreen({ onNavigate, onLogin }: CadastroScreenPr
               Informações de Acesso
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              
+
               {/* Full Name */}
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-on-surface block" htmlFor="name">
@@ -212,6 +224,7 @@ export default function CadastroScreen({ onNavigate, onLogin }: CadastroScreenPr
                     id="password"
                     type={showPassword ? 'text' : 'password'}
                     required
+                    minLength={6}
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
                     placeholder="••••••••"

@@ -1,16 +1,15 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Download, HelpCircle, Bell, ArrowRight, LogOut } from 'lucide-react';
-import { ActivePage, Delivery, User } from '../types';
+import { Search, Download } from 'lucide-react';
+import { Delivery, User } from '../types';
+import ClienteHeader from './layout/ClienteHeader';
 
 interface DashboardClienteProps {
-  onNavigate: (page: ActivePage) => void;
   onLogout: () => void;
   user: User;
   deliveries: Delivery[];
 }
 
 export default function DashboardClienteScreen({
-  onNavigate,
   onLogout,
   user,
   deliveries
@@ -24,11 +23,11 @@ export default function DashboardClienteScreen({
     const list = showAll ? deliveries : deliveries.slice(0, 5);
     if (!term) return list;
 
-    return deliveries.filter(d => 
+    return deliveries.filter(d =>
       d.nfe.toLowerCase().includes(term) ||
       d.cliente.toLowerCase().includes(term) ||
       d.municipio.toLowerCase().includes(term) ||
-      d.id.toLowerCase().includes(term)
+      d.codigo.toLowerCase().includes(term)
     );
   }, [deliveries, searchTerm, showAll]);
 
@@ -39,9 +38,9 @@ export default function DashboardClienteScreen({
     const enRoute = deliveries.filter(d => d.status === 'EM ROTA').length;
     const delayed = deliveries.filter(d => d.status === 'EM ATRASO' || d.status === 'FALHA').length;
 
-    const pctDelivered = total > 0 ? ((delivered / total) * 100).toFixed(1) : '94.2';
-    const pctEnRoute = total > 0 ? ((enRoute / total) * 100).toFixed(1) : '3.8';
-    const pctDelayed = total > 0 ? ((delayed / total) * 100).toFixed(1) : '2.0';
+    const pctDelivered = total > 0 ? ((delivered / total) * 100).toFixed(1) : '0.0';
+    const pctEnRoute = total > 0 ? ((enRoute / total) * 100).toFixed(1) : '0.0';
+    const pctDelayed = total > 0 ? ((delayed / total) * 100).toFixed(1) : '0.0';
 
     return {
       total,
@@ -53,72 +52,13 @@ export default function DashboardClienteScreen({
 
   return (
     <div className="bg-surface text-on-surface font-sans min-h-screen flex flex-col">
-      
-      {/* Top Header */}
-      <header className="sticky top-0 z-50 flex justify-between items-center w-full px-6 h-16 bg-surface border-b border-outline-variant">
-        <div className="flex items-center gap-2">
-          <span className="font-headline text-lg font-bold text-primary">
-            Acompanhamento Entregas Hemmersbach
-          </span>
-        </div>
 
-        {/* Navigation & profile */}
-        <div className="flex items-center gap-2 sm:gap-4">
-          <div className="flex items-center bg-surface-container rounded-lg p-1 text-xs font-semibold mr-2 border border-outline-variant">
-            <button
-              onClick={() => onNavigate('dashboard-operador')}
-              className="px-3 py-1.5 rounded text-secondary hover:text-primary transition-colors"
-            >
-              Operador
-            </button>
-            <button
-              className="px-3 py-1.5 rounded bg-primary text-on-primary font-bold shadow-sm"
-            >
-              Cliente
-            </button>
-          </div>
-
-          <button 
-            onClick={() => alert('Manual de instruções e suporte para rastreamento de cargas.')}
-            className="p-2 hover:bg-secondary-container/50 transition-colors duration-200 rounded-full text-secondary"
-            title="Suporte"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </button>
-          
-          <button 
-            onClick={() => alert('Sem novos alertas para sua conta de cliente.')}
-            className="p-2 hover:bg-secondary-container/50 transition-colors duration-200 rounded-full text-secondary relative"
-            title="Notificações"
-          >
-            <Bell className="w-5 h-5" />
-          </button>
-
-          <div className="h-8 w-px bg-outline-variant hidden sm:block"></div>
-
-          <button
-            onClick={onLogout}
-            className="p-2 hover:bg-error-container/20 rounded-full text-error transition-colors flex items-center gap-1"
-            title="Sair da Conta"
-          >
-            <LogOut className="w-5 h-5" />
-          </button>
-
-          <div className="w-9 h-9 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden border border-outline-variant">
-            <img
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-Juk46gp0KBrUi6xoczqiPNSqNnrdOAH3g4uj7pzQ8mulHE4T4mISWB3hspWSnMGJrPuhBMDnFuLNkpD5D8HYarW0vJnr-tl9mKkP4yrNslgIN88CesZ8UDwivmNpOmI-O1ziIlH0RnNp5ZNshTg4VSvgkhbXkgmWiMts8tpyij-9QicyzYJFFxBtP0cpvoE42FJMB1EGGJgqFxFbZK33RNVlrXQkgoKR6RqiNoh7oodA7o7J7w-BiA"
-              alt="Cliente Hemmersbach profile"
-            />
-          </div>
-        </div>
-      </header>
+      <ClienteHeader profile={user} onLogout={onLogout} />
 
       {/* Main Container */}
       <main className="flex-1 py-8 px-6 max-w-7xl mx-auto w-full">
         <div className="space-y-6">
-          
+
           {/* Dashboard Title & Quick Search Bar */}
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
@@ -152,7 +92,7 @@ export default function DashboardClienteScreen({
 
           {/* Customer KPI Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            
+
             <div className="bg-white p-6 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
               <div>
                 <span className="text-xs font-bold tracking-wider text-secondary block mb-1">TOTAL DE ENTREGAS</span>
@@ -233,7 +173,7 @@ export default function DashboardClienteScreen({
 
             {deliveries.length > 5 && (
               <div className="p-4 border-t border-outline-variant text-center bg-surface-container-low">
-                <button 
+                <button
                   onClick={() => setShowAll(!showAll)}
                   className="text-primary font-sans text-xs font-bold uppercase tracking-wider hover:underline"
                 >

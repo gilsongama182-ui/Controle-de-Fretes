@@ -1,36 +1,38 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, HelpCircle, ArrowRight, Truck } from 'lucide-react';
-import { ActivePage, User } from '../types';
+import { Mail, Lock, Eye, EyeOff, HelpCircle, ArrowRight, Truck, AlertCircle } from 'lucide-react';
+import { ActivePage } from '../types';
+import { useAuth } from '../contexts/AuthContext';
 
 interface LoginScreenProps {
   onNavigate: (page: ActivePage) => void;
-  onLogin: (user: User) => void;
 }
 
-export default function LoginScreen({ onNavigate, onLogin }: LoginScreenProps) {
+export default function LoginScreen({ onNavigate }: LoginScreenProps) {
+  const { signIn } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedRole, setSelectedRole] = useState<'operador' | 'cliente'>('operador');
+  const [errorMessage, setErrorMessage] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
     setIsSubmitting(true);
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      // Simulate login
-      const mockUser: User = {
-        name: selectedRole === 'operador' ? 'Operador Hemmersbach' : 'Cliente Hemmersbach',
-        email: email || (selectedRole === 'operador' ? 'operador@hemmersbach.com' : 'cliente@empresa.com'),
-        profileType: selectedRole,
-        document: selectedRole === 'operador' ? '00.000.000/0001-00' : '12.345.678/0001-90',
-      };
-      onLogin(mockUser);
-      onNavigate(selectedRole === 'operador' ? 'dashboard-operador' : 'dashboard-cliente');
-    }, 1200);
+    const { error } = await signIn(email, password);
+
+    setIsSubmitting(false);
+    if (error) {
+      setErrorMessage(
+        error.message === 'Invalid login credentials'
+          ? 'E-mail ou senha incorretos.'
+          : error.message
+      );
+    }
+    // Em caso de sucesso, o App.tsx redireciona automaticamente
+    // com base na sessão + perfil restaurados pelo AuthContext.
   };
 
   return (
@@ -42,7 +44,7 @@ export default function LoginScreen({ onNavigate, onLogin }: LoginScreenProps) {
       </div>
 
       <div className="w-full max-w-6xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-12 z-10">
-        
+
         {/* Left Side: Form Container */}
         <main className="w-full lg:max-w-[440px]">
           {/* Brand Identity */}
@@ -63,31 +65,12 @@ export default function LoginScreen({ onNavigate, onLogin }: LoginScreenProps) {
               <p className="font-sans text-sm text-on-surface-variant">Acesse sua conta para gerenciar entregas</p>
             </header>
 
-            {/* Quick Role Toggle for Demo convenience */}
-            <div className="grid grid-cols-2 gap-2 p-1 bg-surface-container rounded-lg mb-6">
-              <button
-                type="button"
-                onClick={() => setSelectedRole('operador')}
-                className={`py-2 text-xs font-semibold rounded-md transition-all ${
-                  selectedRole === 'operador'
-                    ? 'bg-primary text-on-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-              >
-                Sou Operador
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedRole('cliente')}
-                className={`py-2 text-xs font-semibold rounded-md transition-all ${
-                  selectedRole === 'cliente'
-                    ? 'bg-primary text-on-primary shadow-sm'
-                    : 'text-on-surface-variant hover:text-on-surface'
-                }`}
-              >
-                Sou Cliente
-              </button>
-            </div>
+            {errorMessage && (
+              <div className="mb-4 flex items-center gap-2 rounded-lg bg-error-container/20 border border-error/30 px-3 py-2 text-xs font-semibold text-error">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMessage}</span>
+              </div>
+            )}
 
             <form onSubmit={handleSubmit} className="space-y-4">
               {/* Email Field */}
@@ -105,7 +88,7 @@ export default function LoginScreen({ onNavigate, onLogin }: LoginScreenProps) {
                     required
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={selectedRole === 'operador' ? 'operador@hemmersbach.com' : 'cliente@empresa.com'}
+                    placeholder="usuario@empresa.com"
                     className="w-full pl-11 pr-4 py-3 bg-surface border border-outline-variant rounded-lg font-sans text-sm text-on-surface focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none transition-all placeholder:text-outline-variant"
                   />
                 </div>
