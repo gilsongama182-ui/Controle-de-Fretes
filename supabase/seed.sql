@@ -1,53 +1,52 @@
--- Hemmersbach Logistics — dados de exemplo (opcional)
--- Rode depois de schema.sql, no SQL Editor do painel Supabase, se quiser
--- começar com os mesmos 10 registros que hoje existem em src/data.ts.
+-- Hemmersbach Logistics — dados de exemplo (opcional, fictícios)
+-- Rode depois de schema.sql, no SQL Editor do painel Supabase.
 
 insert into public.deliveries
   (codigo, nfe, cliente, nome_razao_social, cnpj_cpf, data_pedido, data_expedicao, previsao,
    endereco_completo, bairro_distrito, cep, municipio, uf, fone_fax, status, ocorrencia,
    valor_cobranca, valor_pagamento, codigo_rastreio)
 values
-  ('#HM-9241', '112.983-01', 'Tech Global Solutions', 'Tech Global Solutions LTDA', '12.345.678/0001-90',
-   '2024-05-20', '2024-05-22', '2024-05-20', 'Av. Paulista, 1000 - Andar 15', 'Bela Vista', '01310-100',
-   'São Paulo', 'SP', '(11) 3456-7890', 'ENTREGUE', 'Nenhuma', 1250.00, 840.00, 'HB2024TX990'),
+  ('#HM-1001', '200.001-01', 'Fictícia Alpha', 'Fictícia Alpha Comércio LTDA', '11.111.111/0001-11',
+   '2026-06-20', '2026-06-21', '2026-06-24', 'Rua das Amostras, 100', 'Centro', '01000-000',
+   'São Paulo', 'SP', '(11) 4000-1001', 'ENTREGUE', 'Nenhuma', 1580.00, 1027.00, 'HB-FICT-1001'),
 
-  ('#HM-9238', '112.982-05', 'Alpha Logística Ltda', 'Alpha Logística e Distribuição S.A.', '98.765.432/0001-21',
-   '2024-05-18', '2024-05-19', '2024-05-18', 'Rua das Flores, 450', 'Centro', '80010-000',
-   'Curitiba', 'PR', '(41) 3000-4000', 'EM ROTA', 'Motorista em trânsito', 4800.00, 3100.00, 'HB2024TX981'),
+  ('#HM-1002', '200.002-02', 'Beta Distribuidora', 'Beta Distribuidora de Produtos S.A.', '22.222.222/0001-22',
+   '2026-06-22', '2026-06-23', '2026-06-27', 'Av. Central, 200', 'Barra', '22000-000',
+   'Rio de Janeiro', 'RJ', '(21) 4000-1002', 'EM ROTA', 'Motorista a caminho do destino', 3200.00, 2080.00, 'HB-FICT-1002'),
 
-  ('#HM-9235', '112.981-12', 'Indústrias Metálicas S.A.', 'Indústrias Metálicas Brasileiras S.A.', '45.678.901/0001-33',
-   '2024-05-17', '2024-05-17', '2024-05-17', 'Av. do Contorno, 4500', 'Savassi', '30110-017',
-   'Belo Horizonte', 'MG', '(31) 3222-1111', 'EM ATRASO', 'Veículo quebrado', 950.40, 650.00, 'HB2024TX975'),
+  ('#HM-1003', '200.003-03', 'Gama Indústria', 'Gama Indústria e Comércio LTDA', '33.333.333/0001-33',
+   '2026-06-18', '2026-06-19', '2026-06-22', 'Rod. BR-040, Km 12', 'Distrito Industrial', '30000-000',
+   'Belo Horizonte', 'MG', '(31) 4000-1003', 'EM ATRASO', 'Aguardando liberação na doca', 890.50, 578.00, 'HB-FICT-1003'),
 
-  ('#HM-9231', '112.980-44', 'Distribuidora Nortista', 'Distribuidora de Alimentos Nortista LTDA', '22.111.333/0001-77',
-   '2024-05-15', '2024-05-16', '2024-05-22', 'Av. Djalma Batista, 1500', 'Flores', '69050-010',
-   'Manaus', 'AM', '(92) 3555-8888', 'EM ROTA', 'Em trânsito interestadual', 3400.00, 2200.00, 'HB2024TX931'),
+  ('#HM-1004', '200.004-04', 'Delta Varejo', 'Delta Varejo e Distribuição LTDA', '44.444.444/0001-44',
+   '2026-06-15', '2026-06-16', 'Reagendado', 'Rua das Palmeiras, 45', 'Moinhos de Vento', '90000-000',
+   'Porto Alegre', 'RS', '(51) 4000-1004', 'FALHA', 'Destinatário ausente no local', 420.00, 273.00, 'HB-FICT-1004'),
 
-  ('#HM-9229', '112.979-99', 'Varejo Brasil', 'Varejo Geral do Brasil S.A.', '33.221.445/0001-08',
-   '2024-05-12', '2024-05-14', 'Reagendado', 'Av. Rio Branco, 500', 'Centro', '20040-000',
-   'Rio de Janeiro', 'RJ', '(21) 2345-6789', 'FALHA', 'Endereço não localizado', 850.00, 500.00, 'HB2024TX929'),
+  ('#HM-1005', '200.005-05', 'Épsilon Log', 'Épsilon Logística e Transportes LTDA', '55.555.555/0001-55',
+   '2026-06-24', '2026-06-25', '2026-06-28', 'Av. das Torres, 900', 'Água Verde', '80000-000',
+   'Curitiba', 'PR', '(41) 4000-1005', 'EM ROTA', 'Em trânsito interestadual', 5400.00, 3510.00, 'HB-FICT-1005'),
 
-  ('#HM-29834', '112.983-01', 'TechMatrix Solutions', 'TechMatrix Solutions LTDA', '12.345.678/0001-90',
-   '2024-10-10', '2024-10-12', '2024-10-15', 'Av. Paulista, 1000 - Andar 15', 'Bela Vista', '01310-100',
-   'São Paulo', 'SP', '(11) 3456-7890', 'ENTREGUE', 'Nenhuma', 1250.00, 840.00, 'HB2024TX990'),
+  ('#HM-1006', '200.006-06', 'Zeta Alimentos', 'Zeta Alimentos e Bebidas S.A.', '66.666.666/0001-66',
+   '2026-06-10', '2026-06-11', '2026-06-14', 'Rua Beira Mar, 12', 'Centro', '88000-000',
+   'Florianópolis', 'SC', '(48) 4000-1006', 'ENTREGUE', 'Nenhuma', 1120.00, 728.00, 'HB-FICT-1006'),
 
-  ('#HM-30112', '112.982-05', 'Global Logistics SA', 'Global Logistics S.A.', '98.765.432/0001-21',
-   '2024-10-11', '2024-10-13', '2024-10-16', 'Rua da Assembleia, 10 - Sala 202', 'Centro', '20011-000',
-   'Rio de Janeiro', 'RJ', '(21) 2345-6789', 'EM ROTA', 'Motorista em trânsito', 4800.00, 0.00, 'HB2024TX981'),
+  ('#HM-1007', '200.007-07', 'Eta Construções', 'Eta Construções e Materiais LTDA', '77.777.777/0001-77',
+   '2026-06-19', '2026-06-20', '2026-06-23', 'Av. Oceânica, 500', 'Barra Avenida', '40000-000',
+   'Salvador', 'BA', '(71) 4000-1007', 'EM ATRASO', 'Veículo em manutenção', 2750.00, 1787.50, 'HB-FICT-1007'),
 
-  ('#HM-28990', '112.981-12', 'Inova Health Systems', 'Inova Health Systems S/S', '45.678.901/0001-33',
-   '2024-10-08', '2024-10-10', '2024-10-14', 'Av. do Contorno, 4500', 'Savassi', '30110-017',
-   'Belo Horizonte', 'MG', '(31) 3222-1111', 'EM ATRASO', 'Veículo quebrado', 950.40, 0.00, 'HB2024TX975'),
+  ('#HM-1008', '200.008-08', 'Theta Farma', 'Theta Produtos Farmacêuticos LTDA', '88.888.888/0001-88',
+   '2026-06-25', '2026-06-26', '2026-06-29', 'Av. Djalma Batista, 800', 'Chapada', '69000-000',
+   'Manaus', 'AM', '(92) 4000-1008', 'EM ROTA', 'Nenhuma', 960.00, 624.00, 'HB-FICT-1008'),
 
-  ('#HM-30445', '112.980-11', 'Blue Horizon Retail', 'Blue Horizon Retail ME', '33.221.445/0001-08',
-   '2024-10-12', '2024-10-14', '2024-10-16', 'Rua das Flores, 123', 'Jardim America', '01452-000',
-   'São Paulo', 'SP', '(11) 98888-7777', 'FALHA', 'Endereço não localizado', 315.00, 0.00, 'HB2024TX929'),
+  ('#HM-1009', '200.009-09', 'Iota Móveis', 'Iota Móveis e Decorações LTDA', '99.999.999/0001-99',
+   '2026-06-12', '2026-06-13', '2026-06-16', 'Av. Goiás, 300', 'Setor Central', '74000-000',
+   'Goiânia', 'GO', '(62) 4000-1009', 'ENTREGUE', 'Nenhuma', 1875.00, 1218.75, 'HB-FICT-1009'),
 
-  ('#HM-30556', '112.979-33', 'FastTrack Services', 'FastTrack Services Eireli', '22.111.333/0001-77',
-   '2024-10-14', '2024-10-15', '2024-10-17', 'Av. Batel, 1500 - Bloco C', 'Batel', '80420-090',
-   'Curitiba', 'PR', '(41) 3000-4000', 'EM ROTA', 'Nenhuma', 2100.00, 0.00, 'HB2024TX931')
+  ('#HM-1010', '200.010-10', 'Capa Têxtil', 'Capa Têxtil do Nordeste S.A.', '10.101.010/0001-10',
+   '2026-06-21', '2026-06-22', 'Endereço não localizado', 'Rua do Recife, 77', 'Boa Vista', '50000-000',
+   'Recife', 'PE', '(81) 4000-1010', 'FALHA', 'Endereço não localizado', 530.00, 344.50, 'HB-FICT-1010')
 on conflict (codigo) do nothing;
 
 -- Dica: para que o dashboard do CLIENTE mostre alguma entrega de teste,
 -- crie uma conta "cliente" cujo documento (CNPJ/CPF) bata com um dos
--- valores de cnpj_cpf acima, ex: 12.345.678/0001-90.
+-- valores de cnpj_cpf acima, ex: 11.111.111/0001-11.
