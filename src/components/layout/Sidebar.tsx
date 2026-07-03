@@ -22,7 +22,7 @@ export default function Sidebar({ activePage, onNavigate, onNovaEntrega, onImpor
   return (
     <aside className="w-full md:w-[280px] bg-surface-container-low border-r border-outline-variant flex flex-col py-6 px-4 shrink-0 md:sticky md:top-0 md:h-screen">
       <div className="px-3 mb-8">
-        <img src="/logo-wlogis.png" alt="WLogis" className="h-8 w-auto mb-1" />
+        <img src="/logo-wlogis.png" alt="WLogis" className="h-12 w-auto mb-1" />
         <p className="text-xs text-on-surface-variant font-semibold tracking-wider uppercase opacity-70">
           Painel de Operações
         </p>

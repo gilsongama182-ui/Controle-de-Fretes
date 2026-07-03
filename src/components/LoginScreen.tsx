@@ -49,7 +49,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         <main className="w-full lg:max-w-[440px]">
           {/* Brand Identity */}
           <div className="flex flex-col items-center mb-8">
-            <img src="/logo-wlogis.png" alt="WLogis" className="h-14 w-auto mb-3" />
+            <img src="/logo-wlogis.png" alt="WLogis" className="h-20 w-auto mb-3" />
             <p className="font-sans text-xs font-semibold text-secondary uppercase tracking-[0.2em] mt-1">
               Logistics Core System
             </p>

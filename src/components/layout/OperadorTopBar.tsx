@@ -12,7 +12,7 @@ export default function OperadorTopBar({ profile, searchValue, onSearchChange }:
   return (
     <header className="sticky top-0 z-30 flex justify-between items-center w-full px-6 h-16 bg-surface border-b border-outline-variant">
       <div className="flex items-center gap-4">
-        <img src="/logo-wlogis.png" alt="WLogis" className="h-7 w-auto shrink-0" />
+        <img src="/logo-wlogis.png" alt="WLogis" className="h-10 w-auto shrink-0" />
       </div>
 
       <div className="flex items-center gap-4">
