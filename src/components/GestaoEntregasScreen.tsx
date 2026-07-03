@@ -80,6 +80,7 @@ export default function GestaoEntregasScreen({
         d.codigo.toLowerCase().includes(term) ||
         d.nfe.toLowerCase().includes(term) ||
         d.cliente.toLowerCase().includes(term) ||
+        d.nomeRazaoSocial.toLowerCase().includes(term) ||
         d.cnpjCpf.replace(/\D/g, '').includes(term.replace(/\D/g, ''))
       );
     }
@@ -231,7 +232,7 @@ export default function GestaoEntregasScreen({
                 <div className="relative w-72">
                   <input
                     type="text"
-                    placeholder="Filtrar por NF, Cliente ou CNPJ..."
+                    placeholder="Filtrar por NF, Destinatário ou CNPJ..."
                     value={searchTerm}
                     onChange={(e) => setSearchTerm(e.target.value)}
                     className="w-full pl-4 pr-4 py-2 border border-outline-variant rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary outline-none"
