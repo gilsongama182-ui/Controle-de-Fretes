@@ -41,6 +41,7 @@ export default function EdicaoEntregaScreen({
   const [ocorrencia, setOcorrencia] = useState(delivery?.ocorrencia ?? '');
   const [previsao, setPrevisao] = useState(delivery?.previsao ?? '');
   const [nfe, setNfe] = useState(formatNfe(delivery?.nfe));
+  const [pedido, setPedido] = useState(delivery?.pedido ?? '');
   const [dataEntrega, setDataEntrega] = useState(delivery?.dataEntrega ?? '');
   const [remetente, setRemetente] = useState(delivery?.remetente ?? '');
   const [remetenteCnpj, setRemetenteCnpj] = useState(delivery?.remetenteCnpj ?? '');
@@ -50,6 +51,8 @@ export default function EdicaoEntregaScreen({
   const [dataPedido, setDataPedido] = useState(delivery?.dataPedido ?? '');
   const [dataExpedicao, setDataExpedicao] = useState(delivery?.dataExpedicao ?? '');
   const [endereco, setEndereco] = useState(delivery?.enderecoCompleto ?? '');
+  const [numero, setNumero] = useState(delivery?.numero ?? '');
+  const [complemento, setComplemento] = useState(delivery?.complemento ?? '');
   const [bairro, setBairro] = useState(delivery?.bairroDistrito ?? '');
   const [cep, setCep] = useState(delivery?.cep ?? '');
   const [municipio, setMunicipio] = useState(delivery?.municipio ?? '');
@@ -80,6 +83,7 @@ export default function EdicaoEntregaScreen({
     try {
       await onUpdateDelivery(delivery.id, {
         nfe,
+        pedido,
         remetente,
         remetenteCnpj,
         status,
@@ -92,6 +96,8 @@ export default function EdicaoEntregaScreen({
         dataPedido,
         dataExpedicao,
         enderecoCompleto: endereco,
+        numero,
+        complemento,
         bairroDistrito: bairro,
         cep,
         municipio,
@@ -198,7 +204,7 @@ export default function EdicaoEntregaScreen({
                 {/* SECTION 2: DADOS DE EMISSÃO */}
                 <div className="space-y-4 pt-4 border-t border-outline-variant/30">
                   <h3 className="text-xs font-bold text-secondary tracking-widest uppercase">2. Dados de Emissão</h3>
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
                     <div className="space-y-1">
                       <label className="text-xs text-on-surface-variant font-medium">Data do Pedido</label>
@@ -217,6 +223,17 @@ export default function EdicaoEntregaScreen({
                         value={nfe}
                         onChange={(e) => setNfe(e.target.value)}
                         className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-mono"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">Pedido</label>
+                      <input
+                        type="text"
+                        value={pedido}
+                        onChange={(e) => setPedido(e.target.value)}
+                        placeholder="Referência do pedido"
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
 
@@ -280,12 +297,32 @@ export default function EdicaoEntregaScreen({
 
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
 
-                    <div className="space-y-1 sm:col-span-2">
+                    <div className="space-y-1">
                       <label className="text-xs text-on-surface-variant font-medium">Endereço Completo</label>
                       <input
                         type="text"
                         value={endereco}
                         onChange={(e) => setEndereco(e.target.value)}
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">Nº</label>
+                      <input
+                        type="text"
+                        value={numero}
+                        onChange={(e) => setNumero(e.target.value)}
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">Complemento</label>
+                      <input
+                        type="text"
+                        value={complemento}
+                        onChange={(e) => setComplemento(e.target.value)}
                         className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>

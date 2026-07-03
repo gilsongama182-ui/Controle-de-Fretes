@@ -49,6 +49,7 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
     const newDel: NewDeliveryInput = {
       codigo: `#HM-${randomIdNumber}`,
       nfe,
+      pedido: '',
       remetente,
       remetenteCnpj,
       cliente,
@@ -59,6 +60,8 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       previsao: 'Hoje, 18:00',
       dataEntrega: '',
       enderecoCompleto: endereco || 'Rua das Logísticas, 1000',
+      numero: '',
+      complemento: '',
       bairroDistrito: 'Distrito Industrial',
       cep: '04500-100',
       municipio: cidade || 'São Paulo',
@@ -69,6 +72,8 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       valorCobranca: valorNumerico,
       valorPagamento: valorNumerico * 0.65,
       codigoRastreio: `HB2024TX${randomIdNumber}`,
+      chaveAcessoNfe: '',
+      valorTotalNota: 0,
     };
 
     setIsSubmitting(true);

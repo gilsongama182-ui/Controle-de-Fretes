@@ -115,6 +115,7 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
     const data: NewDeliveryInput = {
       codigo: get('codigo') || `#HM-${randomSuffix}`,
       nfe: get('nfe'),
+      pedido: get('pedido'),
       remetente: get('remetente'),
       remetenteCnpj: get('remetenteCnpj'),
       cliente: get('cliente'),
@@ -125,6 +126,8 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       previsao: get('previsao'),
       dataEntrega: get('dataEntrega') ? normalizeDate(get('dataEntrega')) : '',
       enderecoCompleto: get('enderecoCompleto'),
+      numero: get('numero'),
+      complemento: get('complemento'),
       bairroDistrito: get('bairroDistrito'),
       cep: get('cep'),
       municipio: get('municipio'),
@@ -135,6 +138,8 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       valorCobranca: get('valorCobranca') ? normalizeNumber(get('valorCobranca')) : 0,
       valorPagamento: get('valorPagamento') ? normalizeNumber(get('valorPagamento')) : 0,
       codigoRastreio: get('codigoRastreio'),
+      chaveAcessoNfe: '',
+      valorTotalNota: 0,
     };
 
     return { line: i + 2, data, errors: [] };
@@ -147,6 +152,7 @@ export function downloadCsvTemplate(filename: string) {
     switch (f.key) {
       case 'codigo': return '';
       case 'nfe': return '112983-01';
+      case 'pedido': return 'PC-4521';
       case 'remetente': return 'Minha Empresa Ltda';
       case 'remetenteCnpj': return '11.111.111/0001-11';
       case 'cliente': return 'Cliente Exemplo';
@@ -156,7 +162,9 @@ export function downloadCsvTemplate(filename: string) {
       case 'dataExpedicao': return '2026-07-02';
       case 'previsao': return '2026-07-05';
       case 'dataEntrega': return '';
-      case 'enderecoCompleto': return 'Rua Exemplo, 100';
+      case 'enderecoCompleto': return 'Rua Exemplo';
+      case 'numero': return '100';
+      case 'complemento': return 'Sala 2';
       case 'bairroDistrito': return 'Centro';
       case 'cep': return '00000-000';
       case 'municipio': return 'São Paulo';

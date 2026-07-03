@@ -5,6 +5,7 @@ import { Delivery } from '../types';
 export const DELIVERY_FIELDS: { key: keyof Delivery; label: string; required: boolean }[] = [
   { key: 'codigo', label: 'Código', required: false }, // gerado automaticamente se vazio
   { key: 'nfe', label: 'NF-e', required: true },
+  { key: 'pedido', label: 'Pedido', required: false },
   { key: 'remetente', label: 'Remetente', required: true },
   { key: 'remetenteCnpj', label: 'CNPJ Remetente', required: true },
   { key: 'cliente', label: 'Cliente (apelido)', required: true },
@@ -15,6 +16,8 @@ export const DELIVERY_FIELDS: { key: keyof Delivery; label: string; required: bo
   { key: 'previsao', label: 'Previsão', required: false },
   { key: 'dataEntrega', label: 'Data de Entrega', required: false },
   { key: 'enderecoCompleto', label: 'Endereço', required: true },
+  { key: 'numero', label: 'Nº', required: false },
+  { key: 'complemento', label: 'Complemento', required: false },
   { key: 'bairroDistrito', label: 'Bairro / Distrito', required: false },
   { key: 'cep', label: 'CEP', required: false },
   { key: 'municipio', label: 'Município', required: false },

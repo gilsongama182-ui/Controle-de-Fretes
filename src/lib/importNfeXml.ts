@@ -29,6 +29,10 @@ function formatCep(rawDigits: string): string {
   return d.length === 8 ? d.replace(/(\d{5})(\d{3})/, '$1-$2') : rawDigits;
 }
 
+function todayIso(): string {
+  return new Date().toISOString().split('T')[0];
+}
+
 export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
   const fileName = file.name;
   const xmlText = await file.text();
@@ -38,74 +42,78 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
     return { fileName, data: null, errors: ['Arquivo não é um XML válido.'] };
   }
 
-  const infNFe = doc.getElementsByTagName('infNFe')[0];
   const emit = doc.getElementsByTagName('emit')[0];
-  const dest = doc.getElementsByTagName('dest')[0];
-  const ide = doc.getElementsByTagName('ide')[0];
+  // Destinatário: NF-e padrão usa <dest>; aceitamos <entrega> também, caso o
+  // XML de origem use esse nome.
+  const destino = doc.getElementsByTagName('dest')[0] ?? doc.getElementsByTagName('entrega')[0];
 
-  if (!infNFe || !emit || !dest || !ide) {
-    return { fileName, data: null, errors: ['Não parece ser um XML de NF-e (faltam as seções <ide>, <emit> ou <dest>).'] };
+  if (!emit || !destino) {
+    return { fileName, data: null, errors: ['Não parece ser um XML de NF-e (faltam as seções <emit> ou <dest>/<entrega>).'] };
   }
 
   const errors: string[] = [];
 
-  const nNF = text(ide, 'nNF');
+  const nNF = text(doc.getElementsByTagName('ide')[0] ?? doc, 'nNF');
   if (!nNF) errors.push('NF-e sem número (<nNF>).');
 
   const remetenteNome = text(emit, 'xNome');
   if (!remetenteNome) errors.push('Remetente sem nome (<emit><xNome>).');
   const remetenteCnpjRaw = text(emit, 'CNPJ') || text(emit, 'CPF');
-  if (!remetenteCnpjRaw) errors.push('Remetente sem CNPJ/CPF (<emit><CNPJ> ou <CPF>).');
+  if (!remetenteCnpjRaw) errors.push('Remetente sem CNPJ (<emit><CNPJ>).');
 
-  const destNome = text(dest, 'xNome');
-  if (!destNome) errors.push('Destinatário sem nome (<dest><xNome>).');
-  const destCnpjRaw = text(dest, 'CNPJ') || text(dest, 'CPF');
-  if (!destCnpjRaw) errors.push('Destinatário sem CNPJ/CPF (<dest><CNPJ> ou <CPF>).');
+  const destNome = text(destino, 'xNome');
+  if (!destNome) errors.push('Destinatário sem nome (<xNome>).');
+  // Nesse layout o destinatário normalmente vem como CPF; aceitamos CNPJ também.
+  const destCnpjCpfRaw = text(destino, 'CPF') || text(destino, 'CNPJ');
+  if (!destCnpjCpfRaw) errors.push('Destinatário sem CPF/CNPJ.');
 
-  const enderDest = dest.getElementsByTagName('enderDest')[0];
-  const logradouro = enderDest ? text(enderDest, 'xLgr') : '';
-  const numero = enderDest ? text(enderDest, 'nro') : '';
-  const uf = enderDest ? text(enderDest, 'UF') : '';
-  if (!logradouro) errors.push('Endereço do destinatário ausente (<dest><enderDest><xLgr>).');
-  if (!uf) errors.push('UF do destinatário ausente (<dest><enderDest><UF>).');
-
-  const dhEmi = text(ide, 'dhEmi') || text(ide, 'dEmi');
-  const dataPedido = dhEmi ? dhEmi.slice(0, 10) : '';
-  if (!dataPedido) errors.push('Data de emissão ausente (<ide><dhEmi> ou <dEmi>).');
+  // Endereço do destinatário: pode estar direto em <dest>/<entrega> ou dentro
+  // de <enderDest> (variação mais comum do layout padrão da NF-e).
+  const enderDest = destino.getElementsByTagName('enderDest')[0] ?? destino;
+  const logradouro = text(enderDest, 'xLgr');
+  const numero = text(enderDest, 'nro');
+  const complemento = text(enderDest, 'xCpl');
+  const uf = text(enderDest, 'UF');
+  if (!logradouro) errors.push('Endereço ausente (<xLgr>).');
+  if (!uf) errors.push('UF ausente (<UF>).');
 
   if (errors.length > 0) {
     return { fileName, data: null, errors };
   }
 
-  const chNFe = infNFe.getAttribute('Id')?.replace(/^NFe/, '') || text(doc, 'chNFe');
+  const chNFe = doc.getElementsByTagName('infNFe')[0]?.getAttribute('Id')?.replace(/^NFe/, '') || text(doc, 'chNFe');
   const vNF = text(doc, 'vNF');
-  const infCpl = text(doc, 'infCpl');
-  const foneDest = enderDest ? text(enderDest, 'fone') : '';
+  const pedido = text(doc.getElementsByTagName('infAdic')[0] ?? doc, 'infCpl');
 
   const randomSuffix = Math.floor(1000 + Math.random() * 9000);
   const data: NewDeliveryInput = {
     codigo: `#HM-${randomSuffix}`,
     nfe: nNF,
+    pedido,
     remetente: remetenteNome,
     remetenteCnpj: formatCnpjCpf(remetenteCnpjRaw),
     cliente: destNome,
     nomeRazaoSocial: destNome,
-    cnpjCpf: formatCnpjCpf(destCnpjRaw),
-    dataPedido,
+    cnpjCpf: formatCnpjCpf(destCnpjCpfRaw),
+    dataPedido: todayIso(), // data do pedido = dia da importação, não a data de emissão da NF-e
     dataExpedicao: '',
     previsao: '',
     dataEntrega: '',
-    enderecoCompleto: numero ? `${logradouro}, ${numero}` : logradouro,
-    bairroDistrito: enderDest ? text(enderDest, 'xBairro') : '',
-    cep: enderDest ? formatCep(text(enderDest, 'CEP')) : '',
-    municipio: enderDest ? text(enderDest, 'xMun') : '',
+    enderecoCompleto: logradouro,
+    numero,
+    complemento,
+    bairroDistrito: text(enderDest, 'xBairro'),
+    cep: formatCep(text(enderDest, 'CEP')),
+    municipio: text(enderDest, 'xMun'),
     uf,
-    foneFax: foneDest,
+    foneFax: text(enderDest, 'fone'),
     status: 'EM ROTA',
-    ocorrencia: infCpl || 'Nenhuma',
-    valorCobranca: vNF ? Number(vNF) : 0,
+    ocorrencia: 'Nenhuma',
+    valorCobranca: 0,
     valorPagamento: 0,
-    codigoRastreio: chNFe || '',
+    codigoRastreio: '',
+    chaveAcessoNfe: chNFe || '',
+    valorTotalNota: vNF ? Number(vNF) : 0,
   };
 
   return { fileName, data, errors: [] };

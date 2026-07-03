@@ -8,6 +8,7 @@ interface DeliveryRow {
   id: string;
   codigo: string;
   nfe: string;
+  pedido: string | null;
   remetente: string | null;
   remetente_cnpj: string | null;
   cliente: string;
@@ -18,6 +19,8 @@ interface DeliveryRow {
   previsao: string | null;
   data_entrega: string | null;
   endereco_completo: string;
+  numero: string | null;
+  complemento: string | null;
   bairro_distrito: string | null;
   cep: string | null;
   municipio: string | null;
@@ -28,6 +31,8 @@ interface DeliveryRow {
   valor_cobranca: number;
   valor_pagamento: number;
   codigo_rastreio: string | null;
+  chave_acesso_nfe: string | null;
+  valor_total_nota: number | null;
 }
 
 function fromRow(row: DeliveryRow): Delivery {
@@ -35,6 +40,7 @@ function fromRow(row: DeliveryRow): Delivery {
     id: row.id,
     codigo: row.codigo,
     nfe: row.nfe,
+    pedido: row.pedido ?? '',
     remetente: row.remetente ?? '',
     remetenteCnpj: row.remetente_cnpj ?? '',
     cliente: row.cliente,
@@ -45,6 +51,8 @@ function fromRow(row: DeliveryRow): Delivery {
     previsao: row.previsao ?? '',
     dataEntrega: row.data_entrega ?? '',
     enderecoCompleto: row.endereco_completo,
+    numero: row.numero ?? '',
+    complemento: row.complemento ?? '',
     bairroDistrito: row.bairro_distrito ?? '',
     cep: row.cep ?? '',
     municipio: row.municipio ?? '',
@@ -55,17 +63,20 @@ function fromRow(row: DeliveryRow): Delivery {
     valorCobranca: row.valor_cobranca,
     valorPagamento: row.valor_pagamento,
     codigoRastreio: row.codigo_rastreio ?? '',
+    chaveAcessoNfe: row.chave_acesso_nfe ?? '',
+    valorTotalNota: row.valor_total_nota ?? 0,
   };
 }
 
-// Deixa tudo em CAIXA ALTA pra visual consistente (o "codigo" fica de fora,
-// ele é um identificador tipo "#HM-1234", não texto livre).
+// Deixa tudo em CAIXA ALTA pra visual consistente (o "codigo" e a "chave de
+// acesso" ficam de fora, são identificadores técnicos, não texto livre).
 const upper = (v: string) => v.toUpperCase();
 
 function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   const row: Record<string, unknown> = {};
   if (input.codigo !== undefined) row.codigo = input.codigo;
   if (input.nfe !== undefined) row.nfe = formatNfe(input.nfe);
+  if (input.pedido !== undefined) row.pedido = upper(input.pedido);
   if (input.remetente !== undefined) row.remetente = upper(input.remetente);
   if (input.remetenteCnpj !== undefined) row.remetente_cnpj = upper(input.remetenteCnpj);
   if (input.cliente !== undefined) row.cliente = upper(input.cliente);
@@ -76,6 +87,8 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.previsao !== undefined) row.previsao = upper(input.previsao);
   if (input.dataEntrega !== undefined) row.data_entrega = input.dataEntrega || null;
   if (input.enderecoCompleto !== undefined) row.endereco_completo = upper(input.enderecoCompleto);
+  if (input.numero !== undefined) row.numero = upper(input.numero);
+  if (input.complemento !== undefined) row.complemento = upper(input.complemento);
   if (input.bairroDistrito !== undefined) row.bairro_distrito = upper(input.bairroDistrito);
   if (input.cep !== undefined) row.cep = input.cep;
   if (input.municipio !== undefined) row.municipio = upper(input.municipio);
@@ -86,6 +99,8 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.valorCobranca !== undefined) row.valor_cobranca = input.valorCobranca;
   if (input.valorPagamento !== undefined) row.valor_pagamento = input.valorPagamento;
   if (input.codigoRastreio !== undefined) row.codigo_rastreio = upper(input.codigoRastreio);
+  if (input.chaveAcessoNfe !== undefined) row.chave_acesso_nfe = input.chaveAcessoNfe;
+  if (input.valorTotalNota !== undefined) row.valor_total_nota = input.valorTotalNota;
   return row;
 }
 

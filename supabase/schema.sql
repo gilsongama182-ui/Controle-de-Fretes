@@ -21,6 +21,7 @@ create table if not exists public.deliveries (
   id uuid primary key default gen_random_uuid(),
   codigo text unique not null,
   nfe text not null,
+  pedido text,             -- referência do pedido do cliente (<infAdic><infCpl> no XML)
   remetente text,          -- quem contrata o frete (vincula a conta cliente)
   remetente_cnpj text,
   cliente text not null,   -- destinatário: quem recebe a carga
@@ -31,6 +32,8 @@ create table if not exists public.deliveries (
   previsao text,
   data_entrega date,        -- data real de entrega (preenchida quando status = ENTREGUE)
   endereco_completo text not null,
+  numero text,              -- número do endereço (<nro> no XML)
+  complemento text,         -- complemento do endereço (<xCpl> no XML)
   bairro_distrito text,
   cep text,
   municipio text,
@@ -41,6 +44,8 @@ create table if not exists public.deliveries (
   valor_cobranca numeric(12, 2) not null default 0,
   valor_pagamento numeric(12, 2) not null default 0,
   codigo_rastreio text,
+  chave_acesso_nfe text,          -- uso interno, não aparece em tela
+  valor_total_nota numeric(12, 2), -- uso interno, não aparece em tela
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

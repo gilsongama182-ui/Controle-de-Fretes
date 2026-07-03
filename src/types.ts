@@ -4,6 +4,7 @@ export interface Delivery {
   id: string; // uuid (chave real no banco)
   codigo: string; // e.g., "#HM-9241" (código de exibição)
   nfe: string; // e.g., "112.983-01"
+  pedido: string; // referência do pedido do cliente (vinda do <infCpl> no XML de NF-e)
   remetente: string; // quem contrata o frete (vincula a conta cliente)
   remetenteCnpj: string;
   cliente: string; // destinatário: short name de quem recebe a carga
@@ -14,6 +15,8 @@ export interface Delivery {
   previsao: string; // YYYY-MM-DD or readable string
   dataEntrega: string; // YYYY-MM-DD, data real de entrega (vazio se ainda não entregue)
   enderecoCompleto: string;
+  numero: string; // número do endereço
+  complemento: string; // complemento do endereço
   bairroDistrito: string;
   cep: string;
   municipio: string;
@@ -24,6 +27,8 @@ export interface Delivery {
   valorCobranca: number; // receita
   valorPagamento: number; // custo
   codigoRastreio: string;
+  chaveAcessoNfe: string; // uso interno (não aparece em tela)
+  valorTotalNota: number; // uso interno (não aparece em tela)
 }
 
 export type ProfileType = 'cliente' | 'operador' | 'master';

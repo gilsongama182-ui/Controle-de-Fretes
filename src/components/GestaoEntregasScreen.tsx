@@ -315,17 +315,20 @@ export default function GestaoEntregasScreen({
             <div className="overflow-x-auto">
               {detailedMode ? (
                 /* DENSE WIDE TABLE WITH HORIZONTAL SCROLL */
-                <table className="w-full text-left border-collapse min-w-[2500px]">
+                <table className="w-full text-left border-collapse min-w-[2900px]">
                   <thead className="bg-surface-container-low border-b border-outline-variant text-xs font-bold uppercase tracking-wider text-on-surface-variant sticky top-0">
                     <tr>
                       <th className="px-4 py-3">Remetente</th>
                       <th className="px-4 py-3">CNPJ Remetente</th>
+                      <th className="px-4 py-3">Pedido</th>
                       <th className="px-4 py-3">Data Pedido</th>
                       <th className="px-4 py-3">Data Expedição</th>
                       <th className="px-4 py-3">Data de Entrega</th>
                       <th className="px-4 py-3">Destinatário</th>
                       <th className="px-4 py-3">CNPJ / CPF</th>
                       <th className="px-4 py-3">Endereço</th>
+                      <th className="px-4 py-3">Nº</th>
+                      <th className="px-4 py-3">Complemento</th>
                       <th className="px-4 py-3">Bairro / Distrito</th>
                       <th className="px-4 py-3">CEP</th>
                       <th className="px-4 py-3">Município</th>
@@ -343,12 +346,15 @@ export default function GestaoEntregasScreen({
                         <tr key={del.id} className="hover:bg-primary/5 transition-colors group">
                           <td className="px-4 py-4 text-xs font-semibold text-secondary">{del.remetente}</td>
                           <td className="px-4 py-4 font-mono text-xs">{del.remetenteCnpj}</td>
+                          <td className="px-4 py-4 text-xs">{del.pedido}</td>
                           <td className="px-4 py-4 font-mono text-xs">{formatDateBR(del.dataPedido)}</td>
                           <td className="px-4 py-4 font-mono text-xs">{formatDateBR(del.dataExpedicao)}</td>
                           <td className="px-4 py-4 font-mono text-xs">{del.dataEntrega ? formatDateBR(del.dataEntrega) : '—'}</td>
                           <td className="px-4 py-4 text-xs text-on-surface">{del.nomeRazaoSocial}</td>
                           <td className="px-4 py-4 font-mono text-xs">{del.cnpjCpf}</td>
                           <td className="px-4 py-4 text-xs max-w-[200px] truncate">{del.enderecoCompleto}</td>
+                          <td className="px-4 py-4 text-xs">{del.numero}</td>
+                          <td className="px-4 py-4 text-xs">{del.complemento}</td>
                           <td className="px-4 py-4 text-xs">{del.bairroDistrito}</td>
                           <td className="px-4 py-4 font-mono text-xs">{del.cep}</td>
                           <td className="px-4 py-4 text-xs">{del.municipio}</td>
@@ -398,7 +404,7 @@ export default function GestaoEntregasScreen({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={17} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={20} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega corresponde aos filtros de busca aplicados.
                         </td>
                       </tr>
