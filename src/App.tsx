@@ -173,6 +173,7 @@ function AppShell() {
           onSelectDeliveryForEdit={handleSelectDeliveryForEdit}
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
+          onUpdateDelivery={handleUpdateDelivery}
         />
       );
 

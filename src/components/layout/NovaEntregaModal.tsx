@@ -74,6 +74,8 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       codigoRastreio: `HB2024TX${randomIdNumber}`,
       chaveAcessoNfe: '',
       valorTotalNota: 0,
+      comprovantePath: '',
+      comprovanteNome: '',
     };
 
     setIsSubmitting(true);

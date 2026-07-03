@@ -33,6 +33,8 @@ interface DeliveryRow {
   codigo_rastreio: string | null;
   chave_acesso_nfe: string | null;
   valor_total_nota: number | null;
+  comprovante_path: string | null;
+  comprovante_nome: string | null;
 }
 
 function fromRow(row: DeliveryRow): Delivery {
@@ -65,6 +67,8 @@ function fromRow(row: DeliveryRow): Delivery {
     codigoRastreio: row.codigo_rastreio ?? '',
     chaveAcessoNfe: row.chave_acesso_nfe ?? '',
     valorTotalNota: row.valor_total_nota ?? 0,
+    comprovantePath: row.comprovante_path ?? '',
+    comprovanteNome: row.comprovante_nome ?? '',
   };
 }
 
@@ -101,6 +105,8 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.codigoRastreio !== undefined) row.codigo_rastreio = upper(input.codigoRastreio);
   if (input.chaveAcessoNfe !== undefined) row.chave_acesso_nfe = input.chaveAcessoNfe;
   if (input.valorTotalNota !== undefined) row.valor_total_nota = input.valorTotalNota;
+  if (input.comprovantePath !== undefined) row.comprovante_path = input.comprovantePath || null;
+  if (input.comprovanteNome !== undefined) row.comprovante_nome = input.comprovanteNome || null;
   return row;
 }
 

@@ -123,6 +123,8 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
     codigoRastreio: '',
     chaveAcessoNfe: chNFe || '',
     valorTotalNota: vNF ? Number(vNF) : 0,
+    comprovantePath: '',
+    comprovanteNome: '',
   };
 
   return { fileName, data, errors: [] };

@@ -29,6 +29,8 @@ export interface Delivery {
   codigoRastreio: string;
   chaveAcessoNfe: string; // uso interno (não aparece em tela)
   valorTotalNota: number; // uso interno (não aparece em tela)
+  comprovantePath: string; // caminho do arquivo no Storage (privado)
+  comprovanteNome: string; // nome original do arquivo enviado
 }
 
 export type ProfileType = 'cliente' | 'operador' | 'master';

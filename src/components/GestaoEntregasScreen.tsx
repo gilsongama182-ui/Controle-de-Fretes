@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import {
   Truck, Download, FileUp, CheckCircle, AlertTriangle, Clock,
-  Trash2, Edit, ChevronLeft, ChevronRight, ListCollapse, Table
+  Trash2, Edit, ChevronLeft, ChevronRight, ListCollapse, Table, Paperclip
 } from 'lucide-react';
 import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
@@ -13,6 +13,7 @@ import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
 import NovaEntregaModal from './layout/NovaEntregaModal';
 import ImportModal from './layout/ImportModal';
+import ComprovanteModal from './layout/ComprovanteModal';
 
 interface GestaoEntregasProps {
   onNavigate: (page: ActivePage) => void;
@@ -23,6 +24,7 @@ interface GestaoEntregasProps {
   onSelectDeliveryForEdit: (delivery: Delivery) => void;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
+  onUpdateDelivery: (id: string, patch: Partial<Delivery>) => Promise<void>;
 }
 
 export default function GestaoEntregasScreen({
@@ -33,7 +35,8 @@ export default function GestaoEntregasScreen({
   onDeleteDelivery,
   onSelectDeliveryForEdit,
   onAddDelivery,
-  onImportDeliveries
+  onImportDeliveries,
+  onUpdateDelivery
 }: GestaoEntregasProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -45,6 +48,12 @@ export default function GestaoEntregasScreen({
   const [linesPerPage, setLinesPerPage] = useState(10);
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [comprovanteDeliveryId, setComprovanteDeliveryId] = useState<string | null>(null);
+  // Deriva sempre da lista atual (não guarda uma cópia) para que o modal reflita
+  // o comprovante recém-anexado assim que onUpdateDelivery atualiza o estado do pai.
+  const comprovanteDelivery = comprovanteDeliveryId
+    ? deliveries.find((d) => d.id === comprovanteDeliveryId) ?? null
+    : null;
 
   // Computed metrics for active data (todos derivados do array real de entregas)
   const metrics = useMemo(() => {
@@ -389,6 +398,13 @@ export default function GestaoEntregasScreen({
                           <td className="px-4 py-4 text-right sticky right-0 bg-white group-hover:bg-[#f6f8fa] transition-colors shadow-[-4px_0_12px_rgba(0,0,0,0.05)]">
                             <div className="flex justify-end gap-1">
                               <button
+                                onClick={() => setComprovanteDeliveryId(del.id)}
+                                className={`p-1.5 rounded-lg transition-colors ${del.comprovantePath ? 'text-secondary hover:bg-secondary-container' : 'text-on-surface-variant hover:bg-secondary-container'}`}
+                                title={del.comprovantePath ? 'Comprovante anexado' : 'Anexar comprovante de entrega'}
+                              >
+                                <Paperclip className="w-4 h-4" />
+                              </button>
+                              <button
                                 onClick={() => onSelectDeliveryForEdit(del)}
                                 className="p-1.5 text-on-surface-variant hover:bg-secondary-container rounded-lg transition-colors"
                                 title="Editar"
@@ -452,6 +468,13 @@ export default function GestaoEntregasScreen({
                           </td>
                           <td className="px-5 py-4 text-right">
                             <div className="flex justify-end gap-1">
+                              <button
+                                onClick={() => setComprovanteDeliveryId(del.id)}
+                                className={`p-1.5 rounded-lg transition-colors ${del.comprovantePath ? 'text-secondary hover:bg-secondary-container' : 'text-on-surface-variant hover:bg-secondary-container'}`}
+                                title={del.comprovantePath ? 'Comprovante anexado' : 'Anexar comprovante de entrega'}
+                              >
+                                <Paperclip className="w-4 h-4" />
+                              </button>
                               <button
                                 onClick={() => onSelectDeliveryForEdit(del)}
                                 className="p-1.5 text-on-surface-variant hover:bg-secondary-container rounded-lg transition-colors"
@@ -550,6 +573,12 @@ export default function GestaoEntregasScreen({
         onClose={() => setIsImportOpen(false)}
         onImport={onImportDeliveries}
         existingDeliveries={deliveries}
+      />
+
+      <ComprovanteModal
+        delivery={comprovanteDelivery}
+        onClose={() => setComprovanteDeliveryId(null)}
+        onUpdateDelivery={onUpdateDelivery}
       />
 
     </div>
