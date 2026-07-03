@@ -80,7 +80,8 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   const row: Record<string, unknown> = {};
   if (input.codigo !== undefined) row.codigo = input.codigo;
   if (input.nfe !== undefined) row.nfe = formatNfe(input.nfe);
-  if (input.pedido !== undefined) row.pedido = upper(input.pedido);
+  // Pedido é sempre numérico (7 dígitos) — sem espaço nem ponto.
+  if (input.pedido !== undefined) row.pedido = input.pedido.replace(/\D/g, '');
   if (input.remetente !== undefined) row.remetente = upper(input.remetente);
   if (input.remetenteCnpj !== undefined) row.remetente_cnpj = upper(input.remetenteCnpj);
   if (input.cliente !== undefined) row.cliente = upper(input.cliente);

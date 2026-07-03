@@ -154,7 +154,7 @@ export function downloadCsvTemplate(filename: string) {
     switch (f.key) {
       case 'codigo': return '';
       case 'nfe': return '112983-01';
-      case 'pedido': return 'PC-4521';
+      case 'pedido': return '6584799';
       case 'remetente': return 'Minha Empresa Ltda';
       case 'remetenteCnpj': return '11.111.111/0001-11';
       case 'cliente': return 'Cliente Exemplo';
