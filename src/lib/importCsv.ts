@@ -123,7 +123,7 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       cnpjCpf: get('cnpjCpf'),
       dataPedido: normalizeDate(get('dataPedido')),
       dataExpedicao: get('dataExpedicao') ? normalizeDate(get('dataExpedicao')) : '',
-      previsao: get('previsao'),
+      previsao: get('previsao') ? normalizeDate(get('previsao')) : '',
       dataEntrega: get('dataEntrega') ? normalizeDate(get('dataEntrega')) : '',
       enderecoCompleto: get('enderecoCompleto'),
       numero: get('numero'),

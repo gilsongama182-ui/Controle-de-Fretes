@@ -315,7 +315,7 @@ export default function GestaoEntregasScreen({
             <div className="overflow-x-auto">
               {detailedMode ? (
                 /* DENSE WIDE TABLE WITH HORIZONTAL SCROLL */
-                <table className="w-full text-left border-collapse min-w-[2900px]">
+                <table className="w-full text-left border-collapse min-w-[3050px]">
                   <thead className="bg-surface-container-low border-b border-outline-variant text-xs font-bold uppercase tracking-wider text-on-surface-variant sticky top-0">
                     <tr>
                       <th className="px-4 py-3">Remetente</th>
@@ -323,6 +323,7 @@ export default function GestaoEntregasScreen({
                       <th className="px-4 py-3">Pedido</th>
                       <th className="px-4 py-3">Data Pedido</th>
                       <th className="px-4 py-3">Data Expedição</th>
+                      <th className="px-4 py-3">Previsão de Entrega</th>
                       <th className="px-4 py-3">Data de Entrega</th>
                       <th className="px-4 py-3">Destinatário</th>
                       <th className="px-4 py-3">CNPJ / CPF</th>
@@ -349,6 +350,7 @@ export default function GestaoEntregasScreen({
                           <td className="px-4 py-4 text-xs">{del.pedido}</td>
                           <td className="px-4 py-4 font-mono text-xs">{formatDateBR(del.dataPedido)}</td>
                           <td className="px-4 py-4 font-mono text-xs">{formatDateBR(del.dataExpedicao)}</td>
+                          <td className="px-4 py-4 font-mono text-xs">{del.previsao ? formatDateBR(del.previsao) : '—'}</td>
                           <td className="px-4 py-4 font-mono text-xs">{del.dataEntrega ? formatDateBR(del.dataEntrega) : '—'}</td>
                           <td className="px-4 py-4 text-xs text-on-surface">{del.nomeRazaoSocial}</td>
                           <td className="px-4 py-4 font-mono text-xs">{del.cnpjCpf}</td>
@@ -404,7 +406,7 @@ export default function GestaoEntregasScreen({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={20} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={21} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega corresponde aos filtros de busca aplicados.
                         </td>
                       </tr>

@@ -57,7 +57,7 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       cnpjCpf: cnpjCpf || '00.000.000/0001-00',
       dataPedido: new Date().toISOString().split('T')[0],
       dataExpedicao: new Date().toISOString().split('T')[0],
-      previsao: 'Hoje, 18:00',
+      previsao: new Date().toISOString().split('T')[0],
       dataEntrega: '',
       enderecoCompleto: endereco || 'Rua das Logísticas, 1000',
       numero: '',

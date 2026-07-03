@@ -436,10 +436,9 @@ export default function EdicaoEntregaScreen({
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Previsão de Entrega</label>
                   <input
-                    type="text"
+                    type="date"
                     value={previsao}
                     onChange={(e) => setPrevisao(e.target.value)}
-                    placeholder="Hoje, 18:00"
                     className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
                   />
                 </div>

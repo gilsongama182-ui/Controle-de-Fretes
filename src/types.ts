@@ -12,7 +12,7 @@ export interface Delivery {
   cnpjCpf: string; // CNPJ/CPF do destinatário
   dataPedido: string; // YYYY-MM-DD
   dataExpedicao: string; // YYYY-MM-DD
-  previsao: string; // YYYY-MM-DD or readable string
+  previsao: string; // YYYY-MM-DD
   dataEntrega: string; // YYYY-MM-DD, data real de entrega (vazio se ainda não entregue)
   enderecoCompleto: string;
   numero: string; // número do endereço
