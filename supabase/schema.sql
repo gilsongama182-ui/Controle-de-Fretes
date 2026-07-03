@@ -14,8 +14,11 @@ create table if not exists public.profiles (
   profile_type text not null check (profile_type in ('cliente', 'operador', 'master')),
   document text not null,
   genero text not null default 'nao_informado' check (genero in ('masculino', 'feminino', 'nao_informado')),
+  status text not null default 'pendente' check (status in ('pendente', 'aprovado', 'rejeitado')),
   created_at timestamptz not null default now()
 );
+-- Numa instalação nova, aprove manualmente a primeira conta master:
+-- update public.profiles set status = 'aprovado' where email = 'seu-email@empresa.com';
 
 create table if not exists public.deliveries (
   id uuid primary key default gen_random_uuid(),
@@ -129,46 +132,70 @@ create policy profiles_select_own
   for select
   using (id = auth.uid() or public.current_profile_type() = 'master');
 
--- profiles: master pode alterar o papel de qualquer usuário
+-- profiles: master pode alterar o papel/status de qualquer usuário
 drop policy if exists profiles_update_master on public.profiles;
 create policy profiles_update_master
   on public.profiles
   for update
   using (public.current_profile_type() = 'master');
 
+-- Função auxiliar: status de aprovação do usuário logado
+create or replace function public.current_profile_status()
+returns text
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select status from public.profiles where id = auth.uid();
+$$;
+
 -- deliveries: operador/master veem tudo; cliente vê só entregas cujo CNPJ do
 -- REMETENTE (normalizado, sem pontuação) bate com o document do seu perfil.
+-- Em qualquer caso, exige status = 'aprovado' (cadastros pendentes não veem nada).
 drop policy if exists deliveries_select on public.deliveries;
 create policy deliveries_select
   on public.deliveries
   for select
   using (
-    public.current_profile_type() in ('operador', 'master')
-    or regexp_replace(coalesce(remetente_cnpj, ''), '\D', '', 'g') = (
-      select regexp_replace(document, '\D', '', 'g')
-      from public.profiles
-      where id = auth.uid()
+    public.current_profile_status() = 'aprovado'
+    and (
+      public.current_profile_type() in ('operador', 'master')
+      or regexp_replace(coalesce(remetente_cnpj, ''), '\D', '', 'g') = (
+        select regexp_replace(document, '\D', '', 'g')
+        from public.profiles
+        where id = auth.uid()
+      )
     )
   );
 
--- deliveries: apenas operador/master criam/editam/removem
+-- deliveries: apenas operador/master aprovados criam/editam/removem
 drop policy if exists deliveries_insert on public.deliveries;
 create policy deliveries_insert
   on public.deliveries
   for insert
-  with check (public.current_profile_type() in ('operador', 'master'));
+  with check (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() in ('operador', 'master')
+  );
 
 drop policy if exists deliveries_update on public.deliveries;
 create policy deliveries_update
   on public.deliveries
   for update
-  using (public.current_profile_type() in ('operador', 'master'));
+  using (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() in ('operador', 'master')
+  );
 
 drop policy if exists deliveries_delete on public.deliveries;
 create policy deliveries_delete
   on public.deliveries
   for delete
-  using (public.current_profile_type() in ('operador', 'master'));
+  using (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() in ('operador', 'master')
+  );
 
 -- =========================================================
 -- 5. Storage — comprovantes de entrega (PNG/JPEG/PDF)
@@ -186,6 +213,7 @@ create policy comprovantes_insert
   to authenticated
   with check (
     bucket_id = 'comprovantes'
+    and public.current_profile_status() = 'aprovado'
     and public.current_profile_type() in ('operador', 'master')
   );
 
@@ -196,6 +224,7 @@ create policy comprovantes_select
   to authenticated
   using (
     bucket_id = 'comprovantes'
+    and public.current_profile_status() = 'aprovado'
     and public.current_profile_type() in ('operador', 'master')
   );
 
@@ -206,10 +235,12 @@ create policy comprovantes_update
   to authenticated
   using (
     bucket_id = 'comprovantes'
+    and public.current_profile_status() = 'aprovado'
     and public.current_profile_type() in ('operador', 'master')
   )
   with check (
     bucket_id = 'comprovantes'
+    and public.current_profile_status() = 'aprovado'
     and public.current_profile_type() in ('operador', 'master')
   );
 
@@ -220,5 +251,6 @@ create policy comprovantes_delete
   to authenticated
   using (
     bucket_id = 'comprovantes'
+    and public.current_profile_status() = 'aprovado'
     and public.current_profile_type() in ('operador', 'master')
   );

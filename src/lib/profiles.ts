@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { ProfileType, Genero } from '../types';
+import { ProfileType, Genero, AccountStatus } from '../types';
 
 export interface ProfileRecord {
   id: string;
@@ -8,6 +8,7 @@ export interface ProfileRecord {
   profileType: ProfileType;
   document: string;
   genero: Genero;
+  status: AccountStatus;
   createdAt: string;
 }
 
@@ -18,6 +19,7 @@ interface ProfileRow {
   profile_type: ProfileType;
   document: string;
   genero: Genero;
+  status: AccountStatus;
   created_at: string;
 }
 
@@ -29,6 +31,7 @@ function fromRow(row: ProfileRow): ProfileRecord {
     profileType: row.profile_type,
     document: row.document,
     genero: row.genero,
+    status: row.status,
     createdAt: row.created_at,
   };
 }
@@ -59,6 +62,18 @@ export async function updateProfileGenero(id: string, genero: Genero): Promise<P
   const { data, error } = await supabase
     .from('profiles')
     .update({ genero })
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return fromRow(data as ProfileRow);
+}
+
+export async function updateProfileStatus(id: string, status: AccountStatus): Promise<ProfileRecord> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ status })
     .eq('id', id)
     .select('*')
     .single();

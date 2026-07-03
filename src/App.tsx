@@ -19,6 +19,8 @@ import DashboardClienteScreen from './components/DashboardClienteScreen';
 import GestaoEntregasScreen from './components/GestaoEntregasScreen';
 import EdicaoEntregaScreen from './components/EdicaoEntregaScreen';
 import UsuariosScreen from './components/UsuariosScreen';
+import AccountStatusScreen from './components/AccountStatusScreen';
+import ResetPasswordScreen from './components/ResetPasswordScreen';
 
 function LoadingScreen() {
   return (
@@ -54,7 +56,7 @@ function ProfileErrorScreen({ onRetry, onLogout }: { onRetry: () => void; onLogo
 }
 
 function AppShell() {
-  const { session, profile, loading, profileError, signOut, refreshProfile } = useAuth();
+  const { session, profile, loading, profileError, isPasswordRecovery, signOut, refreshProfile } = useAuth();
   const [activePage, setActivePage] = useState<ActivePage>('login');
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
@@ -80,13 +82,17 @@ function AppShell() {
     if (lastHandledSessionId.current === sessionId) return; // já redirecionado nesta sessão
 
     lastHandledSessionId.current = sessionId;
-    setActivePage(profile.profileType === 'cliente' ? 'dashboard-cliente' : 'dashboard-operador');
+    // Cadastro pendente/rejeitado não é redirecionado pra nenhum dashboard —
+    // a tela de status (renderizada antes do switch abaixo) intercepta primeiro.
+    if (profile.status === 'aprovado') {
+      setActivePage(profile.profileType === 'cliente' ? 'dashboard-cliente' : 'dashboard-operador');
+    }
   }, [loading, session, profile]);
 
   // Busca as entregas do Supabase assim que a sessão + perfil estão prontos
   // (o RLS já limita o resultado a operador=tudo / cliente=próprias entregas).
   useEffect(() => {
-    if (!session || !profile) return;
+    if (!session || !profile || profile.status !== 'aprovado') return;
     let active = true;
     fetchDeliveries()
       .then((rows) => {
@@ -129,8 +135,14 @@ function AppShell() {
   };
 
   if (loading) return <LoadingScreen />;
+  if (session && isPasswordRecovery) {
+    return <ResetPasswordScreen />;
+  }
   if (session && profileError) {
     return <ProfileErrorScreen onRetry={refreshProfile} onLogout={handleLogout} />;
+  }
+  if (session && profile && profile.status !== 'aprovado') {
+    return <AccountStatusScreen status={profile.status} onLogout={handleLogout} />;
   }
 
   switch (activePage) {

@@ -35,6 +35,7 @@ export interface Delivery {
 
 export type ProfileType = 'cliente' | 'operador' | 'master';
 export type Genero = 'masculino' | 'feminino' | 'nao_informado';
+export type AccountStatus = 'pendente' | 'aprovado' | 'rejeitado';
 
 export interface User {
   id: string; // uuid do auth.users / profiles
@@ -43,6 +44,7 @@ export interface User {
   profileType: ProfileType;
   document: string;
   genero: Genero;
+  status: AccountStatus;
 }
 
 export type ActivePage =

@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { Shield } from 'lucide-react';
-import { ActivePage, User, Genero, Delivery } from '../types';
+import { Shield, Mail, Check, X as XIcon } from 'lucide-react';
+import { ActivePage, User, Genero, Delivery, AccountStatus } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
-import { fetchProfiles, updateProfileRole, updateProfileGenero, ProfileRecord } from '../lib/profiles';
+import { fetchProfiles, updateProfileRole, updateProfileGenero, updateProfileStatus, ProfileRecord } from '../lib/profiles';
+import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -31,6 +32,18 @@ const GENERO_LABEL: Record<Genero, string> = {
   masculino: 'Masculino',
 };
 
+const STATUS_LABEL: Record<AccountStatus, string> = {
+  pendente: 'Pendente',
+  aprovado: 'Aprovado',
+  rejeitado: 'Rejeitado',
+};
+
+const STATUS_BADGE_CLASS: Record<AccountStatus, string> = {
+  pendente: 'bg-amber-100 text-amber-800',
+  aprovado: 'bg-green-100 text-green-800',
+  rejeitado: 'bg-red-100 text-red-800',
+};
+
 export default function UsuariosScreen({
   onNavigate,
   onLogout,
@@ -39,11 +52,14 @@ export default function UsuariosScreen({
   onAddDelivery,
   onImportDeliveries
 }: UsuariosScreenProps) {
+  const { requestPasswordReset } = useAuth();
   const [profiles, setProfiles] = useState<ProfileRecord[]>([]);
   const [loading, setLoading] = useState(true);
   const [savingId, setSavingId] = useState<string | null>(null);
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [resetSendingId, setResetSendingId] = useState<string | null>(null);
+  const [resetSentId, setResetSentId] = useState<string | null>(null);
 
   useEffect(() => {
     if (user.profileType !== 'master') return;
@@ -88,6 +104,32 @@ export default function UsuariosScreen({
     }
   };
 
+  const handleStatusChange = async (id: string, status: AccountStatus) => {
+    setSavingId(id);
+    try {
+      const updated = await updateProfileStatus(id, status);
+      setProfiles((prev) => prev.map((p) => (p.id === id ? updated : p)));
+    } catch (err) {
+      alert(err instanceof Error ? `Não foi possível atualizar: ${err.message}` : 'Não foi possível atualizar o status do usuário.');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
+  const handleSendPasswordReset = async (id: string, email: string) => {
+    setResetSendingId(id);
+    setResetSentId(null);
+    try {
+      const { error } = await requestPasswordReset(email);
+      if (error) throw error;
+      setResetSentId(id);
+    } catch (err) {
+      alert(err instanceof Error ? `Não foi possível enviar: ${err.message}` : 'Não foi possível enviar o e-mail de redefinição.');
+    } finally {
+      setResetSendingId(null);
+    }
+  };
+
   return (
     <div className="bg-surface text-on-surface font-sans min-h-screen flex flex-col md:flex-row">
       <Sidebar
@@ -121,20 +163,22 @@ export default function UsuariosScreen({
                   <th className="px-5 py-3">Documento</th>
                   <th className="px-5 py-3">Papel</th>
                   <th className="px-5 py-3">Gênero (avatar)</th>
+                  <th className="px-5 py-3">Status</th>
+                  <th className="px-5 py-3">Ações</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant">
                 {loading ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-sm text-secondary">Carregando...</td>
+                    <td colSpan={8} className="text-center py-8 text-sm text-secondary">Carregando...</td>
                   </tr>
                 ) : profiles.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className="text-center py-8 text-sm text-secondary">Nenhum usuário encontrado.</td>
+                    <td colSpan={8} className="text-center py-8 text-sm text-secondary">Nenhum usuário encontrado.</td>
                   </tr>
                 ) : (
                   profiles.map((p) => (
-                    <tr key={p.id} className="hover:bg-primary/5 transition-colors">
+                    <tr key={p.id} className={`hover:bg-primary/5 transition-colors ${p.status === 'pendente' ? 'bg-amber-50/60' : ''}`}>
                       <td className="px-5 py-4">
                         <Avatar genero={p.genero} name={p.name} className="w-8 h-8" />
                       </td>
@@ -165,6 +209,56 @@ export default function UsuariosScreen({
                             <option key={g} value={g}>{GENERO_LABEL[g]}</option>
                           ))}
                         </select>
+                      </td>
+                      <td className="px-5 py-4">
+                        {p.status === 'pendente' ? (
+                          <div className="flex items-center gap-2">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${STATUS_BADGE_CLASS[p.status]}`}>
+                              {STATUS_LABEL[p.status]}
+                            </span>
+                            <button
+                              type="button"
+                              disabled={savingId === p.id}
+                              onClick={() => handleStatusChange(p.id, 'aprovado')}
+                              title="Aprovar acesso"
+                              className="p-1 rounded bg-green-100 text-green-700 hover:bg-green-200 disabled:opacity-50"
+                            >
+                              <Check className="w-3.5 h-3.5" />
+                            </button>
+                            <button
+                              type="button"
+                              disabled={savingId === p.id}
+                              onClick={() => handleStatusChange(p.id, 'rejeitado')}
+                              title="Rejeitar acesso"
+                              className="p-1 rounded bg-red-100 text-red-700 hover:bg-red-200 disabled:opacity-50"
+                            >
+                              <XIcon className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        ) : (
+                          <select
+                            value={p.status}
+                            disabled={savingId === p.id || p.id === user.id}
+                            title={p.id === user.id ? 'Você não pode alterar o próprio status' : undefined}
+                            onChange={(e) => handleStatusChange(p.id, e.target.value as AccountStatus)}
+                            className={`px-3 py-1.5 border border-outline-variant rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary cursor-pointer disabled:opacity-50 ${STATUS_BADGE_CLASS[p.status]}`}
+                          >
+                            {(Object.keys(STATUS_LABEL) as AccountStatus[]).map((s) => (
+                              <option key={s} value={s}>{STATUS_LABEL[s]}</option>
+                            ))}
+                          </select>
+                        )}
+                      </td>
+                      <td className="px-5 py-4">
+                        <button
+                          type="button"
+                          disabled={resetSendingId === p.id}
+                          onClick={() => handleSendPasswordReset(p.id, p.email)}
+                          className="flex items-center gap-1.5 px-3 py-1.5 border border-outline-variant rounded-lg text-xs font-semibold text-secondary hover:bg-surface-container transition-colors disabled:opacity-50"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          {resetSendingId === p.id ? 'Enviando...' : resetSentId === p.id ? 'E-mail enviado!' : 'Redefinir senha'}
+                        </button>
                       </td>
                     </tr>
                   ))
