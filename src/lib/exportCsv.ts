@@ -12,6 +12,14 @@ function cellValue(delivery: Delivery, key: keyof Delivery): unknown {
   return delivery[key];
 }
 
+// Só aparecem no relatório exportado, não no template de importação (são
+// preenchidos automaticamente pela importação de XML de NF-e, não digitados
+// manualmente pelo usuário).
+const EXPORT_ONLY_FIELDS: { key: keyof Delivery; label: string }[] = [
+  { key: 'chaveAcessoNfe', label: 'Chave de Acesso NF-e' },
+  { key: 'valorTotalNota', label: 'Valor Total da Nota' },
+];
+
 // Separador ";" (não ",") porque o Excel em pt-BR usa vírgula como separador
 // decimal e só quebra colunas automaticamente com ponto e vírgula. Os mesmos
 // rótulos de coluna são usados na importação (lib/importCsv.ts), então um
@@ -21,7 +29,7 @@ export function exportDeliveriesToCsv(
   filename: string,
   excludeKeys: (keyof Delivery)[] = []
 ) {
-  const headers = DELIVERY_FIELDS.filter((h) => !excludeKeys.includes(h.key));
+  const headers = [...DELIVERY_FIELDS, ...EXPORT_ONLY_FIELDS].filter((h) => !excludeKeys.includes(h.key));
   const rows = [
     headers.map((h) => h.label).join(';'),
     ...deliveries.map((d) => headers.map((h) => escapeCsvValue(cellValue(d, h.key))).join(';')),
