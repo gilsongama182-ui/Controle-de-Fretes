@@ -76,6 +76,21 @@ function renderEtiquetaPagina(d: Delivery) {
         <span>CNI / PEDIDO: {d.pedido || '—'}</span>
       </div>
 
+      <div className="etiqueta-recebedor">
+        <div className="etiqueta-recebedor-linha">
+          <span className="etiqueta-recebedor-label">Nome do recebedor:</span>
+          <span className="etiqueta-recebedor-preenchimento"></span>
+        </div>
+        <div className="etiqueta-recebedor-linha">
+          <span className="etiqueta-recebedor-label">Documento:</span>
+          <span className="etiqueta-recebedor-preenchimento"></span>
+        </div>
+        <div className="etiqueta-recebedor-linha">
+          <span className="etiqueta-recebedor-label">Data:</span>
+          <span className="etiqueta-recebedor-data">___ / ___ / ______</span>
+        </div>
+      </div>
+
       <div className="etiqueta-barcode-area">
         {d.chaveAcessoNfe ? (
           <>
@@ -123,7 +138,7 @@ export default function EtiquetaPrintView({ deliveries, onClose }: EtiquetaPrint
         .etiqueta-box-label { font-size: 7pt; font-weight: 800; letter-spacing: 1px; color: #444; margin-bottom: 1mm; }
         .etiqueta-remetente .etiqueta-nome { font-weight: 700; font-size: 9pt; }
         .etiqueta-remetente .etiqueta-linha { font-size: 8pt; color: #222; line-height: 1.35; }
-        .etiqueta-destinatario { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 1.5mm; }
+        .etiqueta-destinatario { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 1.5mm; padding-top: 3mm; }
         .etiqueta-destinatario .etiqueta-nome { font-weight: 800; font-size: 14pt; line-height: 1.2; }
         .etiqueta-destinatario .etiqueta-linha { font-size: 11pt; line-height: 1.35; }
         .etiqueta-destinatario .etiqueta-cidade { font-weight: 700; font-size: 12pt; }
@@ -131,6 +146,13 @@ export default function EtiquetaPrintView({ deliveries, onClose }: EtiquetaPrint
           display: flex; justify-content: space-between; font-size: 9pt; font-weight: 700;
           border-top: 1pt dashed #999; border-bottom: 1pt dashed #999; padding: 1.5mm 0;
         }
+        .etiqueta-recebedor {
+          display: flex; flex-direction: column; gap: 2mm; font-size: 7.5pt; padding: 0.5mm 0;
+        }
+        .etiqueta-recebedor-linha { display: flex; align-items: flex-end; gap: 2mm; }
+        .etiqueta-recebedor-label { font-weight: 700; white-space: nowrap; }
+        .etiqueta-recebedor-preenchimento { flex: 1; border-bottom: 0.75pt solid #444; height: 3mm; }
+        .etiqueta-recebedor-data { letter-spacing: 1px; }
         .etiqueta-barcode-area { text-align: center; }
         .etiqueta-barcode-svg { width: 100%; height: 16mm; }
         .etiqueta-barcode-erro { font-size: 8pt; color: #b91c1c; padding: 4mm 0; }
