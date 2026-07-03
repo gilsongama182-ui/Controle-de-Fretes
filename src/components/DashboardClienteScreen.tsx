@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { Search, Download, ArrowLeft } from 'lucide-react';
+import { Search, Download, ArrowLeft, X } from 'lucide-react';
 import { Delivery, User } from '../types';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
@@ -20,20 +20,30 @@ export default function DashboardClienteScreen({
   const [searchTerm, setSearchTerm] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
+  const [selectedCity, setSelectedCity] = useState<string | null>(null);
 
-  // Filter deliveries based on search input (NF-e or Client)
+  const clearChartSelection = () => {
+    setSelectedUf(null);
+    setSelectedCity(null);
+  };
+
+  // Filter deliveries based on the chart selection (UF / cidade) and on search input (NF-e ou Cliente)
   const filteredDeliveries = useMemo(() => {
+    let base = deliveries;
+    if (selectedUf) base = base.filter(d => d.uf === selectedUf);
+    if (selectedCity) base = base.filter(d => d.municipio === selectedCity);
+
     const term = searchTerm.toLowerCase().trim();
-    const list = showAll ? deliveries : deliveries.slice(0, 5);
+    const list = showAll ? base : base.slice(0, 5);
     if (!term) return list;
 
-    return deliveries.filter(d =>
+    return base.filter(d =>
       d.nfe.toLowerCase().includes(term) ||
       d.cliente.toLowerCase().includes(term) ||
       d.municipio.toLowerCase().includes(term) ||
       d.codigo.toLowerCase().includes(term)
     );
-  }, [deliveries, searchTerm, showAll]);
+  }, [deliveries, searchTerm, showAll, selectedUf, selectedCity]);
 
   // Computed metrics for customer view
   const metrics = useMemo(() => {
@@ -162,8 +172,18 @@ export default function DashboardClienteScreen({
 
           {/* Recent Deliveries list card */}
           <div className="bg-white rounded-xl border border-outline-variant shadow-sm overflow-hidden">
-            <div className="p-6 border-b border-outline-variant">
+            <div className="p-6 border-b border-outline-variant flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-headline text-lg font-bold text-primary">Entregas Recentes</h2>
+              {(selectedUf || selectedCity) && (
+                <button
+                  type="button"
+                  onClick={clearChartSelection}
+                  className="flex items-center gap-1.5 text-xs font-bold text-secondary bg-secondary-container/50 hover:bg-secondary-container px-3 py-1.5 rounded-full transition-colors"
+                >
+                  <span>Filtrando: {selectedCity ? `${selectedCity}, ${selectedUf}` : selectedUf}</span>
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
 
             <div className="overflow-x-auto">
@@ -238,7 +258,7 @@ export default function DashboardClienteScreen({
               {selectedUf && (
                 <button
                   type="button"
-                  onClick={() => setSelectedUf(null)}
+                  onClick={clearChartSelection}
                   className="shrink-0 flex items-center gap-1 text-xs font-bold text-primary hover:underline"
                 >
                   <ArrowLeft className="w-3.5 h-3.5" />
@@ -252,25 +272,34 @@ export default function DashboardClienteScreen({
             ) : (
               <div className="overflow-x-auto">
                 <div className="flex items-end gap-4 sm:gap-6 px-2 pt-6 min-w-max">
-                  {chartData.map((row) => (
-                    <div
-                      key={row.label}
-                      title={`${row.count} entrega(s)`}
-                      onClick={!selectedUf ? () => setSelectedUf(row.label) : undefined}
-                      className={`flex flex-col items-center gap-2 group w-14 ${!selectedUf ? 'cursor-pointer' : ''}`}
-                    >
-                      <span className="text-xs font-bold text-primary">{row.count}</span>
-                      <div className="w-10 sm:w-12 h-36 bg-surface-container rounded-t-lg overflow-hidden flex items-end">
-                        <span
-                          className={`w-full block rounded-t-lg bg-[#FF6600] transition-all ${!selectedUf ? 'group-hover:bg-[#E65C00]' : ''}`}
-                          style={{ height: chartMax > 0 ? `${(row.count / chartMax) * 100}%` : '0%' }}
-                        ></span>
+                  {chartData.map((row) => {
+                    const isSelected = selectedUf ? selectedCity === row.label : false;
+                    return (
+                      <div
+                        key={row.label}
+                        title={`${row.count} entrega(s)`}
+                        onClick={
+                          !selectedUf
+                            ? () => setSelectedUf(row.label)
+                            : () => setSelectedCity((prev) => (prev === row.label ? null : row.label))
+                        }
+                        className="flex flex-col items-center gap-2 group w-14 cursor-pointer"
+                      >
+                        <span className="text-xs font-bold text-primary">{row.count}</span>
+                        <div className="w-10 sm:w-12 h-36 bg-surface-container rounded-t-lg overflow-hidden flex items-end">
+                          <span
+                            className={`w-full block rounded-t-lg transition-all ${
+                              isSelected ? 'bg-[#E65C00] ring-2 ring-[#E65C00]' : 'bg-[#FF6600] group-hover:bg-[#E65C00]'
+                            }`}
+                            style={{ height: chartMax > 0 ? `${(row.count / chartMax) * 100}%` : '0%' }}
+                          ></span>
+                        </div>
+                        <span className={`text-xs text-center truncate w-full ${isSelected ? 'font-bold text-primary' : 'font-semibold text-on-surface-variant'}`}>
+                          {row.label}
+                        </span>
                       </div>
-                      <span className="text-xs font-semibold text-on-surface-variant text-center truncate w-full">
-                        {row.label}
-                      </span>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </div>
             )}
