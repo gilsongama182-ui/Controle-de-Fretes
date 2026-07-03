@@ -140,6 +140,8 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
     valorTotalNota: vNF ? Number(vNF) : 0,
     comprovantePath: '',
     comprovanteNome: '',
+    melhorEnvioId: '',
+    melhorEnvioLastSyncAt: '',
   };
 
   return { fileName, data, errors: [] };

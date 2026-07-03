@@ -9,9 +9,10 @@ interface SidebarProps {
   onImportar: () => void;
   onLogout: () => void;
   onUsuarios?: () => void;
+  onIntegracoes?: () => void;
 }
 
-export default function Sidebar({ activePage, onNavigate, onNovaEntrega, onImportar, onLogout, onUsuarios }: SidebarProps) {
+export default function Sidebar({ activePage, onNavigate, onNovaEntrega, onImportar, onLogout, onUsuarios, onIntegracoes }: SidebarProps) {
   const navItemClass = (page: ActivePage) =>
     `w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-colors ${
       activePage === page
@@ -68,7 +69,7 @@ export default function Sidebar({ activePage, onNavigate, onNovaEntrega, onImpor
 
       <div className="border-t border-outline-variant pt-4 space-y-1">
         <button
-          onClick={() => alert('Configurações do sistema de logística.')}
+          onClick={onIntegracoes ?? (() => alert('Configurações do sistema de logística.'))}
           className="w-full flex items-center gap-3 px-4 py-2 text-on-surface-variant hover:bg-surface-variant/40 rounded-lg text-left text-xs transition-colors"
         >
           <Settings className="w-4 h-4" />

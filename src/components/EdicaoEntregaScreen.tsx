@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import {
-  ChevronRight, Calendar, Landmark, MapPin, Save, ArrowLeft, ClipboardCopy
+  ChevronRight, Calendar, Landmark, MapPin, Save, ArrowLeft, ClipboardCopy, RefreshCw
 } from 'lucide-react';
 import { ActivePage, Delivery, DeliveryStatus, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
 import { formatNfe } from '../lib/formatNfe';
+import { SyncItemResult } from '../lib/melhorEnvio';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -20,6 +21,7 @@ interface EdicaoEntregaProps {
   onUpdateDelivery: (id: string, patch: Partial<Delivery>) => Promise<void>;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
+  onSyncTracking: (ids: string[]) => Promise<SyncItemResult[]>;
 }
 
 export default function EdicaoEntregaScreen({
@@ -30,11 +32,13 @@ export default function EdicaoEntregaScreen({
   deliveries,
   onUpdateDelivery,
   onAddDelivery,
-  onImportDeliveries
+  onImportDeliveries,
+  onSyncTracking
 }: EdicaoEntregaProps) {
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
 
   // Editable Form states (inicializados com fallback vazio; sincronizados abaixo quando `delivery` existe)
   const [status, setStatus] = useState<DeliveryStatus>(delivery?.status ?? 'EM ROTA');
@@ -67,6 +71,7 @@ export default function EdicaoEntregaScreen({
   const [foneFax, setFoneFax] = useState(delivery?.foneFax ?? '');
   const [valorCobranca, setValorCobranca] = useState(delivery?.valorCobranca ?? 0);
   const [valorPagamento, setValorPagamento] = useState(delivery?.valorPagamento ?? 0);
+  const [melhorEnvioId, setMelhorEnvioId] = useState(delivery?.melhorEnvioId ?? '');
 
   if (!delivery) {
     return (
@@ -118,7 +123,8 @@ export default function EdicaoEntregaScreen({
         uf,
         foneFax,
         valorCobranca,
-        valorPagamento
+        valorPagamento,
+        melhorEnvioId
       });
       alert('Informações atualizadas com sucesso!');
       onNavigate('gestao-entregas');
@@ -126,6 +132,26 @@ export default function EdicaoEntregaScreen({
       alert(err instanceof Error ? `Não foi possível salvar: ${err.message}` : 'Não foi possível salvar as alterações.');
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  const handleSyncTracking = async () => {
+    setIsSyncing(true);
+    try {
+      const [result] = await onSyncTracking([delivery.id]);
+      if (!result) {
+        alert('Não foi possível sincronizar: nenhum resultado retornado.');
+      } else if (!result.ok) {
+        alert(`Não foi possível sincronizar: ${result.error ?? 'erro desconhecido'}`);
+      } else if (!result.mappedStatus) {
+        alert(`Rastreio consultado, mas o status "${result.rawStatus ?? '(vazio)'}" ainda não é reconhecido pelo sistema. Nada foi alterado.`);
+      } else {
+        alert('Rastreio atualizado com sucesso!');
+      }
+    } catch (err) {
+      alert(err instanceof Error ? `Não foi possível sincronizar: ${err.message}` : 'Não foi possível sincronizar o rastreio.');
+    } finally {
+      setIsSyncing(false);
     }
   };
 
@@ -139,6 +165,7 @@ export default function EdicaoEntregaScreen({
         onImportar={() => setIsImportOpen(true)}
         onLogout={onLogout}
         onUsuarios={user.profileType === 'master' ? () => onNavigate('usuarios') : undefined}
+        onIntegracoes={user.profileType === 'master' ? () => onNavigate('integracoes') : undefined}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -551,6 +578,34 @@ export default function EdicaoEntregaScreen({
                       <ClipboardCopy className="w-4 h-4" />
                     </button>
                   </div>
+                </div>
+
+                {/* Melhor Envio tracking sync */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider block">ID Melhor Envio</label>
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={melhorEnvioId}
+                      onChange={(e) => setMelhorEnvioId(e.target.value)}
+                      placeholder="ID da etiqueta na Melhor Envio"
+                      className="flex-1 p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-mono"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleSyncTracking}
+                      disabled={isSyncing || !delivery.melhorEnvioId}
+                      title={!delivery.melhorEnvioId ? 'Salve o ID Melhor Envio antes de sincronizar' : undefined}
+                      className="px-3 bg-surface-container border border-outline-variant rounded-lg hover:bg-secondary-container transition-colors text-secondary disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
+                    </button>
+                  </div>
+                  {delivery.melhorEnvioLastSyncAt && (
+                    <p className="text-[10px] text-on-surface-variant">
+                      Última sincronização: {new Date(delivery.melhorEnvioLastSyncAt).toLocaleString('pt-BR')}
+                    </p>
+                  )}
                 </div>
 
                 {/* Finance specs */}

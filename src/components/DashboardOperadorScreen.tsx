@@ -79,6 +79,7 @@ export default function DashboardOperadorScreen({
         onImportar={() => setIsImportOpen(true)}
         onLogout={onLogout}
         onUsuarios={user.profileType === 'master' ? () => onNavigate('usuarios') : undefined}
+        onIntegracoes={user.profileType === 'master' ? () => onNavigate('integracoes') : undefined}
       />
 
       {/* Main Content Area */}

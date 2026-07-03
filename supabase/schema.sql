@@ -58,6 +58,8 @@ create table if not exists public.deliveries (
   valor_total_nota numeric(12, 2), -- uso interno, não aparece em tela
   comprovante_path text,          -- caminho do arquivo no Storage (bucket privado "comprovantes")
   comprovante_nome text,          -- nome original do arquivo enviado
+  melhor_envio_id text,           -- ID da etiqueta na Melhor Envio (nao e o codigo_rastreio publico)
+  melhor_envio_last_sync_at timestamptz,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -65,6 +67,23 @@ create table if not exists public.deliveries (
 create index if not exists deliveries_status_idx on public.deliveries (status);
 create index if not exists deliveries_uf_idx on public.deliveries (uf);
 create index if not exists deliveries_cnpj_cpf_idx on public.deliveries (cnpj_cpf);
+
+-- Token OAuth da conta Melhor Envio conectada (uma conta só, pra toda a
+-- empresa). Sem nenhuma policy de propósito (default-deny) — só a
+-- service_role key, usada exclusivamente dentro das funções serverless
+-- em /api/melhor-envio, consegue ler/escrever essa tabela.
+create table if not exists public.melhor_envio_tokens (
+  id text primary key default 'default',
+  access_token text not null,
+  refresh_token text not null,
+  token_type text,
+  expires_at timestamptz not null,
+  scope text,
+  connected_by uuid references public.profiles(id),
+  connected_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+alter table public.melhor_envio_tokens enable row level security;
 
 -- =========================================================
 -- 2. updated_at automático em deliveries

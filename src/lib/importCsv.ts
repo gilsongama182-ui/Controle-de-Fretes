@@ -149,6 +149,8 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       valorTotalNota: 0,
       comprovantePath: '',
       comprovanteNome: '',
+      melhorEnvioId: get('melhorEnvioId'),
+      melhorEnvioLastSyncAt: '',
     };
 
     return { line: i + 2, data, errors: [] };
@@ -191,6 +193,7 @@ export function downloadCsvTemplate(filename: string) {
       case 'valorCobranca': return '1000.00';
       case 'valorPagamento': return '650.00';
       case 'codigoRastreio': return '';
+      case 'melhorEnvioId': return '';
       default: return '';
     }
   }).join(';');

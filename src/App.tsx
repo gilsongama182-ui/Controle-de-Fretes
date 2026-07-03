@@ -10,6 +10,7 @@ import {
   deleteDelivery,
   NewDeliveryInput,
 } from './lib/deliveries';
+import { syncTracking, SyncItemResult } from './lib/melhorEnvio';
 
 // Import Screen Components
 import LoginScreen from './components/LoginScreen';
@@ -21,6 +22,7 @@ import EdicaoEntregaScreen from './components/EdicaoEntregaScreen';
 import UsuariosScreen from './components/UsuariosScreen';
 import AccountStatusScreen from './components/AccountStatusScreen';
 import ResetPasswordScreen from './components/ResetPasswordScreen';
+import IntegracoesScreen from './components/IntegracoesScreen';
 
 function LoadingScreen() {
   return (
@@ -85,7 +87,15 @@ function AppShell() {
     // Cadastro pendente/rejeitado não é redirecionado pra nenhum dashboard —
     // a tela de status (renderizada antes do switch abaixo) intercepta primeiro.
     if (profile.status === 'aprovado') {
-      setActivePage(profile.profileType === 'cliente' ? 'dashboard-cliente' : 'dashboard-operador');
+      // Depois do redirect de volta do OAuth da Melhor Envio (navegação de
+      // página inteira, o estado do app reseta), manda pra Integrações em
+      // vez do dashboard padrão, senão o aviso de conectado/erro se perde.
+      const hasMelhorEnvioCallback = new URLSearchParams(window.location.search).has('melhor_envio');
+      if (hasMelhorEnvioCallback && profile.profileType === 'master') {
+        setActivePage('integracoes');
+      } else {
+        setActivePage(profile.profileType === 'cliente' ? 'dashboard-cliente' : 'dashboard-operador');
+      }
     }
   }, [loading, session, profile]);
 
@@ -132,6 +142,16 @@ function AppShell() {
     const updated = await updateDelivery(id, patch);
     setDeliveries((prev) => prev.map((d) => (d.id === id ? updated : d)));
     setSelectedDelivery(updated);
+  };
+
+  const handleSyncTracking = async (ids: string[]): Promise<SyncItemResult[]> => {
+    const { results, deliveries: updated } = await syncTracking(ids);
+    setDeliveries((prev) => prev.map((d) => updated.find((u) => u.id === d.id) ?? d));
+    if (selectedDelivery) {
+      const refreshed = updated.find((u) => u.id === selectedDelivery.id);
+      if (refreshed) setSelectedDelivery(refreshed);
+    }
+    return results;
   };
 
   if (loading) return <LoadingScreen />;
@@ -186,6 +206,7 @@ function AppShell() {
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
           onUpdateDelivery={handleUpdateDelivery}
+          onSyncTracking={handleSyncTracking}
         />
       );
 
@@ -201,6 +222,7 @@ function AppShell() {
           onUpdateDelivery={handleUpdateDelivery}
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
+          onSyncTracking={handleSyncTracking}
         />
       );
 
@@ -208,6 +230,19 @@ function AppShell() {
       if (!profile) return <LoadingScreen />;
       return (
         <UsuariosScreen
+          onNavigate={setActivePage}
+          onLogout={handleLogout}
+          user={profile}
+          deliveries={deliveries}
+          onAddDelivery={handleAddDelivery}
+          onImportDeliveries={handleImportDeliveries}
+        />
+      );
+
+    case 'integracoes':
+      if (!profile) return <LoadingScreen />;
+      return (
+        <IntegracoesScreen
           onNavigate={setActivePage}
           onLogout={handleLogout}
           user={profile}

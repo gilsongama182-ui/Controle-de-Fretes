@@ -83,6 +83,8 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       valorTotalNota: 0,
       comprovantePath: '',
       comprovanteNome: '',
+      melhorEnvioId: '',
+      melhorEnvioLastSyncAt: '',
     };
 
     setIsSubmitting(true);

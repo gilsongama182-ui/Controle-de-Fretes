@@ -159,6 +159,7 @@ export default function UsuariosScreen({
         onImportar={() => setIsImportOpen(true)}
         onLogout={onLogout}
         onUsuarios={() => onNavigate('usuarios')}
+        onIntegracoes={() => onNavigate('integracoes')}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

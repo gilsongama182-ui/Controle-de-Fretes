@@ -43,6 +43,8 @@ interface DeliveryRow {
   valor_total_nota: number | null;
   comprovante_path: string | null;
   comprovante_nome: string | null;
+  melhor_envio_id: string | null;
+  melhor_envio_last_sync_at: string | null;
 }
 
 function fromRow(row: DeliveryRow): Delivery {
@@ -84,6 +86,8 @@ function fromRow(row: DeliveryRow): Delivery {
     valorTotalNota: row.valor_total_nota ?? 0,
     comprovantePath: row.comprovante_path ?? '',
     comprovanteNome: row.comprovante_nome ?? '',
+    melhorEnvioId: row.melhor_envio_id ?? '',
+    melhorEnvioLastSyncAt: row.melhor_envio_last_sync_at ?? '',
   };
 }
 
@@ -130,6 +134,8 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.valorTotalNota !== undefined) row.valor_total_nota = input.valorTotalNota;
   if (input.comprovantePath !== undefined) row.comprovante_path = input.comprovantePath || null;
   if (input.comprovanteNome !== undefined) row.comprovante_nome = input.comprovanteNome || null;
+  if (input.melhorEnvioId !== undefined) row.melhor_envio_id = input.melhorEnvioId || null;
+  if (input.melhorEnvioLastSyncAt !== undefined) row.melhor_envio_last_sync_at = input.melhorEnvioLastSyncAt || null;
   return row;
 }
 
@@ -139,6 +145,16 @@ export async function fetchDeliveries(): Promise<Delivery[]> {
     .select('*')
     .order('created_at', { ascending: false });
 
+  if (error) throw error;
+  return (data as DeliveryRow[]).map(fromRow);
+}
+
+// Rebusca só um conjunto de entregas pelo id — usado depois de uma
+// sincronização de rastreio (a função serverless atualiza direto no banco;
+// isso aqui traz o resultado já mapeado pra atualizar o estado local).
+export async function fetchDeliveriesByIds(ids: string[]): Promise<Delivery[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase.from('deliveries').select('*').in('id', ids);
   if (error) throw error;
   return (data as DeliveryRow[]).map(fromRow);
 }

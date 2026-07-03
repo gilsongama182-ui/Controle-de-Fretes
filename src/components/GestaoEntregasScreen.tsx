@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Truck, Download, FileUp, CheckCircle, AlertTriangle, Clock,
-  Trash2, Edit, ChevronLeft, ChevronRight, ListCollapse, Table, Paperclip, Tag
+  Trash2, Edit, ChevronLeft, ChevronRight, ListCollapse, Table, Paperclip, Tag, RefreshCw
 } from 'lucide-react';
 import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
@@ -15,6 +15,7 @@ import NovaEntregaModal from './layout/NovaEntregaModal';
 import ImportModal from './layout/ImportModal';
 import ComprovanteModal from './layout/ComprovanteModal';
 import EtiquetaPrintView from './layout/EtiquetaPrintView';
+import { SyncItemResult } from '../lib/melhorEnvio';
 
 interface GestaoEntregasProps {
   onNavigate: (page: ActivePage) => void;
@@ -26,6 +27,7 @@ interface GestaoEntregasProps {
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
   onUpdateDelivery: (id: string, patch: Partial<Delivery>) => Promise<void>;
+  onSyncTracking: (ids: string[]) => Promise<SyncItemResult[]>;
 }
 
 export default function GestaoEntregasScreen({
@@ -37,7 +39,8 @@ export default function GestaoEntregasScreen({
   onSelectDeliveryForEdit,
   onAddDelivery,
   onImportDeliveries,
-  onUpdateDelivery
+  onUpdateDelivery,
+  onSyncTracking
 }: GestaoEntregasProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -52,6 +55,7 @@ export default function GestaoEntregasScreen({
   const [comprovanteDeliveryId, setComprovanteDeliveryId] = useState<string | null>(null);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isEtiquetaOpen, setIsEtiquetaOpen] = useState(false);
+  const [isSyncingTracking, setIsSyncingTracking] = useState(false);
   // Deriva sempre da lista atual (não guarda uma cópia) para que o modal reflita
   // o comprovante recém-anexado assim que onUpdateDelivery atualiza o estado do pai.
   const comprovanteDelivery = comprovanteDeliveryId
@@ -161,6 +165,26 @@ export default function GestaoEntregasScreen({
 
   const selectedDeliveries = deliveries.filter((d) => selectedIds.has(d.id));
 
+  const handleSyncTracking = async () => {
+    setIsSyncingTracking(true);
+    try {
+      const results = await onSyncTracking(Array.from(selectedIds));
+      const okCount = results.filter((r) => r.ok && r.mappedStatus).length;
+      const unmappedCount = results.filter((r) => r.ok && !r.mappedStatus).length;
+      const failCount = results.filter((r) => !r.ok).length;
+      alert(
+        `Sincronização concluída: ${okCount} atualizada(s)`
+        + (unmappedCount > 0 ? `, ${unmappedCount} com status ainda não reconhecido` : '')
+        + (failCount > 0 ? `, ${failCount} falharam` : '')
+        + '.'
+      );
+    } catch (err) {
+      alert(err instanceof Error ? `Não foi possível sincronizar: ${err.message}` : 'Não foi possível sincronizar o rastreio.');
+    } finally {
+      setIsSyncingTracking(false);
+    }
+  };
+
   return (
     <div className="bg-surface text-on-surface font-sans min-h-screen flex flex-col md:flex-row">
 
@@ -171,6 +195,7 @@ export default function GestaoEntregasScreen({
         onImportar={() => setIsImportOpen(true)}
         onLogout={onLogout}
         onUsuarios={user.profileType === 'master' ? () => onNavigate('usuarios') : undefined}
+        onIntegracoes={user.profileType === 'master' ? () => onNavigate('integracoes') : undefined}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -199,6 +224,15 @@ export default function GestaoEntregasScreen({
               >
                 <Tag className="w-4 h-4" />
                 <span>Gerar Etiquetas{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}</span>
+              </button>
+              <button
+                onClick={handleSyncTracking}
+                disabled={selectedIds.size === 0 || isSyncingTracking}
+                title={selectedIds.size === 0 ? 'Selecione ao menos uma entrega na tabela' : undefined}
+                className="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface-variant rounded-lg font-bold text-sm hover:bg-surface-container transition-all shadow-sm bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-4 h-4 ${isSyncingTracking ? 'animate-spin' : ''}`} />
+                <span>{isSyncingTracking ? 'Sincronizando...' : `Atualizar Rastreio${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}</span>
               </button>
               <button
                 onClick={() => exportDeliveriesToCsv(filteredDeliveries, `gestao-entregas-${new Date().toISOString().split('T')[0]}.csv`)}
