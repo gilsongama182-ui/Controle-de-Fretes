@@ -86,18 +86,16 @@ interface MelhorEnvioTokenResponse {
   expires_in: number;
 }
 
-// Endpoint de troca/renovação de token do OAuth2 (RFC 6749) — o padrão
-// que a própria Melhor Envio segue no endpoint de autorização confirmado
-// em docs.melhorenvio.com.br/reference/fluxo-de-autorização. O caminho
-// exato "/oauth/token" e o formato do corpo NÃO foram confirmados na
-// documentação pública (ela não expõe isso a ferramentas automatizadas) —
-// validar no primeiro clique real de "Conectar Melhor Envio" e ajustar
-// aqui se a resposta da API vier em formato diferente.
+// Endpoint de troca/renovação de token do OAuth2 (RFC 6749) — o caminho
+// "/oauth/token" já foi confirmado certo (erro "invalid_client" da Melhor
+// Envio, não 404). O corpo vai como application/x-www-form-urlencoded —
+// formato exigido pela RFC 6749 e pelo Laravel Passport (base comum de
+// servidores OAuth2 no Brasil) — em vez de JSON.
 async function requestToken(body: Record<string, string>): Promise<MelhorEnvioTokenResponse> {
   const resp = await fetch(`${ME_BASE_URL}/oauth/token`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
-    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+    body: new URLSearchParams(body).toString(),
   });
 
   if (!resp.ok) {
