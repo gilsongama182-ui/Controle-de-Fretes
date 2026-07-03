@@ -88,13 +88,19 @@ interface MelhorEnvioTokenResponse {
 
 // Endpoint de troca/renovação de token do OAuth2 (RFC 6749) — o caminho
 // "/oauth/token" já foi confirmado certo (erro "invalid_client" da Melhor
-// Envio, não 404). O corpo vai como application/x-www-form-urlencoded —
-// formato exigido pela RFC 6749 e pelo Laravel Passport (base comum de
-// servidores OAuth2 no Brasil) — em vez de JSON.
+// Envio, não 404). client_id/client_secret vão via HTTP Basic Auth (método
+// "client_secret_basic", o padrão recomendado pela RFC 6749 seção 2.3.1) em
+// vez de irem no corpo — enviar credenciais no corpo E/OU em formato errado
+// gerava exatamente esse erro "Client authentication failed".
 async function requestToken(body: Record<string, string>): Promise<MelhorEnvioTokenResponse> {
+  const basicAuth = Buffer.from(`${ME_CLIENT_ID}:${ME_CLIENT_SECRET}`).toString('base64');
   const resp = await fetch(`${ME_BASE_URL}/oauth/token`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/x-www-form-urlencoded', Accept: 'application/json' },
+    headers: {
+      'Content-Type': 'application/x-www-form-urlencoded',
+      Accept: 'application/json',
+      Authorization: `Basic ${basicAuth}`,
+    },
     body: new URLSearchParams(body).toString(),
   });
 
@@ -108,8 +114,6 @@ async function requestToken(body: Record<string, string>): Promise<MelhorEnvioTo
 export async function exchangeAuthorizationCode(code: string): Promise<MelhorEnvioTokenResponse> {
   return requestToken({
     grant_type: 'authorization_code',
-    client_id: ME_CLIENT_ID,
-    client_secret: ME_CLIENT_SECRET,
     redirect_uri: ME_REDIRECT_URI,
     code,
   });
@@ -135,8 +139,6 @@ export async function getValidAccessToken(): Promise<string> {
 
   const tokenData = await requestToken({
     grant_type: 'refresh_token',
-    client_id: ME_CLIENT_ID,
-    client_secret: ME_CLIENT_SECRET,
     refresh_token: row.refresh_token,
   });
 
