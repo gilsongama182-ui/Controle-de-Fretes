@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { Delivery, DeliveryStatus } from '../types';
+import { formatNfe } from './formatNfe';
 
 export type NewDeliveryInput = Omit<Delivery, 'id'>;
 
@@ -57,30 +58,34 @@ function fromRow(row: DeliveryRow): Delivery {
   };
 }
 
+// Deixa tudo em CAIXA ALTA pra visual consistente (o "codigo" fica de fora,
+// ele é um identificador tipo "#HM-1234", não texto livre).
+const upper = (v: string) => v.toUpperCase();
+
 function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   const row: Record<string, unknown> = {};
   if (input.codigo !== undefined) row.codigo = input.codigo;
-  if (input.nfe !== undefined) row.nfe = input.nfe;
-  if (input.remetente !== undefined) row.remetente = input.remetente;
-  if (input.remetenteCnpj !== undefined) row.remetente_cnpj = input.remetenteCnpj;
-  if (input.cliente !== undefined) row.cliente = input.cliente;
-  if (input.nomeRazaoSocial !== undefined) row.nome_razao_social = input.nomeRazaoSocial;
-  if (input.cnpjCpf !== undefined) row.cnpj_cpf = input.cnpjCpf;
+  if (input.nfe !== undefined) row.nfe = formatNfe(input.nfe);
+  if (input.remetente !== undefined) row.remetente = upper(input.remetente);
+  if (input.remetenteCnpj !== undefined) row.remetente_cnpj = upper(input.remetenteCnpj);
+  if (input.cliente !== undefined) row.cliente = upper(input.cliente);
+  if (input.nomeRazaoSocial !== undefined) row.nome_razao_social = upper(input.nomeRazaoSocial);
+  if (input.cnpjCpf !== undefined) row.cnpj_cpf = upper(input.cnpjCpf);
   if (input.dataPedido !== undefined) row.data_pedido = input.dataPedido;
   if (input.dataExpedicao !== undefined) row.data_expedicao = input.dataExpedicao || null;
-  if (input.previsao !== undefined) row.previsao = input.previsao;
+  if (input.previsao !== undefined) row.previsao = upper(input.previsao);
   if (input.dataEntrega !== undefined) row.data_entrega = input.dataEntrega || null;
-  if (input.enderecoCompleto !== undefined) row.endereco_completo = input.enderecoCompleto;
-  if (input.bairroDistrito !== undefined) row.bairro_distrito = input.bairroDistrito;
+  if (input.enderecoCompleto !== undefined) row.endereco_completo = upper(input.enderecoCompleto);
+  if (input.bairroDistrito !== undefined) row.bairro_distrito = upper(input.bairroDistrito);
   if (input.cep !== undefined) row.cep = input.cep;
-  if (input.municipio !== undefined) row.municipio = input.municipio;
-  if (input.uf !== undefined) row.uf = input.uf;
+  if (input.municipio !== undefined) row.municipio = upper(input.municipio);
+  if (input.uf !== undefined) row.uf = upper(input.uf);
   if (input.foneFax !== undefined) row.fone_fax = input.foneFax;
   if (input.status !== undefined) row.status = input.status;
-  if (input.ocorrencia !== undefined) row.ocorrencia = input.ocorrencia;
+  if (input.ocorrencia !== undefined) row.ocorrencia = upper(input.ocorrencia);
   if (input.valorCobranca !== undefined) row.valor_cobranca = input.valorCobranca;
   if (input.valorPagamento !== undefined) row.valor_pagamento = input.valorPagamento;
-  if (input.codigoRastreio !== undefined) row.codigo_rastreio = input.codigoRastreio;
+  if (input.codigoRastreio !== undefined) row.codigo_rastreio = upper(input.codigoRastreio);
   return row;
 }
 
