@@ -9,6 +9,14 @@ function escapeCsvValue(value: unknown): string {
 
 function cellValue(delivery: Delivery, key: keyof Delivery): unknown {
   if (key === 'nfe') return formatNfe(delivery.nfe);
+  if (key === 'chaveAcessoNfe') {
+    // ="..." força o Excel a tratar como texto — sem isso, um número de 44
+    // dígitos vira notação científica e perde os zeros à esquerda.
+    return delivery.chaveAcessoNfe ? `="${delivery.chaveAcessoNfe}"` : '';
+  }
+  if (key === 'valorTotalNota') {
+    return delivery.valorTotalNota.toFixed(2).replace('.', ',');
+  }
   return delivery[key];
 }
 
