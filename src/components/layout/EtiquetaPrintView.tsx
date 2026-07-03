@@ -161,11 +161,19 @@ export default function EtiquetaPrintView({ deliveries, onClose }: EtiquetaPrint
           margin-top: 1mm; word-spacing: 3px;
         }
         @media print {
+          /* Esconde todo o resto do app (sidebar, tabela, etc.) e mostra só
+             a etiqueta — sem isso, o conteúdo por trás do overlay também
+             entra na impressão e "empurra" ou substitui a etiqueta. */
+          body * { visibility: hidden; }
+          .etiqueta-print-root, .etiqueta-print-root * { visibility: visible; }
           .etiqueta-no-print { display: none !important; }
           .etiqueta-print-root {
-            position: static !important;
+            position: absolute !important;
+            top: 0 !important;
+            left: 0 !important;
             inset: auto !important;
             overflow: visible !important;
+            width: 100% !important;
             height: auto !important;
             background: white !important;
             padding: 0 !important;
