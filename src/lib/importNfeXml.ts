@@ -43,9 +43,9 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
   }
 
   const emit = doc.getElementsByTagName('emit')[0];
-  // Destinatário: NF-e padrão usa <dest>; aceitamos <entrega> também, caso o
-  // XML de origem use esse nome.
-  const destino = doc.getElementsByTagName('dest')[0] ?? doc.getElementsByTagName('entrega')[0];
+  // Destinatário: prioriza <entrega>; se o XML não tiver essa tag, usa <dest>
+  // (nome padrão do layout da NF-e) como alternativa.
+  const destino = doc.getElementsByTagName('entrega')[0] ?? doc.getElementsByTagName('dest')[0];
 
   if (!emit || !destino) {
     return { fileName, data: null, errors: ['Não parece ser um XML de NF-e (faltam as seções <emit> ou <dest>/<entrega>).'] };
