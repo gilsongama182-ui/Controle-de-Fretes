@@ -262,7 +262,7 @@ export default function DashboardClienteScreen({
                       <span className="text-xs font-bold text-primary">{row.count}</span>
                       <div className="w-10 sm:w-12 h-36 bg-surface-container rounded-t-lg overflow-hidden flex items-end">
                         <span
-                          className={`w-full block rounded-t-lg bg-primary transition-all ${!selectedUf ? 'group-hover:bg-primary-container' : ''}`}
+                          className={`w-full block rounded-t-lg bg-[#FF6600] transition-all ${!selectedUf ? 'group-hover:bg-[#E65C00]' : ''}`}
                           style={{ height: chartMax > 0 ? `${(row.count / chartMax) * 100}%` : '0%' }}
                         ></span>
                       </div>
