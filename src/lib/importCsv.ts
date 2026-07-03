@@ -118,6 +118,13 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       pedido: get('pedido'),
       remetente: get('remetente'),
       remetenteCnpj: get('remetenteCnpj'),
+      remetenteEndereco: get('remetenteEndereco'),
+      remetenteNumero: get('remetenteNumero'),
+      remetenteComplemento: get('remetenteComplemento'),
+      remetenteBairro: get('remetenteBairro'),
+      remetenteCep: get('remetenteCep'),
+      remetenteMunicipio: get('remetenteMunicipio'),
+      remetenteUf: get('remetenteUf'),
       cliente: get('cliente'),
       nomeRazaoSocial: get('nomeRazaoSocial'),
       cnpjCpf: get('cnpjCpf'),
@@ -157,6 +164,13 @@ export function downloadCsvTemplate(filename: string) {
       case 'pedido': return '6584799';
       case 'remetente': return 'Minha Empresa Ltda';
       case 'remetenteCnpj': return '11.111.111/0001-11';
+      case 'remetenteEndereco': return 'Avenida Exemplo';
+      case 'remetenteNumero': return '1000';
+      case 'remetenteComplemento': return 'Sala 10';
+      case 'remetenteBairro': return 'Centro';
+      case 'remetenteCep': return '00000-000';
+      case 'remetenteMunicipio': return 'São Paulo';
+      case 'remetenteUf': return 'SP';
       case 'cliente': return 'Cliente Exemplo';
       case 'nomeRazaoSocial': return 'Cliente Exemplo Comércio LTDA';
       case 'cnpjCpf': return '22.222.222/0001-22';

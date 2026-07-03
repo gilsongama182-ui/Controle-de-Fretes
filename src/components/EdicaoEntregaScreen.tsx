@@ -45,6 +45,13 @@ export default function EdicaoEntregaScreen({
   const [dataEntrega, setDataEntrega] = useState(delivery?.dataEntrega ?? '');
   const [remetente, setRemetente] = useState(delivery?.remetente ?? '');
   const [remetenteCnpj, setRemetenteCnpj] = useState(delivery?.remetenteCnpj ?? '');
+  const [remetenteEndereco, setRemetenteEndereco] = useState(delivery?.remetenteEndereco ?? '');
+  const [remetenteNumero, setRemetenteNumero] = useState(delivery?.remetenteNumero ?? '');
+  const [remetenteComplemento, setRemetenteComplemento] = useState(delivery?.remetenteComplemento ?? '');
+  const [remetenteBairro, setRemetenteBairro] = useState(delivery?.remetenteBairro ?? '');
+  const [remetenteCep, setRemetenteCep] = useState(delivery?.remetenteCep ?? '');
+  const [remetenteMunicipio, setRemetenteMunicipio] = useState(delivery?.remetenteMunicipio ?? '');
+  const [remetenteUf, setRemetenteUf] = useState(delivery?.remetenteUf ?? '');
   const [cliente, setCliente] = useState(delivery?.cliente ?? '');
   const [razaoSocial, setRazaoSocial] = useState(delivery?.nomeRazaoSocial ?? '');
   const [cnpjCpf, setCnpjCpf] = useState(delivery?.cnpjCpf ?? '');
@@ -86,6 +93,13 @@ export default function EdicaoEntregaScreen({
         pedido,
         remetente,
         remetenteCnpj,
+        remetenteEndereco,
+        remetenteNumero,
+        remetenteComplemento,
+        remetenteBairro,
+        remetenteCep,
+        remetenteMunicipio,
+        remetenteUf,
         status,
         ocorrencia,
         previsao,
@@ -199,6 +213,73 @@ export default function EdicaoEntregaScreen({
                   <p className="text-[11px] text-on-surface-variant">
                     Precisa bater com o documento cadastrado na conta do cliente para ele conseguir ver esta entrega.
                   </p>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-1">
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">Endereço do Remetente</label>
+                      <input
+                        type="text"
+                        value={remetenteEndereco}
+                        onChange={(e) => setRemetenteEndereco(e.target.value)}
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">Nº</label>
+                      <input
+                        type="text"
+                        value={remetenteNumero}
+                        onChange={(e) => setRemetenteNumero(e.target.value)}
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">Complemento</label>
+                      <input
+                        type="text"
+                        value={remetenteComplemento}
+                        onChange={(e) => setRemetenteComplemento(e.target.value)}
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">Bairro / Distrito</label>
+                      <input
+                        type="text"
+                        value={remetenteBairro}
+                        onChange={(e) => setRemetenteBairro(e.target.value)}
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">CEP</label>
+                      <input
+                        type="text"
+                        value={remetenteCep}
+                        onChange={(e) => setRemetenteCep(e.target.value)}
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-mono"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">Município</label>
+                      <input
+                        type="text"
+                        value={remetenteMunicipio}
+                        onChange={(e) => setRemetenteMunicipio(e.target.value)}
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-semibold"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-on-surface-variant font-medium">UF</label>
+                      <input
+                        type="text"
+                        maxLength={2}
+                        value={remetenteUf}
+                        onChange={(e) => setRemetenteUf(e.target.value.toUpperCase())}
+                        className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-bold uppercase"
+                      />
+                    </div>
+                  </div>
                 </div>
 
                 {/* SECTION 2: DADOS DE EMISSÃO */}

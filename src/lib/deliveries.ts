@@ -12,6 +12,13 @@ interface DeliveryRow {
   pedido: string | null;
   remetente: string | null;
   remetente_cnpj: string | null;
+  remetente_endereco: string | null;
+  remetente_numero: string | null;
+  remetente_complemento: string | null;
+  remetente_bairro: string | null;
+  remetente_cep: string | null;
+  remetente_municipio: string | null;
+  remetente_uf: string | null;
   cliente: string;
   nome_razao_social: string;
   cnpj_cpf: string;
@@ -46,6 +53,13 @@ function fromRow(row: DeliveryRow): Delivery {
     pedido: row.pedido ?? '',
     remetente: row.remetente ?? '',
     remetenteCnpj: row.remetente_cnpj ?? '',
+    remetenteEndereco: row.remetente_endereco ?? '',
+    remetenteNumero: row.remetente_numero ?? '',
+    remetenteComplemento: row.remetente_complemento ?? '',
+    remetenteBairro: row.remetente_bairro ?? '',
+    remetenteCep: row.remetente_cep ?? '',
+    remetenteMunicipio: row.remetente_municipio ?? '',
+    remetenteUf: row.remetente_uf ?? '',
     cliente: row.cliente,
     nomeRazaoSocial: row.nome_razao_social,
     cnpjCpf: row.cnpj_cpf,
@@ -85,6 +99,13 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.pedido !== undefined) row.pedido = input.pedido.replace(/\D/g, '');
   if (input.remetente !== undefined) row.remetente = upper(input.remetente);
   if (input.remetenteCnpj !== undefined) row.remetente_cnpj = upper(input.remetenteCnpj);
+  if (input.remetenteEndereco !== undefined) row.remetente_endereco = upper(input.remetenteEndereco);
+  if (input.remetenteNumero !== undefined) row.remetente_numero = upper(input.remetenteNumero);
+  if (input.remetenteComplemento !== undefined) row.remetente_complemento = upper(input.remetenteComplemento);
+  if (input.remetenteBairro !== undefined) row.remetente_bairro = upper(input.remetenteBairro);
+  if (input.remetenteCep !== undefined) row.remetente_cep = input.remetenteCep;
+  if (input.remetenteMunicipio !== undefined) row.remetente_municipio = upper(input.remetenteMunicipio);
+  if (input.remetenteUf !== undefined) row.remetente_uf = upper(input.remetenteUf);
   if (input.cliente !== undefined) row.cliente = upper(input.cliente);
   if (input.nomeRazaoSocial !== undefined) row.nome_razao_social = upper(input.nomeRazaoSocial);
   if (input.cnpjCpf !== undefined) row.cnpj_cpf = upper(input.cnpjCpf);

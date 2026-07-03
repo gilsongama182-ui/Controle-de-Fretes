@@ -7,6 +7,13 @@ export interface Delivery {
   pedido: string; // referência do pedido do cliente (vinda do <infCpl> no XML de NF-e)
   remetente: string; // quem contrata o frete (vincula a conta cliente)
   remetenteCnpj: string;
+  remetenteEndereco: string; // logradouro do remetente (<emit><enderEmit><xLgr> no XML)
+  remetenteNumero: string;
+  remetenteComplemento: string;
+  remetenteBairro: string;
+  remetenteCep: string;
+  remetenteMunicipio: string;
+  remetenteUf: string;
   cliente: string; // destinatário: short name de quem recebe a carga
   nomeRazaoSocial: string; // full company name (destinatário)
   cnpjCpf: string; // CNPJ/CPF do destinatário

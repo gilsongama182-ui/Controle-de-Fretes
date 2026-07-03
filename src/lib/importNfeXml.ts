@@ -73,6 +73,10 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
   const remetenteCnpjRaw = text(emit, 'CNPJ') || text(emit, 'CPF');
   if (!remetenteCnpjRaw) errors.push('Remetente sem CNPJ (<emit><CNPJ>).');
 
+  // Endereço do remetente, usado na etiqueta de remessa (não é obrigatório
+  // para não travar a importação de XMLs mais antigos que não tragam isso).
+  const enderEmit = emit.getElementsByTagName('enderEmit')[0] ?? emit;
+
   const destNome = text(destino, 'xNome');
   if (!destNome) errors.push('Destinatário sem nome (<xNome>).');
   // Nesse layout o destinatário normalmente vem como CPF; aceitamos CNPJ também.
@@ -105,6 +109,13 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
     pedido,
     remetente: remetenteNome,
     remetenteCnpj: formatCnpjCpf(remetenteCnpjRaw),
+    remetenteEndereco: text(enderEmit, 'xLgr'),
+    remetenteNumero: text(enderEmit, 'nro'),
+    remetenteComplemento: text(enderEmit, 'xCpl'),
+    remetenteBairro: text(enderEmit, 'xBairro'),
+    remetenteCep: formatCep(text(enderEmit, 'CEP')),
+    remetenteMunicipio: text(enderEmit, 'xMun'),
+    remetenteUf: text(enderEmit, 'UF'),
     cliente: destNome,
     nomeRazaoSocial: destNome,
     cnpjCpf: formatCnpjCpf(destCnpjCpfRaw),

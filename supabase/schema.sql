@@ -27,6 +27,13 @@ create table if not exists public.deliveries (
   pedido text,             -- referência do pedido do cliente (<infAdic><infCpl> no XML)
   remetente text,          -- quem contrata o frete (vincula a conta cliente)
   remetente_cnpj text,
+  remetente_endereco text,    -- usados na etiqueta de remessa 10x15cm
+  remetente_numero text,
+  remetente_complemento text,
+  remetente_bairro text,
+  remetente_cep text,
+  remetente_municipio text,
+  remetente_uf text,
   cliente text not null,   -- destinatário: quem recebe a carga
   nome_razao_social text not null,
   cnpj_cpf text not null,

@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Truck, Download, FileUp, CheckCircle, AlertTriangle, Clock,
-  Trash2, Edit, ChevronLeft, ChevronRight, ListCollapse, Table, Paperclip
+  Trash2, Edit, ChevronLeft, ChevronRight, ListCollapse, Table, Paperclip, Tag
 } from 'lucide-react';
 import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
@@ -14,6 +14,7 @@ import MobileBottomNav from './layout/MobileBottomNav';
 import NovaEntregaModal from './layout/NovaEntregaModal';
 import ImportModal from './layout/ImportModal';
 import ComprovanteModal from './layout/ComprovanteModal';
+import EtiquetaPrintView from './layout/EtiquetaPrintView';
 
 interface GestaoEntregasProps {
   onNavigate: (page: ActivePage) => void;
@@ -49,6 +50,8 @@ export default function GestaoEntregasScreen({
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [comprovanteDeliveryId, setComprovanteDeliveryId] = useState<string | null>(null);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isEtiquetaOpen, setIsEtiquetaOpen] = useState(false);
   // Deriva sempre da lista atual (não guarda uma cópia) para que o modal reflita
   // o comprovante recém-anexado assim que onUpdateDelivery atualiza o estado do pai.
   const comprovanteDelivery = comprovanteDeliveryId
@@ -133,6 +136,31 @@ export default function GestaoEntregasScreen({
     }
   };
 
+  const toggleSelect = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const allOnPageSelected = paginatedDeliveries.length > 0 && paginatedDeliveries.every((d) => selectedIds.has(d.id));
+
+  const toggleSelectAllOnPage = () => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (allOnPageSelected) {
+        paginatedDeliveries.forEach((d) => next.delete(d.id));
+      } else {
+        paginatedDeliveries.forEach((d) => next.add(d.id));
+      }
+      return next;
+    });
+  };
+
+  const selectedDeliveries = deliveries.filter((d) => selectedIds.has(d.id));
+
   return (
     <div className="bg-surface text-on-surface font-sans min-h-screen flex flex-col md:flex-row">
 
@@ -163,6 +191,15 @@ export default function GestaoEntregasScreen({
             </div>
 
             <div className="flex gap-2">
+              <button
+                onClick={() => setIsEtiquetaOpen(true)}
+                disabled={selectedIds.size === 0}
+                title={selectedIds.size === 0 ? 'Selecione ao menos uma entrega na tabela' : undefined}
+                className="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface-variant rounded-lg font-bold text-sm hover:bg-surface-container transition-all shadow-sm bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <Tag className="w-4 h-4" />
+                <span>Gerar Etiquetas{selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}</span>
+              </button>
               <button
                 onClick={() => exportDeliveriesToCsv(filteredDeliveries, `gestao-entregas-${new Date().toISOString().split('T')[0]}.csv`)}
                 className="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface-variant rounded-lg font-bold text-sm hover:bg-surface-container transition-all shadow-sm bg-white"
@@ -335,9 +372,18 @@ export default function GestaoEntregasScreen({
             <div className="overflow-x-auto">
               {detailedMode ? (
                 /* DENSE WIDE TABLE WITH HORIZONTAL SCROLL */
-                <table className="w-full text-left border-collapse min-w-[3200px]">
+                <table className="w-full text-left border-collapse min-w-[3240px]">
                   <thead className="bg-surface-container-low border-b border-outline-variant text-xs font-bold uppercase tracking-wider text-on-surface-variant sticky top-0">
                     <tr>
+                      <th className="px-4 py-3 w-10">
+                        <input
+                          type="checkbox"
+                          checked={allOnPageSelected}
+                          onChange={toggleSelectAllOnPage}
+                          className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                          title="Selecionar todos desta página"
+                        />
+                      </th>
                       <th className="px-4 py-3">Remetente</th>
                       <th className="px-4 py-3">CNPJ Remetente</th>
                       <th className="px-4 py-3">Nº NF-e</th>
@@ -365,7 +411,15 @@ export default function GestaoEntregasScreen({
                   <tbody className="divide-y divide-outline-variant">
                     {paginatedDeliveries.length > 0 ? (
                       paginatedDeliveries.map((del) => (
-                        <tr key={del.id} className="hover:bg-primary/5 transition-colors group">
+                        <tr key={del.id} className={`hover:bg-primary/5 transition-colors group ${selectedIds.has(del.id) ? 'bg-primary/5' : ''}`}>
+                          <td className="px-4 py-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(del.id)}
+                              onChange={() => toggleSelect(del.id)}
+                              className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                            />
+                          </td>
                           <td className="px-4 py-4 text-xs font-semibold text-secondary">{del.remetente}</td>
                           <td className="px-4 py-4 font-mono text-xs">{del.remetenteCnpj}</td>
                           <td className="px-4 py-4 font-mono text-xs text-primary font-bold">{formatNfe(del.nfe)}</td>
@@ -435,7 +489,7 @@ export default function GestaoEntregasScreen({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={22} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={23} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega corresponde aos filtros de busca aplicados.
                         </td>
                       </tr>
@@ -447,6 +501,15 @@ export default function GestaoEntregasScreen({
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-surface-container-low border-b border-outline-variant text-xs font-bold uppercase tracking-wider text-on-surface-variant sticky top-0">
                     <tr>
+                      <th className="px-5 py-3 w-10">
+                        <input
+                          type="checkbox"
+                          checked={allOnPageSelected}
+                          onChange={toggleSelectAllOnPage}
+                          className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                          title="Selecionar todos desta página"
+                        />
+                      </th>
                       <th className="px-5 py-3">NF</th>
                       <th className="px-5 py-3">Destinatário</th>
                       <th className="px-5 py-3">UF</th>
@@ -459,7 +522,15 @@ export default function GestaoEntregasScreen({
                   <tbody className="divide-y divide-outline-variant">
                     {paginatedDeliveries.length > 0 ? (
                       paginatedDeliveries.map((del) => (
-                        <tr key={del.id} className="hover:bg-primary/5 transition-colors group">
+                        <tr key={del.id} className={`hover:bg-primary/5 transition-colors group ${selectedIds.has(del.id) ? 'bg-primary/5' : ''}`}>
+                          <td className="px-5 py-4">
+                            <input
+                              type="checkbox"
+                              checked={selectedIds.has(del.id)}
+                              onChange={() => toggleSelect(del.id)}
+                              className="w-4 h-4 rounded border-outline-variant text-primary focus:ring-primary cursor-pointer"
+                            />
+                          </td>
                           <td className="px-5 py-4 font-mono text-sm text-primary font-bold">{formatNfe(del.nfe)}</td>
                           <td className="px-5 py-4 font-bold text-sm text-on-surface">{del.cliente}</td>
                           <td className="px-5 py-4 text-sm font-semibold">{del.uf}</td>
@@ -504,7 +575,7 @@ export default function GestaoEntregasScreen({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={7} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={8} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega encontrada para a sua busca.
                         </td>
                       </tr>
@@ -591,6 +662,10 @@ export default function GestaoEntregasScreen({
         onClose={() => setComprovanteDeliveryId(null)}
         onUpdateDelivery={onUpdateDelivery}
       />
+
+      {isEtiquetaOpen && (
+        <EtiquetaPrintView deliveries={selectedDeliveries} onClose={() => setIsEtiquetaOpen(false)} />
+      )}
 
     </div>
   );
