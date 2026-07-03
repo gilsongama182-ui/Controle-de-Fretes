@@ -1,6 +1,7 @@
 import { supabase } from './supabaseClient';
 import { Delivery, DeliveryStatus } from '../types';
 import { formatNfe } from './formatNfe';
+import { formatPhoneBR } from './formatPhone';
 
 export type NewDeliveryInput = Omit<Delivery, 'id'>;
 
@@ -98,7 +99,7 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.cep !== undefined) row.cep = input.cep;
   if (input.municipio !== undefined) row.municipio = upper(input.municipio);
   if (input.uf !== undefined) row.uf = upper(input.uf);
-  if (input.foneFax !== undefined) row.fone_fax = input.foneFax;
+  if (input.foneFax !== undefined) row.fone_fax = formatPhoneBR(input.foneFax);
   if (input.status !== undefined) row.status = input.status;
   if (input.ocorrencia !== undefined) row.ocorrencia = upper(input.ocorrencia);
   if (input.valorCobranca !== undefined) row.valor_cobranca = input.valorCobranca;
