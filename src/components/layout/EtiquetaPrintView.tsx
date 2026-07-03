@@ -162,9 +162,16 @@ export default function EtiquetaPrintView({ deliveries, onClose }: EtiquetaPrint
         }
         @media print {
           .etiqueta-no-print { display: none !important; }
-          .etiqueta-print-root { background: white !important; padding: 0 !important; }
+          .etiqueta-print-root {
+            position: static !important;
+            inset: auto !important;
+            overflow: visible !important;
+            height: auto !important;
+            background: white !important;
+            padding: 0 !important;
+          }
           .etiqueta-pages { gap: 0 !important; padding: 0 !important; }
-          .etiqueta-page { box-shadow: none !important; margin: 0 !important; break-after: page; }
+          .etiqueta-page { box-shadow: none !important; margin: 0 !important; break-after: page; page-break-after: always; }
           @page { size: 100mm 150mm; margin: 0; }
         }
       `}</style>
