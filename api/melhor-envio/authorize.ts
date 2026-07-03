@@ -33,8 +33,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   authorizeUrl.searchParams.set('redirect_uri', ME_REDIRECT_URI);
   authorizeUrl.searchParams.set('response_type', 'code');
   authorizeUrl.searchParams.set('state', state);
-  // Sem "scope" explícito de propósito: os escopos usados são os que o
-  // usuário já selecionou ao criar o aplicativo no painel da Melhor Envio.
+  // "shipping-tracking" é o escopo que a API de rastreio exige (confirmado
+  // por tentativa/erro: sem escopo explícito o token vinha sem nenhuma
+  // permissão, e a chamada de rastreio retornava 403 "unauthorized").
+  authorizeUrl.searchParams.set('scope', 'shipping-tracking');
 
   res.statusCode = 302;
   res.setHeader('Location', authorizeUrl.toString());
