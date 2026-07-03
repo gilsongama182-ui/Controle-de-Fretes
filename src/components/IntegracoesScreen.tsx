@@ -139,6 +139,11 @@ export default function IntegracoesScreen({
                 Última atualização de token: {formatDateBR(status.updatedAt.split('T')[0])}
               </p>
             )}
+            {status?.connected && (
+              <p className="text-[11px] text-on-surface-variant mt-1 font-mono">
+                Escopo concedido: {status.scope || '(vazio)'}
+              </p>
+            )}
 
             <button
               type="button"

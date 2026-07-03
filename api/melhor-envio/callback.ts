@@ -45,6 +45,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       refresh_token: tokenData.refresh_token ?? '',
       token_type: tokenData.token_type ?? null,
       expires_at: expiresAt,
+      scope: tokenData.scope ?? null,
       updated_at: new Date().toISOString(),
     });
 

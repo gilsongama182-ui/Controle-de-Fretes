@@ -34,7 +34,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   const supabase = getServiceRoleClient();
   const { data: row } = await supabase
     .from('melhor_envio_tokens')
-    .select('connected_at, updated_at, expires_at')
+    .select('connected_at, updated_at, expires_at, scope')
     .eq('id', 'default')
     .maybeSingle();
 
@@ -42,5 +42,6 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     connected: !!row,
     connectedAt: row?.connected_at ?? null,
     updatedAt: row?.updated_at ?? null,
+    scope: row?.scope ?? null,
   });
 }

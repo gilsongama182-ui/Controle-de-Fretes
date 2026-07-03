@@ -84,6 +84,7 @@ interface MelhorEnvioTokenResponse {
   refresh_token?: string;
   token_type?: string;
   expires_in: number;
+  scope?: string;
 }
 
 // Endpoint de troca/renovação de token do OAuth2 (RFC 6749) — o caminho

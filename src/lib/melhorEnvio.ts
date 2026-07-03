@@ -19,6 +19,7 @@ export interface MelhorEnvioStatus {
   connected: boolean;
   connectedAt: string | null;
   updatedAt: string | null;
+  scope: string | null;
 }
 
 export async function getMelhorEnvioStatus(): Promise<MelhorEnvioStatus> {
