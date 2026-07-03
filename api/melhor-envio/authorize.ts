@@ -33,10 +33,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   authorizeUrl.searchParams.set('redirect_uri', ME_REDIRECT_URI);
   authorizeUrl.searchParams.set('response_type', 'code');
   authorizeUrl.searchParams.set('state', state);
-  // "shipping-tracking" é o escopo que a API de rastreio exige (confirmado
-  // por tentativa/erro: sem escopo explícito o token vinha sem nenhuma
-  // permissão, e a chamada de rastreio retornava 403 "unauthorized").
-  authorizeUrl.searchParams.set('scope', 'shipping-tracking');
+  // Diagnóstico (GET /me e /me/orders com 403, mas /me/shipment/companies
+  // com 200) mostrou que "shipping-tracking" sozinho não basta — endpoints
+  // que leem pedidos/dados de conta exigem escopo próprio. Pede os três
+  // relacionados a rastreio de pedidos.
+  authorizeUrl.searchParams.set('scope', 'shipping-tracking orders-read users-read');
 
   res.statusCode = 302;
   res.setHeader('Location', authorizeUrl.toString());
