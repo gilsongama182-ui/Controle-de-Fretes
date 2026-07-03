@@ -13,6 +13,7 @@ create table if not exists public.profiles (
   email text not null,
   profile_type text not null check (profile_type in ('cliente', 'operador', 'master')),
   document text not null,
+  genero text not null default 'nao_informado' check (genero in ('masculino', 'feminino', 'nao_informado')),
   created_at timestamptz not null default now()
 );
 
@@ -78,13 +79,14 @@ security definer
 set search_path = public
 as $$
 begin
-  insert into public.profiles (id, name, email, profile_type, document)
+  insert into public.profiles (id, name, email, profile_type, document, genero)
   values (
     new.id,
     coalesce(new.raw_user_meta_data ->> 'name', ''),
     new.email,
     coalesce(new.raw_user_meta_data ->> 'profile_type', 'cliente'),
-    coalesce(new.raw_user_meta_data ->> 'document', '')
+    coalesce(new.raw_user_meta_data ->> 'document', ''),
+    coalesce(new.raw_user_meta_data ->> 'genero', 'nao_informado')
   );
   return new;
 end;

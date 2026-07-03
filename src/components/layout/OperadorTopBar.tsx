@@ -1,6 +1,7 @@
 import React from 'react';
 import { Search, Bell } from 'lucide-react';
 import { User } from '../../types';
+import Avatar from './Avatar';
 
 interface OperadorTopBarProps {
   profile: User;
@@ -45,12 +46,7 @@ export default function OperadorTopBar({ profile, searchValue, onSearchChange }:
             <p className="text-[9px] text-secondary font-semibold tracking-wider">UNIDADE SÃO PAULO</p>
           </div>
           <div className="w-10 h-10 rounded-full overflow-hidden border-2 border-primary-container">
-            <img
-              className="w-full h-full object-cover"
-              referrerPolicy="no-referrer"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuAz0rWKkQNtnmB0U1opX2Yx7LsuXpYZnjNyQ7CbTkcXaa7fGUuYLdc3F_tEs56-J140PKcjxE1NP9TiAYaEdyOENmStJvTS5S-Ot0lg4Vn5hhvkgLLZENKc2mCTUtP-_QDyBS3jj7cz6sdoEhW6K2c0YTvKAtixejeV-ya4xCIxw9tj433V0cxU2C6L3ElD1Rn1Y4J-7E1ISnYLQ7QoCT6FXFSGcBA4IG1F_x-uPFLVYSXUAN-x7kAo7w"
-              alt={`${profile.name} profile`}
-            />
+            <Avatar genero={profile.genero} name={profile.name} className="w-full h-full" />
           </div>
         </div>
       </div>

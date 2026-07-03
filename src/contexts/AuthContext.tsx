@@ -1,7 +1,7 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import type { Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
-import { User, ProfileType } from '../types';
+import { User, ProfileType, Genero } from '../types';
 
 interface ProfileRow {
   id: string;
@@ -9,6 +9,7 @@ interface ProfileRow {
   email: string;
   profile_type: ProfileType;
   document: string;
+  genero: Genero;
 }
 
 function fromProfileRow(row: ProfileRow): User {
@@ -18,6 +19,7 @@ function fromProfileRow(row: ProfileRow): User {
     email: row.email,
     profileType: row.profile_type,
     document: row.document,
+    genero: row.genero,
   };
 }
 
@@ -25,6 +27,7 @@ interface SignUpMeta {
   name: string;
   profileType: 'cliente' | 'operador';
   document: string;
+  genero: Genero;
 }
 
 interface AuthContextValue {
@@ -105,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: meta.name,
           profile_type: meta.profileType,
           document: meta.document,
+          genero: meta.genero,
         },
       },
     });

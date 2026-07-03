@@ -1,6 +1,7 @@
 import React from 'react';
 import { HelpCircle, Bell, LogOut } from 'lucide-react';
 import { User } from '../../types';
+import Avatar from './Avatar';
 
 interface ClienteHeaderProps {
   profile: User;
@@ -46,13 +47,8 @@ export default function ClienteHeader({ profile, onLogout }: ClienteHeaderProps)
           <LogOut className="w-5 h-5" />
         </button>
 
-        <div className="w-9 h-9 rounded-full bg-secondary-container flex items-center justify-center overflow-hidden border border-outline-variant">
-          <img
-            className="w-full h-full object-cover"
-            referrerPolicy="no-referrer"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuD-Juk46gp0KBrUi6xoczqiPNSqNnrdOAH3g4uj7pzQ8mulHE4T4mISWB3hspWSnMGJrPuhBMDnFuLNkpD5D8HYarW0vJnr-tl9mKkP4yrNslgIN88CesZ8UDwivmNpOmI-O1ziIlH0RnNp5ZNshTg4VSvgkhbXkgmWiMts8tpyij-9QicyzYJFFxBtP0cpvoE42FJMB1EGGJgqFxFbZK33RNVlrXQkgoKR6RqiNoh7oodA7o7J7w-BiA"
-            alt={`${profile.name} profile`}
-          />
+        <div className="w-9 h-9 rounded-full overflow-hidden border border-outline-variant">
+          <Avatar genero={profile.genero} name={profile.name} className="w-full h-full" />
         </div>
       </div>
     </header>

@@ -27,6 +27,7 @@ export interface Delivery {
 }
 
 export type ProfileType = 'cliente' | 'operador' | 'master';
+export type Genero = 'masculino' | 'feminino' | 'nao_informado';
 
 export interface User {
   id: string; // uuid do auth.users / profiles
@@ -34,6 +35,7 @@ export interface User {
   email: string;
   profileType: ProfileType;
   document: string;
+  genero: Genero;
 }
 
 export type ActivePage =

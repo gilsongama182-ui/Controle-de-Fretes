@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { User as UserIcon, Shield, Lock, Eye, EyeOff, Mail, ArrowRight, Truck, AlertCircle } from 'lucide-react';
-import { ActivePage } from '../types';
+import { ActivePage, Genero } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
 interface CadastroScreenProps {
@@ -13,6 +13,7 @@ export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [document, setDocument] = useState('');
+  const [genero, setGenero] = useState<Genero>('nao_informado');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [agreeTerms, setAgreeTerms] = useState(false);
@@ -33,6 +34,7 @@ export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
       name,
       profileType,
       document: document || (profileType === 'operador' ? '00.000.000/0001-00' : '000.000.000-00'),
+      genero,
     });
     setIsSubmitting(false);
 
@@ -239,6 +241,23 @@ export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
                     {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                   </button>
                 </div>
+              </div>
+
+              {/* Gênero (usado só pra escolher o avatar) */}
+              <div className="space-y-1">
+                <label className="text-xs font-semibold text-on-surface block" htmlFor="genero">
+                  Gênero (para o avatar)
+                </label>
+                <select
+                  id="genero"
+                  value={genero}
+                  onChange={(e) => setGenero(e.target.value as Genero)}
+                  className="w-full px-3 py-2.5 bg-surface-container-low border border-outline-variant rounded-lg focus:ring-2 focus:ring-primary focus:border-primary text-sm outline-none transition-all cursor-pointer"
+                >
+                  <option value="nao_informado">Prefiro não informar</option>
+                  <option value="feminino">Feminino</option>
+                  <option value="masculino">Masculino</option>
+                </select>
               </div>
 
             </div>

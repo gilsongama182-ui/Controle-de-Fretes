@@ -1,13 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { Shield } from 'lucide-react';
-import { ActivePage, User } from '../types';
+import { ActivePage, User, Genero } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
-import { fetchProfiles, updateProfileRole, ProfileRecord } from '../lib/profiles';
+import { fetchProfiles, updateProfileRole, updateProfileGenero, ProfileRecord } from '../lib/profiles';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
 import NovaEntregaModal from './layout/NovaEntregaModal';
 import ImportModal from './layout/ImportModal';
+import Avatar from './layout/Avatar';
 
 interface UsuariosScreenProps {
   onNavigate: (page: ActivePage) => void;
@@ -21,6 +22,12 @@ const ROLE_LABEL: Record<ProfileRecord['profileType'], string> = {
   cliente: 'Cliente',
   operador: 'Operador',
   master: 'Master',
+};
+
+const GENERO_LABEL: Record<Genero, string> = {
+  nao_informado: 'Não informado',
+  feminino: 'Feminino',
+  masculino: 'Masculino',
 };
 
 export default function UsuariosScreen({
@@ -67,6 +74,18 @@ export default function UsuariosScreen({
     }
   };
 
+  const handleGeneroChange = async (id: string, genero: Genero) => {
+    setSavingId(id);
+    try {
+      const updated = await updateProfileGenero(id, genero);
+      setProfiles((prev) => prev.map((p) => (p.id === id ? updated : p)));
+    } catch (err) {
+      alert(err instanceof Error ? `Não foi possível atualizar: ${err.message}` : 'Não foi possível atualizar o gênero do usuário.');
+    } finally {
+      setSavingId(null);
+    }
+  };
+
   return (
     <div className="bg-surface text-on-surface font-sans min-h-screen flex flex-col md:flex-row">
       <Sidebar
@@ -94,24 +113,29 @@ export default function UsuariosScreen({
             <table className="w-full text-left border-collapse">
               <thead className="bg-surface-container-low border-b border-outline-variant text-xs font-bold uppercase tracking-wider text-on-surface-variant">
                 <tr>
+                  <th className="px-5 py-3"></th>
                   <th className="px-5 py-3">Nome</th>
                   <th className="px-5 py-3">E-mail</th>
                   <th className="px-5 py-3">Documento</th>
                   <th className="px-5 py-3">Papel</th>
+                  <th className="px-5 py-3">Gênero (avatar)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-outline-variant">
                 {loading ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-8 text-sm text-secondary">Carregando...</td>
+                    <td colSpan={6} className="text-center py-8 text-sm text-secondary">Carregando...</td>
                   </tr>
                 ) : profiles.length === 0 ? (
                   <tr>
-                    <td colSpan={4} className="text-center py-8 text-sm text-secondary">Nenhum usuário encontrado.</td>
+                    <td colSpan={6} className="text-center py-8 text-sm text-secondary">Nenhum usuário encontrado.</td>
                   </tr>
                 ) : (
                   profiles.map((p) => (
                     <tr key={p.id} className="hover:bg-primary/5 transition-colors">
+                      <td className="px-5 py-4">
+                        <Avatar genero={p.genero} name={p.name} className="w-8 h-8" />
+                      </td>
                       <td className="px-5 py-4 font-semibold text-sm text-on-surface">{p.name || '—'}</td>
                       <td className="px-5 py-4 text-sm text-on-surface-variant">{p.email}</td>
                       <td className="px-5 py-4 font-mono text-xs text-on-surface-variant">{p.document}</td>
@@ -125,6 +149,18 @@ export default function UsuariosScreen({
                         >
                           {(Object.keys(ROLE_LABEL) as ProfileRecord['profileType'][]).map((role) => (
                             <option key={role} value={role}>{ROLE_LABEL[role]}</option>
+                          ))}
+                        </select>
+                      </td>
+                      <td className="px-5 py-4">
+                        <select
+                          value={p.genero}
+                          disabled={savingId === p.id}
+                          onChange={(e) => handleGeneroChange(p.id, e.target.value as Genero)}
+                          className="px-3 py-1.5 border border-outline-variant rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none cursor-pointer disabled:opacity-50"
+                        >
+                          {(Object.keys(GENERO_LABEL) as Genero[]).map((g) => (
+                            <option key={g} value={g}>{GENERO_LABEL[g]}</option>
                           ))}
                         </select>
                       </td>
