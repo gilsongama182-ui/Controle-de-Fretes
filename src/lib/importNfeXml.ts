@@ -33,6 +33,14 @@ function todayIso(): string {
   return new Date().toISOString().split('T')[0];
 }
 
+// A tag <infCpl> costuma trazer um texto livre com várias informações
+// separadas por "|" (ex: "...|CPF:090.995.476-33|PEDIDO:6584799"). Extraímos
+// só o valor do pedido, procurando o rótulo "PEDIDO" em qualquer posição.
+function extractPedido(infCpl: string): string {
+  const match = /PEDIDO[:\s]+([A-Za-z0-9\-/.]+)/i.exec(infCpl);
+  return match ? match[1].trim() : '';
+}
+
 export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
   const fileName = file.name;
   const xmlText = await file.text();
@@ -83,7 +91,8 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
 
   const chNFe = doc.getElementsByTagName('infNFe')[0]?.getAttribute('Id')?.replace(/^NFe/, '') || text(doc, 'chNFe');
   const vNF = text(doc, 'vNF');
-  const pedido = text(doc.getElementsByTagName('infAdic')[0] ?? doc, 'infCpl');
+  const infCpl = text(doc.getElementsByTagName('infAdic')[0] ?? doc, 'infCpl');
+  const pedido = extractPedido(infCpl);
 
   const randomSuffix = Math.floor(1000 + Math.random() * 9000);
   const data: NewDeliveryInput = {
