@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Truck, Download, FileUp, CheckCircle, AlertTriangle, Clock,
   Trash2, Edit, ChevronLeft, ChevronRight, ListCollapse, Table, Paperclip
@@ -105,6 +105,12 @@ export default function GestaoEntregasScreen({
 
     return result;
   }, [deliveries, searchTerm, statusFilter, ufFilter, dateFrom, dateTo]);
+
+  // Volta pra primeira página sempre que os filtros mudam — senão a página
+  // atual pode ficar além do fim da lista filtrada e a tabela parece vazia.
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, statusFilter, ufFilter, dateFrom, dateTo]);
 
   // Pagination logic
   const paginatedDeliveries = useMemo(() => {
