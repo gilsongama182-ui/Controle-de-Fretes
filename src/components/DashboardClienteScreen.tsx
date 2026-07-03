@@ -160,60 +160,6 @@ export default function DashboardClienteScreen({
 
           </div>
 
-          {/* Entregas por UF, com drill-down para top 10 cidades */}
-          <div className="bg-white rounded-xl border border-outline-variant shadow-sm p-6">
-            <div className="flex items-center justify-between mb-4 gap-4">
-              <div>
-                <h2 className="font-headline text-lg font-bold text-primary">
-                  {selectedUf ? `Top cidades em ${selectedUf}` : 'Entregas por UF'}
-                </h2>
-                <p className="text-xs text-secondary mt-0.5">
-                  {selectedUf
-                    ? 'As 10 cidades com mais entregas neste estado.'
-                    : 'Clique em um estado para ver o detalhamento por cidade.'}
-                </p>
-              </div>
-              {selectedUf && (
-                <button
-                  type="button"
-                  onClick={() => setSelectedUf(null)}
-                  className="shrink-0 flex items-center gap-1 text-xs font-bold text-primary hover:underline"
-                >
-                  <ArrowLeft className="w-3.5 h-3.5" />
-                  <span>Voltar para UF</span>
-                </button>
-              )}
-            </div>
-
-            {chartData.length === 0 ? (
-              <p className="text-sm text-secondary text-center py-8">Sem dados suficientes para o gráfico.</p>
-            ) : (
-              <div className="overflow-x-auto">
-                <div className="flex items-end gap-4 sm:gap-6 px-2 pt-6 min-w-max">
-                  {chartData.map((row) => (
-                    <div
-                      key={row.label}
-                      title={`${row.count} entrega(s)`}
-                      onClick={!selectedUf ? () => setSelectedUf(row.label) : undefined}
-                      className={`flex flex-col items-center gap-2 group w-14 ${!selectedUf ? 'cursor-pointer' : ''}`}
-                    >
-                      <span className="text-xs font-bold text-primary">{row.count}</span>
-                      <div className="w-10 sm:w-12 h-36 bg-surface-container rounded-t-lg overflow-hidden flex items-end">
-                        <span
-                          className={`w-full block rounded-t-lg bg-primary transition-all ${!selectedUf ? 'group-hover:bg-primary-container' : ''}`}
-                          style={{ height: chartMax > 0 ? `${(row.count / chartMax) * 100}%` : '0%' }}
-                        ></span>
-                      </div>
-                      <span className="text-xs font-semibold text-on-surface-variant text-center truncate w-full">
-                        {row.label}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-
           {/* Recent Deliveries list card */}
           <div className="bg-white rounded-xl border border-outline-variant shadow-sm overflow-hidden">
             <div className="p-6 border-b border-outline-variant">
@@ -272,6 +218,60 @@ export default function DashboardClienteScreen({
                 >
                   {showAll ? 'VER MENOS ENTREGAS' : 'VER TODAS AS ENTREGAS'}
                 </button>
+              </div>
+            )}
+          </div>
+
+          {/* Entregas por UF, com drill-down para top 10 cidades */}
+          <div className="bg-white rounded-xl border border-outline-variant shadow-sm p-6">
+            <div className="flex items-center justify-between mb-4 gap-4">
+              <div>
+                <h2 className="font-headline text-lg font-bold text-primary">
+                  {selectedUf ? `Top cidades em ${selectedUf}` : 'Entregas por UF'}
+                </h2>
+                <p className="text-xs text-secondary mt-0.5">
+                  {selectedUf
+                    ? 'As 10 cidades com mais entregas neste estado.'
+                    : 'Clique em um estado para ver o detalhamento por cidade.'}
+                </p>
+              </div>
+              {selectedUf && (
+                <button
+                  type="button"
+                  onClick={() => setSelectedUf(null)}
+                  className="shrink-0 flex items-center gap-1 text-xs font-bold text-primary hover:underline"
+                >
+                  <ArrowLeft className="w-3.5 h-3.5" />
+                  <span>Voltar para UF</span>
+                </button>
+              )}
+            </div>
+
+            {chartData.length === 0 ? (
+              <p className="text-sm text-secondary text-center py-8">Sem dados suficientes para o gráfico.</p>
+            ) : (
+              <div className="overflow-x-auto">
+                <div className="flex items-end gap-4 sm:gap-6 px-2 pt-6 min-w-max">
+                  {chartData.map((row) => (
+                    <div
+                      key={row.label}
+                      title={`${row.count} entrega(s)`}
+                      onClick={!selectedUf ? () => setSelectedUf(row.label) : undefined}
+                      className={`flex flex-col items-center gap-2 group w-14 ${!selectedUf ? 'cursor-pointer' : ''}`}
+                    >
+                      <span className="text-xs font-bold text-primary">{row.count}</span>
+                      <div className="w-10 sm:w-12 h-36 bg-surface-container rounded-t-lg overflow-hidden flex items-end">
+                        <span
+                          className={`w-full block rounded-t-lg bg-primary transition-all ${!selectedUf ? 'group-hover:bg-primary-container' : ''}`}
+                          style={{ height: chartMax > 0 ? `${(row.count / chartMax) * 100}%` : '0%' }}
+                        ></span>
+                      </div>
+                      <span className="text-xs font-semibold text-on-surface-variant text-center truncate w-full">
+                        {row.label}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             )}
           </div>
