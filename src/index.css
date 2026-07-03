@@ -5,15 +5,15 @@
   --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
   --font-headline: "Hanken Grotesk", sans-serif;
 
-  /* Theme custom colors */
-  --color-primary: #001e40;
+  /* Theme custom colors — harmonizadas com o logo WLOGIS (grafite + azul) */
+  --color-primary: #241f20;
   --color-on-primary: #ffffff;
-  --color-primary-container: #003366;
-  --color-on-primary-container: #799dd6;
-  --color-secondary: #505f76;
+  --color-primary-container: #3e3839;
+  --color-on-primary-container: #ede6e7;
+  --color-secondary: #1b7797;
   --color-on-secondary: #ffffff;
-  --color-secondary-container: #d0e1fb;
-  --color-on-secondary-container: #54647a;
+  --color-secondary-container: #cdebf6;
+  --color-on-secondary-container: #0e4a5e;
   --color-tertiary: #002416;
   --color-on-tertiary: #ffffff;
   --color-tertiary-container: #003c27;

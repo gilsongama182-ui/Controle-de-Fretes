@@ -144,10 +144,10 @@ export default function DashboardClienteScreen({
               </div>
             </div>
 
-            <div className="bg-white p-6 rounded-xl border border-outline-variant shadow-sm border-l-4 border-l-primary-container flex flex-col justify-between">
+            <div className="bg-white p-6 rounded-xl border border-outline-variant shadow-sm border-l-4 border-l-secondary flex flex-col justify-between">
               <div>
                 <span className="text-xs font-bold tracking-wider text-secondary block mb-1">% EM ROTA</span>
-                <span className="text-3xl font-bold text-primary-container">{metrics.pctEnRoute}</span>
+                <span className="text-3xl font-bold text-secondary">{metrics.pctEnRoute}</span>
               </div>
             </div>
 

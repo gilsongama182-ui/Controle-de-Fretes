@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, HelpCircle, ArrowRight, Truck, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, HelpCircle, ArrowRight, AlertCircle } from 'lucide-react';
 import { ActivePage } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -49,10 +49,7 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
         <main className="w-full lg:max-w-[440px]">
           {/* Brand Identity */}
           <div className="flex flex-col items-center mb-8">
-            <div className="w-16 h-16 bg-primary flex items-center justify-center rounded-xl shadow-lg mb-4">
-              <Truck className="text-on-primary w-10 h-10" />
-            </div>
-            <h1 className="font-headline text-4xl font-bold text-primary tracking-tight">WLOGIS</h1>
+            <img src="/logo-wlogis.png" alt="WLogis" className="h-14 w-auto mb-3" />
             <p className="font-sans text-xs font-semibold text-secondary uppercase tracking-[0.2em] mt-1">
               Logistics Core System
             </p>

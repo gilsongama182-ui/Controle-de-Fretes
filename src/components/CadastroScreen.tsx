@@ -47,9 +47,10 @@ export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-surface">
       {/* Header / Brand */}
-      <header className="mb-8 text-center max-w-[640px] w-full">
+      <header className="mb-8 text-center max-w-[640px] w-full flex flex-col items-center">
+        <img src="/logo-wlogis.png" alt="WLogis" className="h-10 w-auto mb-4" />
         <h1 className="font-headline text-3xl font-semibold text-primary tracking-tight mb-2">
-          Acompanhamento Entregas WLOGIS
+          Acompanhamento Entregas
         </h1>
         <p className="font-sans text-sm text-secondary">
           Crie sua conta para acessar o ecossistema logístico.
