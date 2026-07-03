@@ -4,6 +4,7 @@ import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
+import { formatNfe } from '../lib/formatNfe';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -207,7 +208,7 @@ export default function DashboardOperadorScreen({
                 <table className="w-full text-left border-collapse">
                   <thead className="bg-surface-container border-b border-outline-variant">
                     <tr>
-                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">Nº PEDIDO</th>
+                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">NF-E</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">DESTINATÁRIO</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">CIDADE/UF</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">STATUS</th>
@@ -221,7 +222,7 @@ export default function DashboardOperadorScreen({
                         onClick={() => onSelectDeliveryForEdit(del)}
                         className="hover:bg-primary/5 transition-colors cursor-pointer group"
                       >
-                        <td className="px-5 py-4 font-mono text-sm text-primary font-semibold">{del.codigo}</td>
+                        <td className="px-5 py-4 font-mono text-sm text-primary font-semibold">{formatNfe(del.nfe)}</td>
                         <td className="px-5 py-4 font-semibold text-sm text-on-surface">{del.cliente}</td>
                         <td className="px-5 py-4 text-sm text-on-surface-variant">{del.municipio}, {del.uf}</td>
                         <td className="px-5 py-4">
