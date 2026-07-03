@@ -1,13 +1,16 @@
 import React, { useState } from 'react';
 import { FileUp, X, CheckCircle, AlertTriangle, Download } from 'lucide-react';
+import { Delivery } from '../../types';
 import { NewDeliveryInput } from '../../lib/deliveries';
 import { parseDeliveriesCsv, downloadCsvTemplate } from '../../lib/importCsv';
 import { parseNfeXmlFile } from '../../lib/importNfeXml';
+import { formatNfe } from '../../lib/formatNfe';
 
 interface ImportModalProps {
   open: boolean;
   onClose: () => void;
   onImport: (inputs: NewDeliveryInput[]) => Promise<void>;
+  existingDeliveries: Delivery[];
 }
 
 interface Row {
@@ -19,7 +22,39 @@ interface Row {
 
 type Mode = 'csv' | 'xml';
 
-export default function ImportModal({ open, onClose, onImport }: ImportModalProps) {
+const onlyDigits = (v: string) => v.replace(/\D/g, '');
+const duplicateKey = (remetenteCnpj: string, nfe: string) => `${onlyDigits(remetenteCnpj)}|${formatNfe(nfe)}`;
+
+// Rejeita linhas/arquivos cujo par (CNPJ do remetente + NF-e) já existe no banco,
+// ou que se repete dentro do próprio arquivo importado (evita duplicar entregas).
+function markDuplicates(items: Row[], existing: Delivery[]): Row[] {
+  const existingKeys = new Set(existing.map((d) => duplicateKey(d.remetenteCnpj, d.nfe)));
+  const seenInBatch = new Set<string>();
+
+  return items.map((r) => {
+    if (!r.data) return r;
+    const key = duplicateKey(r.data.remetenteCnpj, r.data.nfe);
+    const alreadyInDb = existingKeys.has(key);
+    const alreadyInBatch = seenInBatch.has(key);
+    seenInBatch.add(key);
+
+    if (alreadyInDb || alreadyInBatch) {
+      return {
+        ...r,
+        data: null,
+        errors: [
+          ...r.errors,
+          alreadyInDb
+            ? `NF-e ${formatNfe(r.data.nfe)} já cadastrada no sistema para este remetente — não importada.`
+            : `NF-e ${formatNfe(r.data.nfe)} repetida dentro do próprio arquivo — não importada.`,
+        ],
+      };
+    }
+    return r;
+  });
+}
+
+export default function ImportModal({ open, onClose, onImport, existingDeliveries }: ImportModalProps) {
   const [mode, setMode] = useState<Mode>('csv');
   const [dragActive, setDragActive] = useState(false);
   const [fileLabel, setFileLabel] = useState('');
@@ -55,7 +90,8 @@ export default function ImportModal({ open, onClose, onImport }: ImportModalProp
     reader.onload = () => {
       const text = typeof reader.result === 'string' ? reader.result : '';
       const parsed = parseDeliveriesCsv(text);
-      setRows(parsed.map((r) => ({ key: String(r.line), label: `Linha ${r.line}`, data: r.data, errors: r.errors })));
+      const mapped = parsed.map((r) => ({ key: String(r.line), label: `Linha ${r.line}`, data: r.data, errors: r.errors }));
+      setRows(markDuplicates(mapped, existingDeliveries));
     };
     reader.readAsText(file, 'utf-8');
   };
@@ -70,7 +106,8 @@ export default function ImportModal({ open, onClose, onImport }: ImportModalProp
     setIsParsing(true);
     try {
       const parsed = await Promise.all(xmlFiles.map((f) => parseNfeXmlFile(f)));
-      setRows(parsed.map((r) => ({ key: r.fileName, label: r.fileName, data: r.data, errors: r.errors })));
+      const mapped = parsed.map((r) => ({ key: r.fileName, label: r.fileName, data: r.data, errors: r.errors }));
+      setRows(markDuplicates(mapped, existingDeliveries));
     } finally {
       setIsParsing(false);
     }

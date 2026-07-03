@@ -274,6 +274,7 @@ export default function DashboardOperadorScreen({
         open={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onImport={onImportDeliveries}
+        existingDeliveries={deliveries}
       />
 
     </div>

@@ -184,6 +184,7 @@ function AppShell() {
           onLogout={handleLogout}
           user={profile}
           delivery={selectedDelivery}
+          deliveries={deliveries}
           onUpdateDelivery={handleUpdateDelivery}
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
@@ -197,6 +198,7 @@ function AppShell() {
           onNavigate={setActivePage}
           onLogout={handleLogout}
           user={profile}
+          deliveries={deliveries}
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
         />

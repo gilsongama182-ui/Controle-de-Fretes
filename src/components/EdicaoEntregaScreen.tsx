@@ -16,6 +16,7 @@ interface EdicaoEntregaProps {
   onLogout: () => void;
   user: User;
   delivery: Delivery | null;
+  deliveries: Delivery[];
   onUpdateDelivery: (id: string, patch: Partial<Delivery>) => Promise<void>;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
@@ -26,6 +27,7 @@ export default function EdicaoEntregaScreen({
   onLogout,
   user,
   delivery,
+  deliveries,
   onUpdateDelivery,
   onAddDelivery,
   onImportDeliveries
@@ -501,6 +503,7 @@ export default function EdicaoEntregaScreen({
         open={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onImport={onImportDeliveries}
+        existingDeliveries={deliveries}
       />
 
     </div>

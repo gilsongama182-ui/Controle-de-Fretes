@@ -539,6 +539,7 @@ export default function GestaoEntregasScreen({
         open={isImportOpen}
         onClose={() => setIsImportOpen(false)}
         onImport={onImportDeliveries}
+        existingDeliveries={deliveries}
       />
 
     </div>

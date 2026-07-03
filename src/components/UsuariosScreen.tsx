@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Shield } from 'lucide-react';
-import { ActivePage, User, Genero } from '../types';
+import { ActivePage, User, Genero, Delivery } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
 import { fetchProfiles, updateProfileRole, updateProfileGenero, ProfileRecord } from '../lib/profiles';
 import Sidebar from './layout/Sidebar';
@@ -14,6 +14,7 @@ interface UsuariosScreenProps {
   onNavigate: (page: ActivePage) => void;
   onLogout: () => void;
   user: User;
+  deliveries: Delivery[];
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
 }
@@ -34,6 +35,7 @@ export default function UsuariosScreen({
   onNavigate,
   onLogout,
   user,
+  deliveries,
   onAddDelivery,
   onImportDeliveries
 }: UsuariosScreenProps) {
@@ -176,7 +178,7 @@ export default function UsuariosScreen({
       <MobileBottomNav activePage="usuarios" onNavigate={onNavigate} onImportar={() => setIsImportOpen(true)} />
 
       <NovaEntregaModal open={isNewDeliveryOpen} onClose={() => setIsNewDeliveryOpen(false)} onCreate={onAddDelivery} />
-      <ImportModal open={isImportOpen} onClose={() => setIsImportOpen(false)} onImport={onImportDeliveries} />
+      <ImportModal open={isImportOpen} onClose={() => setIsImportOpen(false)} onImport={onImportDeliveries} existingDeliveries={deliveries} />
     </div>
   );
 }
