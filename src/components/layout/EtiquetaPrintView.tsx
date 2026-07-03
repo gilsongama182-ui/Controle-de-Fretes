@@ -114,51 +114,58 @@ export default function EtiquetaPrintView({ deliveries, onClose }: EtiquetaPrint
           width: 100mm;
           height: 150mm;
           box-sizing: border-box;
-          padding: 4mm;
+          padding: 3.5mm;
           display: flex;
           flex-direction: column;
-          gap: 2.5mm;
-          font-size: 9pt;
+          gap: 1.6mm;
+          font-size: 8.5pt;
           color: #111;
           margin: 0 auto;
           background: white;
           box-shadow: 0 2px 10px rgba(0,0,0,0.15);
+          overflow: hidden;
         }
         .etiqueta-header {
           display: flex;
           justify-content: space-between;
           align-items: center;
           border-bottom: 1.5pt solid #111;
-          padding-bottom: 2mm;
+          padding-bottom: 1.5mm;
+          flex-shrink: 0;
         }
-        .etiqueta-brand { font-weight: 800; font-size: 13pt; letter-spacing: 0.5px; }
-        .etiqueta-pedido-box { text-align: right; font-size: 8pt; line-height: 1.3; }
-        .etiqueta-pedido-box strong { font-size: 10pt; display: block; }
-        .etiqueta-box { border: 1pt solid #111; border-radius: 2mm; padding: 2mm 3mm; }
-        .etiqueta-box-label { font-size: 7pt; font-weight: 800; letter-spacing: 1px; color: #444; margin-bottom: 1mm; }
-        .etiqueta-remetente .etiqueta-nome { font-weight: 700; font-size: 9pt; }
-        .etiqueta-remetente .etiqueta-linha { font-size: 8pt; color: #222; line-height: 1.35; }
-        .etiqueta-destinatario { flex: 1; display: flex; flex-direction: column; justify-content: flex-start; gap: 1.5mm; padding-top: 3mm; }
-        .etiqueta-destinatario .etiqueta-nome { font-weight: 800; font-size: 14pt; line-height: 1.2; }
-        .etiqueta-destinatario .etiqueta-linha { font-size: 11pt; line-height: 1.35; }
-        .etiqueta-destinatario .etiqueta-cidade { font-weight: 700; font-size: 12pt; }
+        .etiqueta-brand { font-weight: 800; font-size: 12pt; letter-spacing: 0.5px; }
+        .etiqueta-pedido-box { text-align: right; font-size: 7.5pt; line-height: 1.25; }
+        .etiqueta-pedido-box strong { font-size: 9pt; display: block; }
+        .etiqueta-box { border: 1pt solid #111; border-radius: 2mm; padding: 1.5mm 3mm; flex-shrink: 0; }
+        .etiqueta-box-label { font-size: 6.5pt; font-weight: 800; letter-spacing: 1px; color: #444; margin-bottom: 0.5mm; }
+        .etiqueta-remetente .etiqueta-nome { font-weight: 700; font-size: 8.5pt; }
+        .etiqueta-remetente .etiqueta-linha { font-size: 7.5pt; color: #222; line-height: 1.3; }
+        .etiqueta-destinatario {
+          flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column;
+          justify-content: flex-start; gap: 1mm; padding-top: 1.5mm; overflow: hidden;
+        }
+        .etiqueta-destinatario .etiqueta-nome { font-weight: 800; font-size: 12.5pt; line-height: 1.15; }
+        .etiqueta-destinatario .etiqueta-linha { font-size: 9.5pt; line-height: 1.3; }
+        .etiqueta-destinatario .etiqueta-cidade { font-weight: 700; font-size: 10.5pt; }
         .etiqueta-nf-row {
-          display: flex; justify-content: space-between; font-size: 9pt; font-weight: 700;
-          border-top: 1pt dashed #999; border-bottom: 1pt dashed #999; padding: 1.5mm 0;
+          display: flex; justify-content: space-between; font-size: 8pt; font-weight: 700;
+          border-top: 1pt dashed #999; border-bottom: 1pt dashed #999; padding: 1mm 0;
+          flex-shrink: 0;
         }
         .etiqueta-recebedor {
-          display: flex; flex-direction: column; gap: 2mm; font-size: 7.5pt; padding: 0.5mm 0;
+          display: flex; flex-direction: column; gap: 1.2mm; font-size: 7pt; padding: 0.5mm 0;
+          flex-shrink: 0;
         }
         .etiqueta-recebedor-linha { display: flex; align-items: flex-end; gap: 2mm; }
         .etiqueta-recebedor-label { font-weight: 700; white-space: nowrap; }
-        .etiqueta-recebedor-preenchimento { flex: 1; border-bottom: 0.75pt solid #444; height: 3mm; }
+        .etiqueta-recebedor-preenchimento { flex: 1; border-bottom: 0.75pt solid #444; height: 2.5mm; }
         .etiqueta-recebedor-data { letter-spacing: 1px; }
-        .etiqueta-barcode-area { text-align: center; }
-        .etiqueta-barcode-svg { width: 100%; height: 16mm; }
-        .etiqueta-barcode-erro { font-size: 8pt; color: #b91c1c; padding: 4mm 0; }
+        .etiqueta-barcode-area { text-align: center; flex-shrink: 0; }
+        .etiqueta-barcode-svg { width: 100%; height: 13mm; display: block; }
+        .etiqueta-barcode-erro { font-size: 7.5pt; color: #b91c1c; padding: 3mm 0; }
         .etiqueta-chave-texto {
-          font-family: 'Courier New', monospace; font-size: 7.5pt; letter-spacing: 1px;
-          margin-top: 1mm; word-spacing: 3px;
+          font-family: 'Courier New', monospace; font-size: 7pt; letter-spacing: 1px;
+          margin-top: 0.8mm; word-spacing: 3px;
         }
         @media print {
           /* Esconde todo o resto do app (sidebar, tabela, etc.) e mostra só
