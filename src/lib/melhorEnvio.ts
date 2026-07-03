@@ -47,15 +47,6 @@ export interface SyncTrackingResult {
   deliveries: Delivery[];
 }
 
-// Diagnóstico temporário — remover depois de resolver o 403 no rastreio.
-export async function debugMelhorEnvio(): Promise<unknown> {
-  const token = await getAccessToken();
-  const resp = await fetch('/api/melhor-envio/debug', {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-  return resp.json();
-}
-
 export async function syncTracking(deliveryIds: string[]): Promise<SyncTrackingResult> {
   const token = await getAccessToken();
   const resp = await fetch('/api/melhor-envio/sync', {

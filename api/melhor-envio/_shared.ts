@@ -158,14 +158,23 @@ export async function getValidAccessToken(): Promise<string> {
   return tokenData.access_token;
 }
 
-// Mapeamento RASCUNHO — não confirmado contra uma resposta real da API de
-// rastreio (ver plano da integração). Qualquer status não reconhecido
-// retorna null de propósito, pra nunca sobrescrever o status de uma
-// entrega com um valor adivinhado.
+// "received" confirmado contra uma resposta real da API de rastreio (23h
+// da entrega de teste NF-e 5548 — status "Postado no Ponto Parceiro" no
+// painel da Melhor Envio). Os demais são inferência sobre o vocabulário
+// típico de rastreio e ainda não foram vistos numa resposta real — por
+// isso qualquer status não reconhecido retorna null de propósito, pra
+// nunca sobrescrever o status de uma entrega com um valor adivinhado.
 export function mapTrackingStatus(meStatus: string): DeliveryStatus | null {
   const s = meStatus.toLowerCase();
   if (s.includes('delivered') || s.includes('entregue')) return 'ENTREGUE';
   if (s.includes('undelivered') || s.includes('devolvido') || s.includes('returned') || s.includes('failed')) return 'FALHA';
-  if (s.includes('posted') || s.includes('transit') || s.includes('postado') || s.includes('released') || s.includes('generated')) return 'EM ROTA';
+  if (
+    s.includes('received') ||
+    s.includes('posted') ||
+    s.includes('transit') ||
+    s.includes('postado') ||
+    s.includes('released') ||
+    s.includes('generated')
+  ) return 'EM ROTA';
   return null;
 }

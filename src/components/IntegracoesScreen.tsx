@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Plug, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { ActivePage, User, Delivery } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
-import { connectMelhorEnvio, getMelhorEnvioStatus, debugMelhorEnvio, MelhorEnvioStatus } from '../lib/melhorEnvio';
+import { connectMelhorEnvio, getMelhorEnvioStatus, MelhorEnvioStatus } from '../lib/melhorEnvio';
 import { formatDateBR } from '../lib/formatDate';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
@@ -33,21 +33,6 @@ export default function IntegracoesScreen({
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState('');
   const [callbackNotice, setCallbackNotice] = useState<{ type: 'connected' | 'error'; message?: string } | null>(null);
-  const [debugResult, setDebugResult] = useState<string>('');
-  const [debugLoading, setDebugLoading] = useState(false);
-
-  const handleDebug = async () => {
-    setDebugLoading(true);
-    setDebugResult('');
-    try {
-      const result = await debugMelhorEnvio();
-      setDebugResult(JSON.stringify(result, null, 2));
-    } catch (err) {
-      setDebugResult(err instanceof Error ? err.message : 'Erro desconhecido.');
-    } finally {
-      setDebugLoading(false);
-    }
-  };
 
   useEffect(() => {
     if (user.profileType !== 'master') return;
@@ -168,24 +153,6 @@ export default function IntegracoesScreen({
               <ExternalLink className="w-4 h-4" />
               {status?.connected ? 'Reconectar Melhor Envio' : 'Conectar Melhor Envio'}
             </button>
-
-            {status?.connected && (
-              <div className="mt-4 pt-4 border-t border-outline-variant/30">
-                <button
-                  type="button"
-                  onClick={handleDebug}
-                  disabled={debugLoading}
-                  className="px-3 py-1.5 border border-outline-variant rounded-lg text-xs font-semibold text-secondary hover:bg-surface-container transition-colors disabled:opacity-50"
-                >
-                  {debugLoading ? 'Testando...' : 'Diagnóstico (temporário)'}
-                </button>
-                {debugResult && (
-                  <pre className="mt-3 p-3 bg-surface-container-low rounded-lg text-[10px] overflow-x-auto whitespace-pre-wrap">
-                    {debugResult}
-                  </pre>
-                )}
-              </div>
-            )}
           </div>
         </main>
       </div>
