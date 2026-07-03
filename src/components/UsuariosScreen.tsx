@@ -14,7 +14,7 @@ interface UsuariosScreenProps {
   onLogout: () => void;
   user: User;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
-  onImportDelivery: (input: NewDeliveryInput) => Promise<void>;
+  onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
 }
 
 const ROLE_LABEL: Record<ProfileRecord['profileType'], string> = {
@@ -28,7 +28,7 @@ export default function UsuariosScreen({
   onLogout,
   user,
   onAddDelivery,
-  onImportDelivery
+  onImportDeliveries
 }: UsuariosScreenProps) {
   const [profiles, setProfiles] = useState<ProfileRecord[]>([]);
   const [loading, setLoading] = useState(true);
@@ -140,7 +140,7 @@ export default function UsuariosScreen({
       <MobileBottomNav activePage="usuarios" onNavigate={onNavigate} onImportar={() => setIsImportOpen(true)} />
 
       <NovaEntregaModal open={isNewDeliveryOpen} onClose={() => setIsNewDeliveryOpen(false)} onCreate={onAddDelivery} />
-      <ImportModal open={isImportOpen} onClose={() => setIsImportOpen(false)} onImport={onImportDelivery} />
+      <ImportModal open={isImportOpen} onClose={() => setIsImportOpen(false)} onImport={onImportDeliveries} />
     </div>
   );
 }

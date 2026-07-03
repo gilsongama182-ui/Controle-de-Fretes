@@ -5,6 +5,7 @@ import { AuthProvider, useAuth } from './contexts/AuthContext';
 import {
   fetchDeliveries,
   createDelivery,
+  createDeliveries,
   updateDelivery,
   deleteDelivery,
   NewDeliveryInput,
@@ -106,6 +107,11 @@ function AppShell() {
     setDeliveries((prev) => [created, ...prev]);
   };
 
+  const handleImportDeliveries = async (inputs: NewDeliveryInput[]) => {
+    const created = await createDeliveries(inputs);
+    setDeliveries((prev) => [...created, ...prev]);
+  };
+
   const handleDeleteDelivery = async (id: string) => {
     await deleteDelivery(id);
     setDeliveries((prev) => prev.filter((d) => d.id !== id));
@@ -140,7 +146,7 @@ function AppShell() {
           user={profile}
           deliveries={deliveries}
           onAddDelivery={handleAddDelivery}
-          onImportDelivery={handleAddDelivery}
+          onImportDeliveries={handleImportDeliveries}
           onSelectDeliveryForEdit={handleSelectDeliveryForEdit}
         />
       );
@@ -166,7 +172,7 @@ function AppShell() {
           onDeleteDelivery={handleDeleteDelivery}
           onSelectDeliveryForEdit={handleSelectDeliveryForEdit}
           onAddDelivery={handleAddDelivery}
-          onImportDelivery={handleAddDelivery}
+          onImportDeliveries={handleImportDeliveries}
         />
       );
 
@@ -180,7 +186,7 @@ function AppShell() {
           delivery={selectedDelivery}
           onUpdateDelivery={handleUpdateDelivery}
           onAddDelivery={handleAddDelivery}
-          onImportDelivery={handleAddDelivery}
+          onImportDeliveries={handleImportDeliveries}
         />
       );
 
@@ -192,7 +198,7 @@ function AppShell() {
           onLogout={handleLogout}
           user={profile}
           onAddDelivery={handleAddDelivery}
-          onImportDelivery={handleAddDelivery}
+          onImportDeliveries={handleImportDeliveries}
         />
       );
 

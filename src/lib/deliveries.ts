@@ -94,6 +94,17 @@ export async function fetchDeliveries(): Promise<Delivery[]> {
   return (data as DeliveryRow[]).map(fromRow);
 }
 
+export async function createDeliveries(inputs: NewDeliveryInput[]): Promise<Delivery[]> {
+  if (inputs.length === 0) return [];
+  const { data, error } = await supabase
+    .from('deliveries')
+    .insert(inputs.map(toRow))
+    .select('*');
+
+  if (error) throw error;
+  return (data as DeliveryRow[]).map(fromRow);
+}
+
 export async function createDelivery(input: NewDeliveryInput): Promise<Delivery> {
   const { data, error } = await supabase
     .from('deliveries')

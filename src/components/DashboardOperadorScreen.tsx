@@ -16,7 +16,7 @@ interface DashboardOperadorProps {
   user: User;
   deliveries: Delivery[];
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
-  onImportDelivery: (input: NewDeliveryInput) => Promise<void>;
+  onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
   onSelectDeliveryForEdit: (delivery: Delivery) => void;
 }
 
@@ -26,7 +26,7 @@ export default function DashboardOperadorScreen({
   user,
   deliveries,
   onAddDelivery,
-  onImportDelivery,
+  onImportDeliveries,
   onSelectDeliveryForEdit
 }: DashboardOperadorProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -272,7 +272,7 @@ export default function DashboardOperadorScreen({
       <ImportModal
         open={isImportOpen}
         onClose={() => setIsImportOpen(false)}
-        onImport={onImportDelivery}
+        onImport={onImportDeliveries}
       />
 
     </div>

@@ -22,7 +22,7 @@ interface GestaoEntregasProps {
   onDeleteDelivery: (id: string) => Promise<void>;
   onSelectDeliveryForEdit: (delivery: Delivery) => void;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
-  onImportDelivery: (input: NewDeliveryInput) => Promise<void>;
+  onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
 }
 
 export default function GestaoEntregasScreen({
@@ -33,7 +33,7 @@ export default function GestaoEntregasScreen({
   onDeleteDelivery,
   onSelectDeliveryForEdit,
   onAddDelivery,
-  onImportDelivery
+  onImportDeliveries
 }: GestaoEntregasProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -538,7 +538,7 @@ export default function GestaoEntregasScreen({
       <ImportModal
         open={isImportOpen}
         onClose={() => setIsImportOpen(false)}
-        onImport={onImportDelivery}
+        onImport={onImportDeliveries}
       />
 
     </div>

@@ -18,7 +18,7 @@ interface EdicaoEntregaProps {
   delivery: Delivery | null;
   onUpdateDelivery: (id: string, patch: Partial<Delivery>) => Promise<void>;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
-  onImportDelivery: (input: NewDeliveryInput) => Promise<void>;
+  onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
 }
 
 export default function EdicaoEntregaScreen({
@@ -28,7 +28,7 @@ export default function EdicaoEntregaScreen({
   delivery,
   onUpdateDelivery,
   onAddDelivery,
-  onImportDelivery
+  onImportDeliveries
 }: EdicaoEntregaProps) {
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -500,7 +500,7 @@ export default function EdicaoEntregaScreen({
       <ImportModal
         open={isImportOpen}
         onClose={() => setIsImportOpen(false)}
-        onImport={onImportDelivery}
+        onImport={onImportDeliveries}
       />
 
     </div>

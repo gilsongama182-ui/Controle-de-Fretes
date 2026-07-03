@@ -1,29 +1,6 @@
 import { Delivery } from '../types';
 import { formatNfe } from './formatNfe';
-
-const HEADERS: { key: keyof Delivery; label: string }[] = [
-  { key: 'codigo', label: 'Código' },
-  { key: 'nfe', label: 'NF-e' },
-  { key: 'remetente', label: 'Remetente' },
-  { key: 'remetenteCnpj', label: 'CNPJ Remetente' },
-  { key: 'cliente', label: 'Cliente (apelido)' },
-  { key: 'nomeRazaoSocial', label: 'Destinatário' },
-  { key: 'cnpjCpf', label: 'CNPJ / CPF' },
-  { key: 'dataPedido', label: 'Data do Pedido' },
-  { key: 'dataExpedicao', label: 'Data de Expedição' },
-  { key: 'previsao', label: 'Previsão' },
-  { key: 'enderecoCompleto', label: 'Endereço' },
-  { key: 'bairroDistrito', label: 'Bairro / Distrito' },
-  { key: 'cep', label: 'CEP' },
-  { key: 'municipio', label: 'Município' },
-  { key: 'uf', label: 'UF' },
-  { key: 'foneFax', label: 'Fone / Fax' },
-  { key: 'status', label: 'Status' },
-  { key: 'ocorrencia', label: 'Ocorrência' },
-  { key: 'valorCobranca', label: 'Valor Cobrança' },
-  { key: 'valorPagamento', label: 'Valor Pagamento' },
-  { key: 'codigoRastreio', label: 'Código de Rastreio' },
-];
+import { DELIVERY_FIELDS } from './deliveryFields';
 
 function escapeCsvValue(value: unknown): string {
   const str = String(value ?? '');
@@ -36,13 +13,15 @@ function cellValue(delivery: Delivery, key: keyof Delivery): unknown {
 }
 
 // Separador ";" (não ",") porque o Excel em pt-BR usa vírgula como separador
-// decimal e só quebra colunas automaticamente com ponto e vírgula.
+// decimal e só quebra colunas automaticamente com ponto e vírgula. Os mesmos
+// rótulos de coluna são usados na importação (lib/importCsv.ts), então um
+// arquivo exportado pode ser editado e reimportado diretamente.
 export function exportDeliveriesToCsv(
   deliveries: Delivery[],
   filename: string,
   excludeKeys: (keyof Delivery)[] = []
 ) {
-  const headers = HEADERS.filter((h) => !excludeKeys.includes(h.key));
+  const headers = DELIVERY_FIELDS.filter((h) => !excludeKeys.includes(h.key));
   const rows = [
     headers.map((h) => h.label).join(';'),
     ...deliveries.map((d) => headers.map((h) => escapeCsvValue(cellValue(d, h.key))).join(';')),
