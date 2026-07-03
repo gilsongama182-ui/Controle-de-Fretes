@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { Shield, Mail, Check, X as XIcon } from 'lucide-react';
 import { ActivePage, User, Genero, Delivery, AccountStatus } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
-import { fetchProfiles, updateProfileRole, updateProfileGenero, updateProfileStatus, ProfileRecord } from '../lib/profiles';
+import { fetchProfiles, updateProfileRole, updateProfileGenero, updateProfileStatus, updateProfileDocument, ProfileRecord } from '../lib/profiles';
 import { useAuth } from '../contexts/AuthContext';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
@@ -60,6 +60,7 @@ export default function UsuariosScreen({
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [resetSendingId, setResetSendingId] = useState<string | null>(null);
   const [resetSentId, setResetSentId] = useState<string | null>(null);
+  const [documentDrafts, setDocumentDrafts] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (user.profileType !== 'master') return;
@@ -101,6 +102,25 @@ export default function UsuariosScreen({
       alert(err instanceof Error ? `Não foi possível atualizar: ${err.message}` : 'Não foi possível atualizar o gênero do usuário.');
     } finally {
       setSavingId(null);
+    }
+  };
+
+  const handleDocumentBlur = async (id: string, currentValue: string) => {
+    const draft = documentDrafts[id]?.trim();
+    if (draft === undefined || draft === currentValue) return;
+    setSavingId(id);
+    try {
+      const updated = await updateProfileDocument(id, draft);
+      setProfiles((prev) => prev.map((p) => (p.id === id ? updated : p)));
+    } catch (err) {
+      alert(err instanceof Error ? `Não foi possível atualizar: ${err.message}` : 'Não foi possível atualizar o documento do usuário.');
+    } finally {
+      setSavingId(null);
+      setDocumentDrafts((prev) => {
+        const next = { ...prev };
+        delete next[id];
+        return next;
+      });
     }
   };
 
@@ -184,7 +204,17 @@ export default function UsuariosScreen({
                       </td>
                       <td className="px-5 py-4 font-semibold text-sm text-on-surface">{p.name || '—'}</td>
                       <td className="px-5 py-4 text-sm text-on-surface-variant">{p.email}</td>
-                      <td className="px-5 py-4 font-mono text-xs text-on-surface-variant">{p.document}</td>
+                      <td className="px-5 py-4">
+                        <input
+                          type="text"
+                          value={documentDrafts[p.id] ?? p.document}
+                          disabled={savingId === p.id}
+                          onChange={(e) => setDocumentDrafts((prev) => ({ ...prev, [p.id]: e.target.value }))}
+                          onBlur={() => handleDocumentBlur(p.id, p.document)}
+                          onKeyDown={(e) => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur(); }}
+                          className="w-full min-w-[140px] px-2 py-1.5 font-mono text-xs bg-transparent border border-transparent hover:border-outline-variant focus:border-primary focus:bg-white rounded-lg outline-none focus:ring-2 focus:ring-primary/20 disabled:opacity-50 transition-colors"
+                        />
+                      </td>
                       <td className="px-5 py-4">
                         <select
                           value={p.profileType}

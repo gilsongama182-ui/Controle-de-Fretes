@@ -70,6 +70,18 @@ export async function updateProfileGenero(id: string, genero: Genero): Promise<P
   return fromRow(data as ProfileRow);
 }
 
+export async function updateProfileDocument(id: string, document: string): Promise<ProfileRecord> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .update({ document })
+    .eq('id', id)
+    .select('*')
+    .single();
+
+  if (error) throw error;
+  return fromRow(data as ProfileRow);
+}
+
 export async function updateProfileStatus(id: string, status: AccountStatus): Promise<ProfileRecord> {
   const { data, error } = await supabase
     .from('profiles')
