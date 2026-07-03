@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Mail, Lock, Eye, EyeOff, HelpCircle, ArrowRight, AlertCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, HelpCircle, ArrowRight, AlertCircle, Truck, MapPin, Clock } from 'lucide-react';
 import { ActivePage } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -181,22 +181,30 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
           </footer>
         </main>
 
-        {/* Right Side: Futuristic Logistics Hub Illustration */}
+        {/* Right Side: Brand Panel (sem foto externa — só o logo WLOGIS + ícones) */}
         <aside className="hidden lg:flex flex-1 items-center justify-center ml-8">
-          <div className="relative w-full max-w-xl aspect-square bg-surface-container rounded-3xl overflow-hidden shadow-2xl border border-outline-variant group">
-            <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent z-10"></div>
-            <img
-              className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              referrerPolicy="no-referrer"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBD7WQkZu74qG44uBzfGqeD-qLx6YHgxc_ZlRV0clRSMX6wY7qJ-XZu9xgyDsZYbxAaXmzeafPl9wPhlLdrhrD1gloifjlgfROdSSSoGjj64SZK5_q6UIJZkbRBbYi3D3yYKj_40IbF4xpyYCqBafYw_1n1xPBXUsJLMyKFqni8rpp0Hx8NUL7pwzhWa-CG-QSNNJ1JXoYPNSK72JbtKHm7i-Lf-bRZwjXgHfyz-FUgKWAlEPbZjOuevA"
-              alt="WLOGIS modern logistics hub at dusk"
-            />
-            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white z-20">
-              <h3 className="font-headline text-2xl font-bold mb-1">Precisão em cada entrega.</h3>
-              <p className="font-sans text-sm opacity-90 leading-relaxed">
-                Acompanhamento em tempo real para frotas globais de alto desempenho.
-              </p>
+          <div className="relative w-full max-w-xl aspect-square bg-gradient-to-br from-secondary-container via-white to-surface-container rounded-3xl overflow-hidden shadow-2xl border border-outline-variant flex flex-col items-center justify-center p-12 text-center">
+            <div className="absolute -top-16 -right-16 w-72 h-72 rounded-full bg-[#FF6600]/10 blur-3xl"></div>
+            <div className="absolute -bottom-16 -left-16 w-72 h-72 rounded-full bg-secondary/10 blur-3xl"></div>
+
+            <img src="/logo-wlogis.png" alt="WLogis" className="h-16 w-auto mb-10 relative z-10" />
+
+            <div className="flex items-center gap-4 mb-10 relative z-10">
+              <div className="w-14 h-14 rounded-2xl bg-secondary/10 flex items-center justify-center">
+                <Truck className="w-7 h-7 text-secondary" />
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-[#FF6600]/10 flex items-center justify-center">
+                <MapPin className="w-7 h-7 text-[#FF6600]" />
+              </div>
+              <div className="w-14 h-14 rounded-2xl bg-[#F5C93E]/20 flex items-center justify-center">
+                <Clock className="w-7 h-7 text-[#B8900A]" />
+              </div>
             </div>
+
+            <h3 className="font-headline text-2xl font-bold text-primary mb-2 relative z-10">Precisão em cada entrega.</h3>
+            <p className="font-sans text-sm text-secondary leading-relaxed max-w-sm relative z-10">
+              Acompanhamento em tempo real para frotas globais de alto desempenho.
+            </p>
           </div>
         </aside>
 
