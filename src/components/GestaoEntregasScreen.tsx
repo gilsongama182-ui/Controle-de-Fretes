@@ -76,12 +76,16 @@ export default function GestaoEntregasScreen({
     // Search term
     const term = searchTerm.toLowerCase().trim();
     if (term) {
+      // Só compara dígitos do CNPJ/CPF quando o termo tem algum dígito —
+      // "".includes("") é sempre true em JS, então sem essa checagem uma
+      // busca só com letras (ex: "brito") "vazava" e batia com tudo.
+      const termDigits = term.replace(/\D/g, '');
       result = result.filter(d =>
         d.codigo.toLowerCase().includes(term) ||
         d.nfe.toLowerCase().includes(term) ||
         d.cliente.toLowerCase().includes(term) ||
         d.nomeRazaoSocial.toLowerCase().includes(term) ||
-        d.cnpjCpf.replace(/\D/g, '').includes(term.replace(/\D/g, ''))
+        (termDigits.length > 0 && d.cnpjCpf.replace(/\D/g, '').includes(termDigits))
       );
     }
 
