@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { getBearerToken, getUserClient, getServiceRoleClient, sendJson } from './_shared';
+import { getBearerToken, getUserClient, getServiceRoleClient, sendJson } from './_shared.js';
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   if (req.method !== 'GET') {

@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { DeliveryStatus } from '../../src/types';
+import type { DeliveryStatus } from '../../src/types';
 
 // Funções server-only compartilhadas pelas rotas de /api/melhor-envio.
 // Nunca importar este arquivo (nem nada dentro de api/) de código do

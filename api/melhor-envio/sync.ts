@@ -7,7 +7,7 @@ import {
   sendJson,
   readJsonBody,
   ME_BASE_URL,
-} from './_shared';
+} from './_shared.js';
 
 interface SyncRequestBody {
   deliveryIds: string[];

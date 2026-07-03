@@ -1,5 +1,5 @@
 import type { IncomingMessage, ServerResponse } from 'http';
-import { exchangeAuthorizationCode, getServiceRoleClient } from './_shared';
+import { exchangeAuthorizationCode, getServiceRoleClient } from './_shared.js';
 
 function parseCookies(req: IncomingMessage): Record<string, string> {
   const header = req.headers.cookie;

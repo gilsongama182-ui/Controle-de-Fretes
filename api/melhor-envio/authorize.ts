@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import { randomBytes } from 'crypto';
-import { ME_CLIENT_ID, ME_BASE_URL, ME_REDIRECT_URI, sendJson } from './_shared';
+import { ME_CLIENT_ID, ME_BASE_URL, ME_REDIRECT_URI, sendJson } from './_shared.js';
 
 // GET puro (o navegador navega pra cá de verdade, pra depois ir pra tela de
 // login/aprovação da Melhor Envio) — por isso não dá pra exigir o header
