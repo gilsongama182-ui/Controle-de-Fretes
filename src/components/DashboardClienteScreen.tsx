@@ -131,7 +131,7 @@ export default function DashboardClienteScreen({
                 onClick={() => exportDeliveriesToCsv(
                   searchTerm.trim() ? filteredDeliveries : deliveries,
                   `minhas-entregas-${new Date().toISOString().split('T')[0]}.csv`,
-                  ['valorCobranca', 'valorPagamento', 'codigoRastreio']
+                  ['codigo', 'valorCobranca', 'valorPagamento', 'codigoRastreio']
                 )}
                 className="flex items-center justify-center gap-2 h-11 px-4 border border-outline text-primary font-sans text-xs font-semibold uppercase tracking-wider rounded-lg hover:bg-primary/5 transition-colors whitespace-nowrap shadow-sm w-full sm:w-auto"
               >
