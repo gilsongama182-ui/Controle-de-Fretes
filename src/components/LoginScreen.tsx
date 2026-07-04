@@ -289,15 +289,11 @@ export default function LoginScreen({ onNavigate }: LoginScreenProps) {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/10 to-transparent z-10"></div>
             <img
               className="w-full h-full object-cover transition-transform duration-1000 group-hover:scale-105"
-              referrerPolicy="no-referrer"
-              src="https://lh3.googleusercontent.com/aida-public/AB6AXuBD7WQkZu74qG44uBzfGqeD-qLx6YHgxc_ZlRV0clRSMX6wY7qJ-XZu9xgyDsZYbxAaXmzeafPl9wPhlLdrhrD1gloifjlgfROdSSSoGjj64SZK5_q6UIJZkbRBbYi3D3yYKj_40IbF4xpyYCqBafYw_1n1xPBXUsJLMyKFqni8rpp0Hx8NUL7pwzhWa-CG-QSNNJ1JXoYPNSK72JbtKHm7i-Lf-bRZwjXgHfyz-FUgKWAlEPbZjOuevA"
-              alt="WLOGIS modern logistics hub at dusk"
+              src="/login-hero.jpg"
+              alt="Galpão de operações da WLogis"
             />
-            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-black/80 via-black/40 to-transparent text-white z-20">
-              <h3 className="font-headline text-2xl font-bold mb-1">Precisão em cada entrega.</h3>
-              <p className="font-sans text-sm opacity-90 leading-relaxed">
-                Acompanhamento em tempo real para frotas globais de alto desempenho.
-              </p>
+            <div className="absolute bottom-0 left-0 right-0 p-8 bg-gradient-to-t from-secondary/95 via-secondary/50 to-transparent text-white z-20">
+              <h3 className="font-headline text-2xl font-bold">Precisão em cada entrega.</h3>
             </div>
           </div>
         </aside>
