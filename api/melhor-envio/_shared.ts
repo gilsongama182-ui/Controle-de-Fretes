@@ -170,6 +170,7 @@ export interface MelhorEnvioOrderDetail {
   generated_at: string | null;
   created_at: string | null;
   tracking: string | null;
+  price: number | null;
   invoice?: { number?: string | number | null; key?: string | null } | null;
 }
 
@@ -283,6 +284,7 @@ export interface DeliverySyncOutcome {
   rawStatus?: string;
   mappedStatus?: DeliveryStatus | null;
   previsao?: string | null;
+  valorPagamento?: number | null;
   patch?: Record<string, unknown>;
   error?: string;
 }
@@ -335,7 +337,13 @@ export function matchAndBuildPatch(
   const previsao = computePrevisaoEntrega(order);
   if (previsao) patch.previsao = previsao;
 
-  return { ok: true, rawStatus, mappedStatus, previsao, patch };
+  // "Preço do envio" na Melhor Envio -> "Pago Operador" no WLOGIS, a
+  // pedido do usuário: substitui a estimativa de 65% por cima do valor de
+  // cobrança pelo custo real do frete assim que ele existir na Melhor Envio.
+  const valorPagamento = order.price;
+  if (valorPagamento != null) patch.valor_pagamento = valorPagamento;
+
+  return { ok: true, rawStatus, mappedStatus, previsao, valorPagamento, patch };
 }
 
 // "received" confirmado contra uma resposta real da API de rastreio (23h

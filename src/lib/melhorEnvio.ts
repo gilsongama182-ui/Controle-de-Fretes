@@ -40,6 +40,7 @@ export interface SyncItemResult {
   rawStatus?: string;
   mappedStatus?: string | null;
   previsao?: string | null;
+  valorPagamento?: number | null;
   error?: string;
 }
 

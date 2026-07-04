@@ -21,6 +21,7 @@ interface SyncItemResult {
   rawStatus?: string;
   mappedStatus?: string | null;
   previsao?: string | null;
+  valorPagamento?: number | null;
   error?: string;
 }
 
@@ -116,6 +117,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       rawStatus: outcome.rawStatus,
       mappedStatus: outcome.mappedStatus,
       previsao: outcome.previsao,
+      valorPagamento: outcome.valorPagamento,
       error: updateError?.message,
     });
   }

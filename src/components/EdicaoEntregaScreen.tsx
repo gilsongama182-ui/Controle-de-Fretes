@@ -80,6 +80,12 @@ export default function EdicaoEntregaScreen({
     if (delivery?.melhorEnvioId) setMelhorEnvioId(delivery.melhorEnvioId);
   }, [delivery?.melhorEnvioId]);
 
+  // Mesma ideia pro valor pago ao operador: quando a sincronização traz o
+  // "Preço do envio" real da Melhor Envio, reflete no campo.
+  useEffect(() => {
+    if (delivery?.valorPagamento != null) setValorPagamento(delivery.valorPagamento);
+  }, [delivery?.valorPagamento]);
+
   if (!delivery) {
     return (
       <div className="p-8 text-center bg-surface min-h-screen flex flex-col items-center justify-center gap-4">
@@ -155,6 +161,7 @@ export default function EdicaoEntregaScreen({
         if (result.mappedStatus) parts.push(`status atualizado para "${result.mappedStatus}"`);
         else parts.push(`status "${result.rawStatus ?? '(vazio)'}" ainda não é reconhecido pelo sistema`);
         if (result.previsao) parts.push(`previsão de entrega: ${formatDateBR(result.previsao)}`);
+        if (result.valorPagamento != null) parts.push(`pago operador: R$ ${result.valorPagamento.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`);
         alert(`Rastreio consultado — ${parts.join('; ')}.`);
       }
     } catch (err) {
