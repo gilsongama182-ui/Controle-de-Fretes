@@ -70,12 +70,18 @@ export default function GestaoEntregasScreen({
   const metrics = useMemo(() => {
     const total = deliveries.length;
     const deliveredCount = deliveries.filter(d => d.status === 'ENTREGUE').length;
+    const failedCount = deliveries.filter(d => d.status === 'FALHA').length;
     const delayedCount = deliveries.filter(d => d.status === 'EM ATRASO').length;
     const todayStr = new Date().toISOString().split('T')[0];
     const dueTodayCount = deliveries.filter(d =>
       d.previsao === todayStr || d.previsao.toLowerCase().includes('hoje')
     ).length;
-    const pctSuccess = total > 0 ? ((deliveredCount / total) * 100).toFixed(1) : '0.0';
+    // Mesma lógica do Painel de Controle: mede sucesso sobre as entregas já
+    // concluídas (entregue ou falha), não sobre o total geral — senão o
+    // indicador fica artificialmente baixo enquanto houver muita entrega
+    // ainda em rota, que nem teve chance de ser entregue ainda.
+    const finalizedCount = deliveredCount + failedCount;
+    const pctSuccess = finalizedCount > 0 ? ((deliveredCount / finalizedCount) * 100).toFixed(1) : '0.0';
 
     return { total, delayedCount, dueTodayCount, pctSuccess };
   }, [deliveries]);
