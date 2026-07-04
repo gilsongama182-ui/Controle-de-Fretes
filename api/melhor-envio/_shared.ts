@@ -158,6 +158,50 @@ export async function getValidAccessToken(): Promise<string> {
   return tokenData.access_token;
 }
 
+export const ME_USER_AGENT = 'WLOGIS (suporte@wlogis.com.br)';
+
+export interface MelhorEnvioOrderMatch {
+  id: string;
+  trackingCode: string | null;
+}
+
+// Varre as páginas de GET /me/orders (mais recentes primeiro) procurando o
+// pedido cujo número ou chave de acesso da NF-e bate com o informado —
+// descoberto inspecionando um pedido real: o campo vem em "invoice.number"
+// / "invoice.key". Cobre um número limitado de páginas por chamada pra não
+// estourar o tempo de execução da função serverless.
+export async function findMelhorEnvioOrder(
+  accessToken: string,
+  { nfe, chaveAcessoNfe }: { nfe: string; chaveAcessoNfe: string }
+): Promise<MelhorEnvioOrderMatch | null> {
+  const maxPages = 15;
+  for (let page = 1; page <= maxPages; page++) {
+    const resp = await fetch(`${ME_BASE_URL}/api/v2/me/orders?page=${page}`, {
+      headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json', 'User-Agent': ME_USER_AGENT },
+    });
+    if (!resp.ok) break;
+
+    const body = (await resp.json()) as { data?: Array<Record<string, unknown>>; last_page?: number };
+    const items = body.data ?? [];
+    if (items.length === 0) break;
+
+    for (const item of items) {
+      const invoice = item.invoice as Record<string, unknown> | undefined;
+      const invNumber = invoice?.number != null ? String(invoice.number) : null;
+      const invKey = invoice?.key != null ? String(invoice.key) : null;
+      if ((nfe && invNumber === nfe) || (chaveAcessoNfe && invKey === chaveAcessoNfe)) {
+        return {
+          id: String(item.id),
+          trackingCode: item.tracking != null ? String(item.tracking) : null,
+        };
+      }
+    }
+
+    if (body.last_page && page >= body.last_page) break;
+  }
+  return null;
+}
+
 // "received" confirmado contra uma resposta real da API de rastreio (23h
 // da entrega de teste NF-e 5548 — status "Postado no Ponto Parceiro" no
 // painel da Melhor Envio). Os demais são inferência sobre o vocabulário

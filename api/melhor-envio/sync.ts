@@ -4,9 +4,11 @@ import {
   getUserClient,
   getValidAccessToken,
   mapTrackingStatus,
+  findMelhorEnvioOrder,
   sendJson,
   readJsonBody,
   ME_BASE_URL,
+  ME_USER_AGENT,
 } from './_shared.js';
 
 interface SyncRequestBody {
@@ -37,6 +39,14 @@ function extractStatusText(entry: unknown): string | null {
     if (typeof status === 'string') return status;
   }
   return null;
+}
+
+interface DeliveryRow {
+  id: string;
+  melhor_envio_id: string | null;
+  nfe: string;
+  chave_acesso_nfe: string | null;
+  codigo_rastreio: string | null;
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
@@ -71,8 +81,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   // mesma trava que já protege a tela de Gestão de Entregas hoje.
   const { data: deliveries, error: fetchError } = await userClient
     .from('deliveries')
-    .select('id, melhor_envio_id, nfe')
-    .in('id', deliveryIds);
+    .select('id, melhor_envio_id, nfe, chave_acesso_nfe, codigo_rastreio')
+    .in('id', deliveryIds)
+    .returns<DeliveryRow[]>();
 
   if (fetchError) {
     sendJson(res, 500, { error: `Não foi possível buscar as entregas: ${fetchError.message}` });
@@ -80,25 +91,59 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   }
 
   const results: SyncItemResult[] = [];
-  const withMelhorEnvioId = (deliveries ?? []).filter((d) => d.melhor_envio_id);
-
-  for (const id of deliveryIds) {
-    if (!withMelhorEnvioId.some((d) => d.id === id)) {
-      results.push({ deliveryId: id, ok: false, error: 'Entrega sem "ID Melhor Envio" preenchido.' });
-    }
-  }
-
-  if (withMelhorEnvioId.length === 0) {
-    sendJson(res, 200, { results });
-    return;
-  }
 
   let accessToken: string;
   try {
     accessToken = await getValidAccessToken();
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Falha ao obter token da Melhor Envio.';
-    for (const d of withMelhorEnvioId) results.push({ deliveryId: d.id, ok: false, error: message });
+    for (const id of deliveryIds) results.push({ deliveryId: id, ok: false, error: message });
+    sendJson(res, 200, { results });
+    return;
+  }
+
+  // Pra quem não tem "ID Melhor Envio" salvo, tenta achar automaticamente
+  // combinando pelo número ou chave de acesso da NF-e (campo "invoice" do
+  // pedido na Melhor Envio) — assim o operador não precisa caçar o UUID
+  // manualmente no painel deles.
+  const resolved: { delivery: DeliveryRow; melhorEnvioId: string; trackingCode: string | null; isNew: boolean }[] = [];
+
+  for (const delivery of deliveries ?? []) {
+    if (delivery.melhor_envio_id) {
+      resolved.push({ delivery, melhorEnvioId: delivery.melhor_envio_id, trackingCode: null, isNew: false });
+      continue;
+    }
+
+    try {
+      const match = await findMelhorEnvioOrder(accessToken, {
+        nfe: delivery.nfe,
+        chaveAcessoNfe: delivery.chave_acesso_nfe ?? '',
+      });
+      if (match) {
+        resolved.push({ delivery, melhorEnvioId: match.id, trackingCode: match.trackingCode, isNew: true });
+      } else {
+        results.push({
+          deliveryId: delivery.id,
+          ok: false,
+          error: 'Não foi encontrado nenhum pedido na Melhor Envio com essa NF-e.',
+        });
+      }
+    } catch (err) {
+      results.push({
+        deliveryId: delivery.id,
+        ok: false,
+        error: err instanceof Error ? `Falha ao buscar o pedido: ${err.message}` : 'Falha ao buscar o pedido na Melhor Envio.',
+      });
+    }
+  }
+
+  for (const id of deliveryIds) {
+    if (!(deliveries ?? []).some((d) => d.id === id) && !results.some((r) => r.deliveryId === id)) {
+      results.push({ deliveryId: id, ok: false, error: 'Entrega não encontrada.' });
+    }
+  }
+
+  if (resolved.length === 0) {
     sendJson(res, 200, { results });
     return;
   }
@@ -111,9 +156,9 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         Authorization: `Bearer ${accessToken}`,
         'Content-Type': 'application/json',
         Accept: 'application/json',
-        'User-Agent': 'WLOGIS (suporte@wlogis.com.br)',
+        'User-Agent': ME_USER_AGENT,
       },
-      body: JSON.stringify({ orders: withMelhorEnvioId.map((d) => d.melhor_envio_id) }),
+      body: JSON.stringify({ orders: resolved.map((r) => r.melhorEnvioId) }),
     });
     if (!resp.ok) {
       const errText = await resp.text().catch(() => '');
@@ -122,7 +167,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     trackingResponse = await resp.json();
   } catch (err) {
     const message = err instanceof Error ? err.message : 'Falha ao consultar rastreio na Melhor Envio.';
-    for (const d of withMelhorEnvioId) results.push({ deliveryId: d.id, ok: false, error: message });
+    for (const r of resolved) results.push({ deliveryId: r.delivery.id, ok: false, error: message });
     sendJson(res, 200, { results });
     return;
   }
@@ -133,13 +178,17 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       ? (trackingResponse as Record<string, unknown>)
       : {};
 
-  for (const delivery of withMelhorEnvioId) {
-    const entry = responseByOrderId[delivery.melhor_envio_id as string];
+  for (const r of resolved) {
+    const entry = responseByOrderId[r.melhorEnvioId];
     const rawStatus = extractStatusText(entry);
 
     const patch: Record<string, unknown> = { melhor_envio_last_sync_at: nowIso };
-    let mappedStatus: string | null = null;
+    if (r.isNew) {
+      patch.melhor_envio_id = r.melhorEnvioId;
+      if (!r.delivery.codigo_rastreio && r.trackingCode) patch.codigo_rastreio = r.trackingCode;
+    }
 
+    let mappedStatus: string | null = null;
     if (rawStatus) {
       mappedStatus = mapTrackingStatus(rawStatus);
       if (mappedStatus) {
@@ -151,10 +200,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     const { error: updateError } = await userClient
       .from('deliveries')
       .update(patch)
-      .eq('id', delivery.id);
+      .eq('id', r.delivery.id);
 
     results.push({
-      deliveryId: delivery.id,
+      deliveryId: r.delivery.id,
       ok: !updateError,
       rawStatus: rawStatus ?? undefined,
       mappedStatus,

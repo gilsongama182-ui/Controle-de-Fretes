@@ -1,0 +1,7 @@
+{
+  "functions": {
+    "api/melhor-envio/sync.ts": {
+      "maxDuration": 30
+    }
+  }
+}

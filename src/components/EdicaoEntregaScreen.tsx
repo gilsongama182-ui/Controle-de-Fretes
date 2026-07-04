@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   ChevronRight, Calendar, Landmark, MapPin, Save, ArrowLeft, ClipboardCopy, RefreshCw
 } from 'lucide-react';
@@ -72,6 +72,12 @@ export default function EdicaoEntregaScreen({
   const [valorCobranca, setValorCobranca] = useState(delivery?.valorCobranca ?? 0);
   const [valorPagamento, setValorPagamento] = useState(delivery?.valorPagamento ?? 0);
   const [melhorEnvioId, setMelhorEnvioId] = useState(delivery?.melhorEnvioId ?? '');
+
+  // Se a sincronização descobrir o ID automaticamente (campo estava vazio),
+  // reflete no campo assim que a entrega atualizada chegar de volta.
+  useEffect(() => {
+    if (delivery?.melhorEnvioId) setMelhorEnvioId(delivery.melhorEnvioId);
+  }, [delivery?.melhorEnvioId]);
 
   if (!delivery) {
     return (
@@ -588,14 +594,14 @@ export default function EdicaoEntregaScreen({
                       type="text"
                       value={melhorEnvioId}
                       onChange={(e) => setMelhorEnvioId(e.target.value)}
-                      placeholder="ID da etiqueta na Melhor Envio"
+                      placeholder="Deixe em branco pra buscar automaticamente pela NF-e"
                       className="flex-1 p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-mono"
                     />
                     <button
                       type="button"
                       onClick={handleSyncTracking}
-                      disabled={isSyncing || !delivery.melhorEnvioId}
-                      title={!delivery.melhorEnvioId ? 'Salve o ID Melhor Envio antes de sincronizar' : undefined}
+                      disabled={isSyncing}
+                      title="Atualizar rastreio (busca o ID automaticamente pela NF-e, se estiver vazio)"
                       className="px-3 bg-surface-container border border-outline-variant rounded-lg hover:bg-secondary-container transition-colors text-secondary disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                     >
                       <RefreshCw className={`w-4 h-4 ${isSyncing ? 'animate-spin' : ''}`} />
