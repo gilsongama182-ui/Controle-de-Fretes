@@ -47,10 +47,17 @@ export default function DashboardOperadorScreen({
     const pctOnTrack = total > 0 ? (((total - delayedCount - failedCount) / total) * 100).toFixed(1) : '0.0';
     const pctOffTrack = total > 0 ? (((delayedCount + failedCount) / total) * 100).toFixed(1) : '0.0';
 
+    // % Entregue mede sucesso sobre as entregas já CONCLUÍDAS (entregue ou
+    // falha) — não sobre o total, senão o indicador fica artificialmente
+    // baixo enquanto houver entregas ainda em rota/atraso que nem tiveram
+    // chance de ser entregues ainda.
+    const finalizedCount = deliveredCount + failedCount;
+    const pctDelivered = finalizedCount > 0 ? ((deliveredCount / finalizedCount) * 100).toFixed(1) : '0.0';
+
     return {
       total,
       enRouteCount,
-      pctDelivered: `${pct(deliveredCount)}%`,
+      pctDelivered: `${pctDelivered}%`,
       pctEnRoute: `${pct(enRouteCount)}%`,
       pctOnTrack: `${pctOnTrack}%`,
       pctOffTrack: `${pctOffTrack}%`,
@@ -142,7 +149,7 @@ export default function DashboardOperadorScreen({
               </div>
               <div className="mt-4">
                 <h4 className="font-headline text-3xl font-bold text-primary">{metrics.pctDelivered}</h4>
-                <p className="text-xs text-secondary mt-1">Meta: 90%</p>
+                <p className="text-xs text-secondary mt-1">Meta: 98,5%</p>
               </div>
             </div>
 
