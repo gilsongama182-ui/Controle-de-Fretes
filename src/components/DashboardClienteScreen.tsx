@@ -110,7 +110,7 @@ export default function DashboardClienteScreen({
           <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
             <div>
               <h1 className="font-headline text-3xl font-bold text-primary">Dashboard de Entregas</h1>
-              <p className="text-sm text-secondary">Área do cliente para monitoramento autônomo de cargas.</p>
+              <p className="text-sm text-secondary">Área do cliente para monitoramento de cargas.</p>
             </div>
 
             <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
