@@ -246,6 +246,98 @@ export function computePrevisaoEntrega(order: MelhorEnvioOrderDetail): string | 
   return forecast.toISOString().split('T')[0];
 }
 
+export interface DeliveryTrackingRow {
+  id: string;
+  melhor_envio_id: string | null;
+  nfe: string;
+  chave_acesso_nfe: string | null;
+  codigo_rastreio: string | null;
+}
+
+export interface MelhorEnvioOrderIndexes {
+  byId: Map<string, MelhorEnvioOrderDetail>;
+  byInvoiceNumber: Map<string, MelhorEnvioOrderDetail>;
+  byInvoiceKey: Map<string, MelhorEnvioOrderDetail>;
+}
+
+// Monta os três índices em memória (por ID da Melhor Envio, por número de
+// NF-e e por chave de acesso) uma única vez por sincronização — tanto o
+// sync manual quanto o cron automático usam o mesmo formato de índice pra
+// não duplicar essa lógica de combinação.
+export function buildOrderIndexes(orders: MelhorEnvioOrderDetail[]): MelhorEnvioOrderIndexes {
+  const byId = new Map<string, MelhorEnvioOrderDetail>();
+  const byInvoiceNumber = new Map<string, MelhorEnvioOrderDetail>();
+  const byInvoiceKey = new Map<string, MelhorEnvioOrderDetail>();
+  for (const order of orders) {
+    byId.set(order.id, order);
+    const num = order.invoice?.number != null ? String(order.invoice.number) : null;
+    const key = order.invoice?.key ?? null;
+    if (num && !byInvoiceNumber.has(num)) byInvoiceNumber.set(num, order);
+    if (key && !byInvoiceKey.has(key)) byInvoiceKey.set(key, order);
+  }
+  return { byId, byInvoiceNumber, byInvoiceKey };
+}
+
+export interface DeliverySyncOutcome {
+  ok: boolean;
+  rawStatus?: string;
+  mappedStatus?: DeliveryStatus | null;
+  previsao?: string | null;
+  patch?: Record<string, unknown>;
+  error?: string;
+}
+
+// Combina uma entrega com o pedido correspondente na Melhor Envio (por ID
+// já salvo, ou por NF-e/chave de acesso quando ainda não tem ID) e monta o
+// patch a ser gravado — usado tanto pelo sync manual (sync.ts) quanto pelo
+// cron automático (cron-sync.ts), pra manter as duas rotas sempre com a
+// mesma regra de mapeamento.
+export function matchAndBuildPatch(
+  delivery: DeliveryTrackingRow,
+  indexes: MelhorEnvioOrderIndexes,
+  nowIso: string
+): DeliverySyncOutcome {
+  let order: MelhorEnvioOrderDetail | undefined;
+  let isNew = false;
+  if (delivery.melhor_envio_id) {
+    order = indexes.byId.get(delivery.melhor_envio_id);
+  } else {
+    order =
+      indexes.byInvoiceNumber.get(delivery.nfe) ??
+      (delivery.chave_acesso_nfe ? indexes.byInvoiceKey.get(delivery.chave_acesso_nfe) : undefined);
+    isNew = !!order;
+  }
+
+  if (!order) {
+    return {
+      ok: false,
+      error: delivery.melhor_envio_id
+        ? 'Pedido não encontrado na Melhor Envio (ID pode estar desatualizado).'
+        : 'Não foi encontrado nenhum pedido na Melhor Envio com essa NF-e.',
+    };
+  }
+
+  const patch: Record<string, unknown> = { melhor_envio_last_sync_at: nowIso };
+  if (isNew) {
+    patch.melhor_envio_id = order.id;
+    if (!delivery.codigo_rastreio && order.tracking) patch.codigo_rastreio = order.tracking;
+  }
+
+  const rawStatus = order.status;
+  const mappedStatus = rawStatus ? mapTrackingStatus(rawStatus) : null;
+  if (mappedStatus) {
+    patch.status = mappedStatus;
+    if (mappedStatus === 'ENTREGUE') {
+      patch.data_entrega = (order.delivered_at ?? nowIso).split(/[ T]/)[0];
+    }
+  }
+
+  const previsao = computePrevisaoEntrega(order);
+  if (previsao) patch.previsao = previsao;
+
+  return { ok: true, rawStatus, mappedStatus, previsao, patch };
+}
+
 // "received" confirmado contra uma resposta real da API de rastreio (23h
 // da entrega de teste NF-e 5548 — status "Postado no Ponto Parceiro" no
 // painel da Melhor Envio). Os demais são inferência sobre o vocabulário

@@ -2,6 +2,15 @@
   "functions": {
     "api/melhor-envio/sync.ts": {
       "maxDuration": 60
+    },
+    "api/melhor-envio/cron-sync.ts": {
+      "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/melhor-envio/cron-sync",
+      "schedule": "*/30 * * * *"
+    }
+  ]
 }

@@ -3,10 +3,10 @@ import {
   getBearerToken,
   getUserClient,
   getValidAccessToken,
-  mapTrackingStatus,
   fetchAllMelhorEnvioOrders,
-  computePrevisaoEntrega,
-  MelhorEnvioOrderDetail,
+  buildOrderIndexes,
+  matchAndBuildPatch,
+  DeliveryTrackingRow,
   sendJson,
   readJsonBody,
 } from './_shared.js';
@@ -22,14 +22,6 @@ interface SyncItemResult {
   mappedStatus?: string | null;
   previsao?: string | null;
   error?: string;
-}
-
-interface DeliveryRow {
-  id: string;
-  melhor_envio_id: string | null;
-  nfe: string;
-  chave_acesso_nfe: string | null;
-  codigo_rastreio: string | null;
 }
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
@@ -66,7 +58,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     .from('deliveries')
     .select('id, melhor_envio_id, nfe, chave_acesso_nfe, codigo_rastreio')
     .in('id', deliveryIds)
-    .returns<DeliveryRow[]>();
+    .returns<DeliveryTrackingRow[]>();
 
   if (fetchError) {
     sendJson(res, 500, { error: `Não foi possível buscar as entregas: ${fetchError.message}` });
@@ -87,7 +79,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
   // Uma única varredura de pedidos serve pra combinar TODAS as entregas
   // selecionadas — não é mais feita uma busca por nota fiscal.
-  let orders: MelhorEnvioOrderDetail[];
+  let orders;
   try {
     orders = await fetchAllMelhorEnvioOrders(accessToken);
   } catch (err) {
@@ -97,17 +89,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     return;
   }
 
-  const byId = new Map<string, MelhorEnvioOrderDetail>();
-  const byInvoiceNumber = new Map<string, MelhorEnvioOrderDetail>();
-  const byInvoiceKey = new Map<string, MelhorEnvioOrderDetail>();
-  for (const order of orders) {
-    byId.set(order.id, order);
-    const num = order.invoice?.number != null ? String(order.invoice.number) : null;
-    const key = order.invoice?.key ?? null;
-    if (num && !byInvoiceNumber.has(num)) byInvoiceNumber.set(num, order);
-    if (key && !byInvoiceKey.has(key)) byInvoiceKey.set(key, order);
-  }
-
+  const indexes = buildOrderIndexes(orders);
   const nowIso = new Date().toISOString();
 
   for (const id of deliveryIds) {
@@ -117,55 +99,23 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       continue;
     }
 
-    let order: MelhorEnvioOrderDetail | undefined;
-    let isNew = false;
-    if (delivery.melhor_envio_id) {
-      order = byId.get(delivery.melhor_envio_id);
-    } else {
-      order = byInvoiceNumber.get(delivery.nfe) ?? (delivery.chave_acesso_nfe ? byInvoiceKey.get(delivery.chave_acesso_nfe) : undefined);
-      isNew = !!order;
-    }
-
-    if (!order) {
-      results.push({
-        deliveryId: delivery.id,
-        ok: false,
-        error: delivery.melhor_envio_id
-          ? 'Pedido não encontrado na Melhor Envio (ID pode estar desatualizado).'
-          : 'Não foi encontrado nenhum pedido na Melhor Envio com essa NF-e.',
-      });
+    const outcome = matchAndBuildPatch(delivery, indexes, nowIso);
+    if (!outcome.ok || !outcome.patch) {
+      results.push({ deliveryId: delivery.id, ok: false, error: outcome.error });
       continue;
     }
 
-    const patch: Record<string, unknown> = { melhor_envio_last_sync_at: nowIso };
-    if (isNew) {
-      patch.melhor_envio_id = order.id;
-      if (!delivery.codigo_rastreio && order.tracking) patch.codigo_rastreio = order.tracking;
-    }
-
-    const rawStatus = order.status;
-    const mappedStatus = rawStatus ? mapTrackingStatus(rawStatus) : null;
-    if (mappedStatus) {
-      patch.status = mappedStatus;
-      if (mappedStatus === 'ENTREGUE') {
-        patch.data_entrega = (order.delivered_at ?? nowIso).split(/[ T]/)[0];
-      }
-    }
-
-    const previsao = computePrevisaoEntrega(order);
-    if (previsao) patch.previsao = previsao;
-
     const { error: updateError } = await userClient
       .from('deliveries')
-      .update(patch)
+      .update(outcome.patch)
       .eq('id', delivery.id);
 
     results.push({
       deliveryId: delivery.id,
       ok: !updateError,
-      rawStatus: rawStatus ?? undefined,
-      mappedStatus,
-      previsao,
+      rawStatus: outcome.rawStatus,
+      mappedStatus: outcome.mappedStatus,
+      previsao: outcome.previsao,
       error: updateError?.message,
     });
   }
