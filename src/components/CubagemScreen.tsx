@@ -1,11 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { ChevronRight, ChevronLeft, Ruler, Package } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Ruler, Package, Tag } from 'lucide-react';
 import { ActivePage, Delivery, User } from '../types';
 import { Volume, VolumeInput } from '../lib/deliveryVolumes';
 import { formatNfe } from '../lib/formatNfe';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import CubagemModal from './layout/CubagemModal';
+import EtiquetaPrintView from './layout/EtiquetaPrintView';
 
 interface CubagemScreenProps {
   onNavigate: (page: ActivePage) => void;
@@ -28,6 +29,7 @@ export default function CubagemScreen({
   const [currentPage, setCurrentPage] = useState(1);
   const [linesPerPage] = useState(10);
   const [cubagemDeliveryId, setCubagemDeliveryId] = useState<string | null>(null);
+  const [etiquetaDeliveryId, setEtiquetaDeliveryId] = useState<string | null>(null);
 
   if (user.profileType !== 'operador_log' && user.profileType !== 'master') {
     return (
@@ -59,6 +61,9 @@ export default function CubagemScreen({
 
   const cubagemDelivery = cubagemDeliveryId
     ? deliveries.find((d) => d.id === cubagemDeliveryId) ?? null
+    : null;
+  const etiquetaDelivery = etiquetaDeliveryId
+    ? deliveries.find((d) => d.id === etiquetaDeliveryId) ?? null
     : null;
 
   return (
@@ -131,13 +136,23 @@ export default function CubagemScreen({
                             </span>
                           </td>
                           <td className="px-5 py-4 text-right">
-                            <button
-                              onClick={() => setCubagemDeliveryId(del.id)}
-                              className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-outline text-on-surface-variant rounded-lg text-xs font-bold hover:bg-secondary-container transition-colors"
-                            >
-                              <Ruler className="w-3.5 h-3.5" />
-                              Cubagem
-                            </button>
+                            <div className="flex justify-end gap-2">
+                              <button
+                                onClick={() => setCubagemDeliveryId(del.id)}
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-outline text-on-surface-variant rounded-lg text-xs font-bold hover:bg-secondary-container transition-colors"
+                              >
+                                <Ruler className="w-3.5 h-3.5" />
+                                Cubagem
+                              </button>
+                              <button
+                                onClick={() => setEtiquetaDeliveryId(del.id)}
+                                title="Gerar etiqueta de remessa"
+                                className="inline-flex items-center gap-1.5 px-3 py-1.5 border border-outline text-on-surface-variant rounded-lg text-xs font-bold hover:bg-secondary-container transition-colors"
+                              >
+                                <Tag className="w-3.5 h-3.5" />
+                                Etiqueta
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );
@@ -185,6 +200,10 @@ export default function CubagemScreen({
         onClose={() => setCubagemDeliveryId(null)}
         onSave={onSaveVolumes}
       />
+
+      {etiquetaDelivery && (
+        <EtiquetaPrintView deliveries={[etiquetaDelivery]} onClose={() => setEtiquetaDeliveryId(null)} />
+      )}
     </div>
   );
 }
