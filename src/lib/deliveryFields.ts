@@ -35,7 +35,6 @@ export const DELIVERY_FIELDS: { key: keyof Delivery; label: string; required: bo
   { key: 'valorCobranca', label: 'Valor Cobrança', required: false },
   { key: 'valorPagamento', label: 'Valor Pagamento', required: false },
   { key: 'codigoRastreio', label: 'Código de Rastreio', required: false },
-  { key: 'melhorEnvioId', label: 'ID Melhor Envio', required: false },
 ];
 
 // Normaliza um cabeçalho para comparação: sem acento, minúsculo, só letras/números.

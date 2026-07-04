@@ -17,6 +17,14 @@ function cellValue(delivery: Delivery, key: keyof Delivery): unknown {
   if (key === 'valorTotalNota') {
     return delivery.valorTotalNota.toFixed(2).replace('.', ',');
   }
+  if (key === 'valorPagamento') {
+    return delivery.valorPagamento.toFixed(2).replace('.', ',');
+  }
+  if (key === 'codigoRastreio') {
+    // Mesmo problema da chave de acesso: um código só com dígitos vira
+    // notação científica no Excel se não for forçado como texto.
+    return delivery.codigoRastreio ? `="${delivery.codigoRastreio}"` : '';
+  }
   return delivery[key];
 }
 
