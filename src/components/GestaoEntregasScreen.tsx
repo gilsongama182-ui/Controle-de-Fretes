@@ -1,7 +1,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import {
   Truck, Download, FileUp, CheckCircle, AlertTriangle, Clock,
-  Trash2, Edit, ChevronLeft, ChevronRight, ListCollapse, Table, Paperclip, Tag, RefreshCw
+  Trash2, Edit, ChevronLeft, ChevronRight, ListCollapse, Table, Paperclip, Tag, RefreshCw,
+  ArrowUp, ArrowDown, ArrowUpDown
 } from 'lucide-react';
 import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
@@ -45,8 +46,11 @@ export default function GestaoEntregasScreen({
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [ufFilter, setUfFilter] = useState('');
+  const [comprovanteFilter, setComprovanteFilter] = useState<'' | 'com' | 'sem'>('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [sortKey, setSortKey] = useState<keyof Delivery | null>(null);
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [detailedMode, setDetailedMode] = useState(true); // default to detailed/wide table
   const [currentPage, setCurrentPage] = useState(1);
   const [linesPerPage, setLinesPerPage] = useState(10);
@@ -106,6 +110,13 @@ export default function GestaoEntregasScreen({
       result = result.filter(d => d.uf === ufFilter);
     }
 
+    // Comprovante anexado ou não
+    if (comprovanteFilter === 'com') {
+      result = result.filter(d => !!d.comprovantePath);
+    } else if (comprovanteFilter === 'sem') {
+      result = result.filter(d => !d.comprovantePath);
+    }
+
     // Período (Data do Pedido)
     if (dateFrom) {
       result = result.filter(d => d.dataPedido >= dateFrom);
@@ -115,19 +126,44 @@ export default function GestaoEntregasScreen({
     }
 
     return result;
-  }, [deliveries, searchTerm, statusFilter, ufFilter, dateFrom, dateTo]);
+  }, [deliveries, searchTerm, statusFilter, ufFilter, comprovanteFilter, dateFrom, dateTo]);
+
+  // Ordenação por coluna — clicar num cabeçalho ordena por aquele campo;
+  // clicar de novo no mesmo cabeçalho inverte a direção.
+  const sortedDeliveries = useMemo(() => {
+    if (!sortKey) return filteredDeliveries;
+    const arr = [...filteredDeliveries];
+    arr.sort((a, b) => {
+      const av = a[sortKey];
+      const bv = b[sortKey];
+      const cmp = typeof av === 'number' && typeof bv === 'number'
+        ? av - bv
+        : String(av ?? '').localeCompare(String(bv ?? ''), 'pt-BR', { numeric: true });
+      return sortDirection === 'asc' ? cmp : -cmp;
+    });
+    return arr;
+  }, [filteredDeliveries, sortKey, sortDirection]);
+
+  const handleSort = (key: keyof Delivery) => {
+    if (sortKey === key) {
+      setSortDirection((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setSortKey(key);
+      setSortDirection('asc');
+    }
+  };
 
   // Volta pra primeira página sempre que os filtros mudam — senão a página
   // atual pode ficar além do fim da lista filtrada e a tabela parece vazia.
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, ufFilter, dateFrom, dateTo]);
+  }, [searchTerm, statusFilter, ufFilter, comprovanteFilter, dateFrom, dateTo]);
 
   // Pagination logic
   const paginatedDeliveries = useMemo(() => {
     const startIndex = (currentPage - 1) * linesPerPage;
-    return filteredDeliveries.slice(startIndex, startIndex + linesPerPage);
-  }, [filteredDeliveries, currentPage, linesPerPage]);
+    return sortedDeliveries.slice(startIndex, startIndex + linesPerPage);
+  }, [sortedDeliveries, currentPage, linesPerPage]);
 
   const totalPages = Math.ceil(filteredDeliveries.length / linesPerPage);
 
@@ -185,6 +221,23 @@ export default function GestaoEntregasScreen({
     }
   };
 
+  const SortableTh = ({ sortField, label, className = 'px-4' }: { sortField: keyof Delivery; label: string; className?: string }) => (
+    <th
+      onClick={() => handleSort(sortField)}
+      className={`py-3 cursor-pointer select-none hover:text-primary transition-colors ${className}`}
+      title={`Ordenar por ${label}`}
+    >
+      <span className="inline-flex items-center gap-1">
+        {label}
+        {sortKey === sortField ? (
+          sortDirection === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+        ) : (
+          <ArrowUpDown className="w-3 h-3 opacity-30" />
+        )}
+      </span>
+    </th>
+  );
+
   return (
     <div className="bg-surface text-on-surface font-sans min-h-screen flex flex-col md:flex-row">
 
@@ -235,7 +288,7 @@ export default function GestaoEntregasScreen({
                 <span>{isSyncingTracking ? 'Sincronizando...' : `Atualizar Rastreio${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}</span>
               </button>
               <button
-                onClick={() => exportDeliveriesToCsv(filteredDeliveries, `gestao-entregas-${new Date().toISOString().split('T')[0]}.csv`)}
+                onClick={() => exportDeliveriesToCsv(sortedDeliveries, `gestao-entregas-${new Date().toISOString().split('T')[0]}.csv`)}
                 className="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface-variant rounded-lg font-bold text-sm hover:bg-surface-container transition-all shadow-sm bg-white"
               >
                 <Download className="w-4 h-4" />
@@ -346,6 +399,17 @@ export default function GestaoEntregasScreen({
                   <option value="PR">Paraná</option>
                 </select>
 
+                {/* Comprovante anexado ou não */}
+                <select
+                  value={comprovanteFilter}
+                  onChange={(e) => setComprovanteFilter(e.target.value as '' | 'com' | 'sem')}
+                  className="px-3 py-2 border border-outline-variant rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                >
+                  <option value="">Comprovante: Todos</option>
+                  <option value="com">Com anexo</option>
+                  <option value="sem">Sem anexo</option>
+                </select>
+
                 {/* Filtro por período (Data do Pedido) */}
                 <div className="flex items-center gap-1.5 px-3 py-1.5 border border-outline-variant rounded-lg bg-white">
                   <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Período</span>
@@ -418,27 +482,27 @@ export default function GestaoEntregasScreen({
                           title="Selecionar todos desta página"
                         />
                       </th>
-                      <th className="px-4 py-3">Remetente</th>
-                      <th className="px-4 py-3">CNPJ Remetente</th>
-                      <th className="px-4 py-3">Nº NF-e</th>
-                      <th className="px-4 py-3">Pedido</th>
-                      <th className="px-4 py-3">Data Pedido</th>
-                      <th className="px-4 py-3">Data Expedição</th>
-                      <th className="px-4 py-3">Previsão de Entrega</th>
-                      <th className="px-4 py-3">Data de Entrega</th>
-                      <th className="px-4 py-3">Destinatário</th>
-                      <th className="px-4 py-3">CNPJ / CPF</th>
-                      <th className="px-4 py-3">Endereço</th>
-                      <th className="px-4 py-3">Nº</th>
-                      <th className="px-4 py-3">Complemento</th>
-                      <th className="px-4 py-3">Bairro / Distrito</th>
-                      <th className="px-4 py-3">CEP</th>
-                      <th className="px-4 py-3">Município</th>
-                      <th className="px-4 py-3">UF</th>
-                      <th className="px-4 py-3">Fone / Fax</th>
-                      <th className="px-4 py-3">Status / Ocorrência</th>
-                      <th className="px-4 py-3 text-right">Valor Cobrança</th>
-                      <th className="px-4 py-3 text-right">Valor Pagto</th>
+                      <SortableTh sortField="remetente" label="Remetente" />
+                      <SortableTh sortField="remetenteCnpj" label="CNPJ Remetente" />
+                      <SortableTh sortField="nfe" label="Nº NF-e" />
+                      <SortableTh sortField="pedido" label="Pedido" />
+                      <SortableTh sortField="dataPedido" label="Data Pedido" />
+                      <SortableTh sortField="dataExpedicao" label="Data Expedição" />
+                      <SortableTh sortField="previsao" label="Previsão de Entrega" />
+                      <SortableTh sortField="dataEntrega" label="Data de Entrega" />
+                      <SortableTh sortField="nomeRazaoSocial" label="Destinatário" />
+                      <SortableTh sortField="cnpjCpf" label="CNPJ / CPF" />
+                      <SortableTh sortField="enderecoCompleto" label="Endereço" />
+                      <SortableTh sortField="numero" label="Nº" />
+                      <SortableTh sortField="complemento" label="Complemento" />
+                      <SortableTh sortField="bairroDistrito" label="Bairro / Distrito" />
+                      <SortableTh sortField="cep" label="CEP" />
+                      <SortableTh sortField="municipio" label="Município" />
+                      <SortableTh sortField="uf" label="UF" />
+                      <SortableTh sortField="foneFax" label="Fone / Fax" />
+                      <SortableTh sortField="status" label="Status / Ocorrência" />
+                      <SortableTh sortField="valorCobranca" label="Valor Cobrança" className="px-4 text-right" />
+                      <SortableTh sortField="valorPagamento" label="Valor Pagto" className="px-4 text-right" />
                       <th className="px-4 py-3 text-right sticky right-0 bg-surface-container-low shadow-[-4px_0_12px_rgba(0,0,0,0.05)]">Ações</th>
                     </tr>
                   </thead>
@@ -544,11 +608,11 @@ export default function GestaoEntregasScreen({
                           title="Selecionar todos desta página"
                         />
                       </th>
-                      <th className="px-5 py-3">NF</th>
-                      <th className="px-5 py-3">Destinatário</th>
-                      <th className="px-5 py-3">UF</th>
-                      <th className="px-5 py-3">Previsão</th>
-                      <th className="px-5 py-3">Status</th>
+                      <SortableTh sortField="nfe" label="NF" className="px-5" />
+                      <SortableTh sortField="cliente" label="Destinatário" className="px-5" />
+                      <SortableTh sortField="uf" label="UF" className="px-5" />
+                      <SortableTh sortField="previsao" label="Previsão" className="px-5" />
+                      <SortableTh sortField="status" label="Status" className="px-5" />
                       <th className="px-5 py-3">Ocorrência</th>
                       <th className="px-5 py-3 text-right">Ações</th>
                     </tr>
