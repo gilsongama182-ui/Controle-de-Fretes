@@ -8,6 +8,11 @@ import OperadorTopBar from './layout/OperadorTopBar';
 import CubagemModal from './layout/CubagemModal';
 import EtiquetaPrintView from './layout/EtiquetaPrintView';
 
+// Referência estável — se fosse "?? []" direto na JSX, um array novo seria
+// criado a cada re-render do componente, mudando a dependência do useEffect
+// dentro do CubagemModal e resetando os rascunhos não salvos do usuário.
+const EMPTY_VOLUMES: Volume[] = [];
+
 interface CubagemScreenProps {
   onNavigate: (page: ActivePage) => void;
   onLogout: () => void;
@@ -201,7 +206,7 @@ export default function CubagemScreen({
 
       <CubagemModal
         delivery={cubagemDelivery}
-        volumes={cubagemDeliveryId ? volumesByDeliveryId.get(cubagemDeliveryId) ?? [] : []}
+        volumes={(cubagemDeliveryId && volumesByDeliveryId.get(cubagemDeliveryId)) || EMPTY_VOLUMES}
         onClose={() => setCubagemDeliveryId(null)}
         onSave={onSaveVolumes}
       />

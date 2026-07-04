@@ -77,6 +77,7 @@ function AppShell() {
       if (lastHandledSessionId.current !== null) {
         setActivePage('login');
         setDeliveries([]);
+        setVolumes([]);
         setSelectedDelivery(null);
       }
       lastHandledSessionId.current = null;
