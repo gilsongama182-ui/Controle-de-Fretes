@@ -74,6 +74,7 @@ export default function IntegracoesScreen({
         onLogout={onLogout}
         onUsuarios={() => onNavigate('usuarios')}
         onIntegracoes={() => onNavigate('integracoes')}
+        onCubagem={() => onNavigate('cubagem')}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

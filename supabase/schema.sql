@@ -11,7 +11,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
   email text not null,
-  profile_type text not null check (profile_type in ('cliente', 'operador', 'master')),
+  profile_type text not null check (profile_type in ('cliente', 'operador', 'master', 'operador_log')),
   document text not null,
   genero text not null default 'nao_informado' check (genero in ('masculino', 'feminino', 'nao_informado')),
   status text not null default 'pendente' check (status in ('pendente', 'aprovado', 'rejeitado')),
@@ -85,6 +85,22 @@ create table if not exists public.melhor_envio_tokens (
 );
 alter table public.melhor_envio_tokens enable row level security;
 
+-- Volumes (cubagem) de cada entrega, 1:N — peso em kg, dimensões em cm.
+-- Preenchida pela tela de Inclusão de Cubagem (papel operador_log/master).
+create table if not exists public.delivery_volumes (
+  id uuid primary key default gen_random_uuid(),
+  delivery_id uuid not null references public.deliveries(id) on delete cascade,
+  ordem int not null default 1,
+  peso numeric(10, 2) not null default 0,        -- kg
+  altura numeric(10, 2) not null default 0,      -- cm
+  largura numeric(10, 2) not null default 0,     -- cm
+  comprimento numeric(10, 2) not null default 0, -- cm
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now()
+);
+create index if not exists delivery_volumes_delivery_id_idx on public.delivery_volumes (delivery_id);
+alter table public.delivery_volumes enable row level security;
+
 -- =========================================================
 -- 2. updated_at automático em deliveries
 -- =========================================================
@@ -102,6 +118,11 @@ $$;
 drop trigger if exists deliveries_set_updated_at on public.deliveries;
 create trigger deliveries_set_updated_at
   before update on public.deliveries
+  for each row execute function public.set_updated_at();
+
+drop trigger if exists delivery_volumes_set_updated_at on public.delivery_volumes;
+create trigger delivery_volumes_set_updated_at
+  before update on public.delivery_volumes
   for each row execute function public.set_updated_at();
 
 -- =========================================================
@@ -186,7 +207,7 @@ create policy deliveries_select
   using (
     public.current_profile_status() = 'aprovado'
     and (
-      public.current_profile_type() in ('operador', 'master')
+      public.current_profile_type() in ('operador', 'master', 'operador_log')
       or regexp_replace(coalesce(remetente_cnpj, ''), '\D', '', 'g') = (
         select regexp_replace(document, '\D', '', 'g')
         from public.profiles
@@ -221,6 +242,44 @@ create policy deliveries_delete
   using (
     public.current_profile_status() = 'aprovado'
     and public.current_profile_type() in ('operador', 'master')
+  );
+
+-- delivery_volumes: operador/master (relatório de exportação) e operador_log
+-- (tela de cubagem) leem; só operador_log/master criam/editam/removem.
+drop policy if exists delivery_volumes_select on public.delivery_volumes;
+create policy delivery_volumes_select
+  on public.delivery_volumes
+  for select
+  using (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() in ('operador', 'master', 'operador_log')
+  );
+
+drop policy if exists delivery_volumes_insert on public.delivery_volumes;
+create policy delivery_volumes_insert
+  on public.delivery_volumes
+  for insert
+  with check (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() in ('operador_log', 'master')
+  );
+
+drop policy if exists delivery_volumes_update on public.delivery_volumes;
+create policy delivery_volumes_update
+  on public.delivery_volumes
+  for update
+  using (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() in ('operador_log', 'master')
+  );
+
+drop policy if exists delivery_volumes_delete on public.delivery_volumes;
+create policy delivery_volumes_delete
+  on public.delivery_volumes
+  for delete
+  using (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() in ('operador_log', 'master')
   );
 
 -- =========================================================

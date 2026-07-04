@@ -182,6 +182,7 @@ export default function EdicaoEntregaScreen({
         onLogout={onLogout}
         onUsuarios={user.profileType === 'master' ? () => onNavigate('usuarios') : undefined}
         onIntegracoes={user.profileType === 'master' ? () => onNavigate('integracoes') : undefined}
+        onCubagem={user.profileType === 'master' ? () => onNavigate('cubagem') : undefined}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

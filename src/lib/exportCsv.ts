@@ -1,6 +1,7 @@
 import { Delivery } from '../types';
 import { formatNfe } from './formatNfe';
 import { DELIVERY_FIELDS } from './deliveryFields';
+import { Volume } from './deliveryVolumes';
 
 function escapeCsvValue(value: unknown): string {
   const str = String(value ?? '');
@@ -36,6 +37,17 @@ const EXPORT_ONLY_FIELDS: { key: keyof Delivery; label: string }[] = [
   { key: 'valorTotalNota', label: 'Valor Total da Nota' },
 ];
 
+// Colunas de cubagem (peso/altura/largura/comprimento) não são um campo de
+// Delivery — vêm de uma tabela separada (1 entrega : N volumes) — por isso
+// entram à parte, não por DELIVERY_FIELDS/excludeKeys. Só aparecem quando o
+// chamador passa o mapa de volumes; a exportação do cliente nunca passa esse
+// mapa, então essas colunas nunca aparecem pra esse perfil.
+const VOLUME_HEADERS = ['Qtd Volumes', 'Peso (kg)', 'Altura (cm)', 'Largura (cm)', 'Comprimento (cm)'];
+
+function formatVolumeColumn(volumes: Volume[], pick: (v: Volume) => number): string {
+  return volumes.map((v) => pick(v).toFixed(2).replace('.', ',')).join(' | ');
+}
+
 // Separador ";" (não ",") porque o Excel em pt-BR usa vírgula como separador
 // decimal e só quebra colunas automaticamente com ponto e vírgula. Os mesmos
 // rótulos de coluna são usados na importação (lib/importCsv.ts), então um
@@ -43,12 +55,26 @@ const EXPORT_ONLY_FIELDS: { key: keyof Delivery; label: string }[] = [
 export function exportDeliveriesToCsv(
   deliveries: Delivery[],
   filename: string,
-  excludeKeys: (keyof Delivery)[] = []
+  excludeKeys: (keyof Delivery)[] = [],
+  volumesByDeliveryId?: Map<string, Volume[]>
 ) {
   const headers = [...DELIVERY_FIELDS, ...EXPORT_ONLY_FIELDS].filter((h) => !excludeKeys.includes(h.key));
+  const headerRow = [...headers.map((h) => h.label), ...(volumesByDeliveryId ? VOLUME_HEADERS : [])].join(';');
   const rows = [
-    headers.map((h) => h.label).join(';'),
-    ...deliveries.map((d) => headers.map((h) => escapeCsvValue(cellValue(d, h.key))).join(';')),
+    headerRow,
+    ...deliveries.map((d) => {
+      const base = headers.map((h) => escapeCsvValue(cellValue(d, h.key)));
+      if (!volumesByDeliveryId) return base.join(';');
+      const volumes = volumesByDeliveryId.get(d.id) ?? [];
+      const extra = [
+        String(volumes.length),
+        escapeCsvValue(formatVolumeColumn(volumes, (v) => v.peso)),
+        escapeCsvValue(formatVolumeColumn(volumes, (v) => v.altura)),
+        escapeCsvValue(formatVolumeColumn(volumes, (v) => v.largura)),
+        escapeCsvValue(formatVolumeColumn(volumes, (v) => v.comprimento)),
+      ];
+      return [...base, ...extra].join(';');
+    }),
   ];
   // BOM no início para o Excel reconhecer acentuação em UTF-8 corretamente.
   const csvContent = '﻿' + rows.join('\r\n');

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { Truck, AlertTriangle } from 'lucide-react';
 import { ActivePage, Delivery } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -11,6 +11,7 @@ import {
   NewDeliveryInput,
 } from './lib/deliveries';
 import { syncTracking, SyncItemResult } from './lib/melhorEnvio';
+import { fetchAllVolumes, saveVolumesForDelivery, Volume, VolumeInput } from './lib/deliveryVolumes';
 
 // Import Screen Components
 import LoginScreen from './components/LoginScreen';
@@ -23,6 +24,7 @@ import UsuariosScreen from './components/UsuariosScreen';
 import AccountStatusScreen from './components/AccountStatusScreen';
 import ResetPasswordScreen from './components/ResetPasswordScreen';
 import IntegracoesScreen from './components/IntegracoesScreen';
+import CubagemScreen from './components/CubagemScreen';
 
 function LoadingScreen() {
   return (
@@ -61,6 +63,7 @@ function AppShell() {
   const { session, profile, loading, profileError, isPasswordRecovery, signOut, refreshProfile } = useAuth();
   const [activePage, setActivePage] = useState<ActivePage>('login');
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
+  const [volumes, setVolumes] = useState<Volume[]>([]);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const lastHandledSessionId = useRef<string | null>(null);
 
@@ -93,8 +96,12 @@ function AppShell() {
       const hasMelhorEnvioCallback = new URLSearchParams(window.location.search).has('melhor_envio');
       if (hasMelhorEnvioCallback && profile.profileType === 'master') {
         setActivePage('integracoes');
+      } else if (profile.profileType === 'cliente') {
+        setActivePage('dashboard-cliente');
+      } else if (profile.profileType === 'operador_log') {
+        setActivePage('cubagem');
       } else {
-        setActivePage(profile.profileType === 'cliente' ? 'dashboard-cliente' : 'dashboard-operador');
+        setActivePage('dashboard-operador');
       }
     }
   }, [loading, session, profile]);
@@ -109,10 +116,27 @@ function AppShell() {
         if (active) setDeliveries(rows);
       })
       .catch((err) => console.error('Falha ao buscar entregas:', err));
+    // RLS devolve [] pra quem não tem select em delivery_volumes (ex: cliente)
+    // sem lançar erro, então não precisa de tratamento especial por papel aqui.
+    fetchAllVolumes()
+      .then((rows) => {
+        if (active) setVolumes(rows);
+      })
+      .catch((err) => console.error('Falha ao buscar cubagem:', err));
     return () => {
       active = false;
     };
   }, [session?.user.id, profile?.id]);
+
+  const volumesByDeliveryId = useMemo(() => {
+    const map = new Map<string, Volume[]>();
+    for (const volume of volumes) {
+      const list = map.get(volume.deliveryId);
+      if (list) list.push(volume);
+      else map.set(volume.deliveryId, [volume]);
+    }
+    return map;
+  }, [volumes]);
 
   const handleLogout = async () => {
     await signOut();
@@ -142,6 +166,11 @@ function AppShell() {
     const updated = await updateDelivery(id, patch);
     setDeliveries((prev) => prev.map((d) => (d.id === id ? updated : d)));
     setSelectedDelivery(updated);
+  };
+
+  const handleSaveVolumes = async (deliveryId: string, volumeInputs: VolumeInput[]) => {
+    const saved = await saveVolumesForDelivery(deliveryId, volumeInputs);
+    setVolumes((prev) => [...prev.filter((v) => v.deliveryId !== deliveryId), ...saved]);
   };
 
   const handleSyncTracking = async (ids: string[]): Promise<SyncItemResult[]> => {
@@ -177,6 +206,7 @@ function AppShell() {
           onLogout={handleLogout}
           user={profile}
           deliveries={deliveries}
+          volumesByDeliveryId={volumesByDeliveryId}
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
           onSelectDeliveryForEdit={handleSelectDeliveryForEdit}
@@ -201,6 +231,7 @@ function AppShell() {
           onLogout={handleLogout}
           user={profile}
           deliveries={deliveries}
+          volumesByDeliveryId={volumesByDeliveryId}
           onDeleteDelivery={handleDeleteDelivery}
           onSelectDeliveryForEdit={handleSelectDeliveryForEdit}
           onAddDelivery={handleAddDelivery}
@@ -249,6 +280,19 @@ function AppShell() {
           deliveries={deliveries}
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
+        />
+      );
+
+    case 'cubagem':
+      if (!profile) return <LoadingScreen />;
+      return (
+        <CubagemScreen
+          onNavigate={setActivePage}
+          onLogout={handleLogout}
+          user={profile}
+          deliveries={deliveries}
+          volumesByDeliveryId={volumesByDeliveryId}
+          onSaveVolumes={handleSaveVolumes}
         />
       );
 

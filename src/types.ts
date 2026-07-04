@@ -42,7 +42,7 @@ export interface Delivery {
   melhorEnvioLastSyncAt: string; // ISO datetime da última sincronização de rastreio, vazio se nunca sincronizado
 }
 
-export type ProfileType = 'cliente' | 'operador' | 'master';
+export type ProfileType = 'cliente' | 'operador' | 'master' | 'operador_log';
 export type Genero = 'masculino' | 'feminino' | 'nao_informado';
 export type AccountStatus = 'pendente' | 'aprovado' | 'rejeitado';
 
@@ -64,4 +64,5 @@ export type ActivePage =
   | 'gestao-entregas'
   | 'edicao-entrega'
   | 'usuarios'
-  | 'integracoes';
+  | 'integracoes'
+  | 'cubagem';

@@ -23,6 +23,7 @@ interface UsuariosScreenProps {
 const ROLE_LABEL: Record<ProfileRecord['profileType'], string> = {
   cliente: 'Cliente',
   operador: 'Operador',
+  operador_log: 'Operador Log',
   master: 'Master',
 };
 
@@ -160,6 +161,7 @@ export default function UsuariosScreen({
         onLogout={onLogout}
         onUsuarios={() => onNavigate('usuarios')}
         onIntegracoes={() => onNavigate('integracoes')}
+        onCubagem={() => onNavigate('cubagem')}
       />
 
       <div className="flex-1 flex flex-col min-w-0">

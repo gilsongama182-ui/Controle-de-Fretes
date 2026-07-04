@@ -5,6 +5,7 @@ import { NewDeliveryInput } from '../lib/deliveries';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
 import { formatNfe } from '../lib/formatNfe';
+import { Volume } from '../lib/deliveryVolumes';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -16,6 +17,7 @@ interface DashboardOperadorProps {
   onLogout: () => void;
   user: User;
   deliveries: Delivery[];
+  volumesByDeliveryId: Map<string, Volume[]>;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
   onSelectDeliveryForEdit: (delivery: Delivery) => void;
@@ -26,6 +28,7 @@ export default function DashboardOperadorScreen({
   onLogout,
   user,
   deliveries,
+  volumesByDeliveryId,
   onAddDelivery,
   onImportDeliveries,
   onSelectDeliveryForEdit
@@ -87,6 +90,7 @@ export default function DashboardOperadorScreen({
         onLogout={onLogout}
         onUsuarios={user.profileType === 'master' ? () => onNavigate('usuarios') : undefined}
         onIntegracoes={user.profileType === 'master' ? () => onNavigate('integracoes') : undefined}
+        onCubagem={user.profileType === 'master' ? () => onNavigate('cubagem') : undefined}
       />
 
       {/* Main Content Area */}
@@ -106,7 +110,7 @@ export default function DashboardOperadorScreen({
 
             <div className="flex gap-2">
               <button
-                onClick={() => exportDeliveriesToCsv(deliveries, `relatorio-entregas-${new Date().toISOString().split('T')[0]}.csv`)}
+                onClick={() => exportDeliveriesToCsv(deliveries, `relatorio-entregas-${new Date().toISOString().split('T')[0]}.csv`, [], volumesByDeliveryId)}
                 className="flex items-center gap-2 px-4 py-2 bg-surface border border-outline-variant rounded-lg text-on-surface hover:bg-surface-container-high transition-colors font-bold text-sm shadow-sm"
               >
                 <Download className="w-4 h-4" />
