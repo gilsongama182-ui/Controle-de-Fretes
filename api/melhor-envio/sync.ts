@@ -4,9 +4,9 @@ import {
   getUserClient,
   getValidAccessToken,
   mapTrackingStatus,
-  findMelhorEnvioOrder,
-  fetchMelhorEnvioOrderDetail,
+  fetchAllMelhorEnvioOrders,
   computePrevisaoEntrega,
+  MelhorEnvioOrderDetail,
   sendJson,
   readJsonBody,
 } from './_shared.js';
@@ -85,87 +85,83 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     return;
   }
 
-  // Pra quem não tem "ID Melhor Envio" salvo, tenta achar automaticamente
-  // combinando pelo número ou chave de acesso da NF-e (campo "invoice" do
-  // pedido na Melhor Envio) — assim o operador não precisa caçar o UUID
-  // manualmente no painel deles.
-  const resolved: { delivery: DeliveryRow; melhorEnvioId: string; trackingCode: string | null; isNew: boolean }[] = [];
-
-  for (const delivery of deliveries ?? []) {
-    if (delivery.melhor_envio_id) {
-      resolved.push({ delivery, melhorEnvioId: delivery.melhor_envio_id, trackingCode: null, isNew: false });
-      continue;
-    }
-
-    try {
-      const match = await findMelhorEnvioOrder(accessToken, {
-        nfe: delivery.nfe,
-        chaveAcessoNfe: delivery.chave_acesso_nfe ?? '',
-      });
-      if (match) {
-        resolved.push({ delivery, melhorEnvioId: match.id, trackingCode: match.trackingCode, isNew: true });
-      } else {
-        results.push({
-          deliveryId: delivery.id,
-          ok: false,
-          error: 'Não foi encontrado nenhum pedido na Melhor Envio com essa NF-e.',
-        });
-      }
-    } catch (err) {
-      results.push({
-        deliveryId: delivery.id,
-        ok: false,
-        error: err instanceof Error ? `Falha ao buscar o pedido: ${err.message}` : 'Falha ao buscar o pedido na Melhor Envio.',
-      });
-    }
+  // Uma única varredura de pedidos serve pra combinar TODAS as entregas
+  // selecionadas — não é mais feita uma busca por nota fiscal.
+  let orders: MelhorEnvioOrderDetail[];
+  try {
+    orders = await fetchAllMelhorEnvioOrders(accessToken);
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Falha ao buscar pedidos na Melhor Envio.';
+    for (const id of deliveryIds) results.push({ deliveryId: id, ok: false, error: message });
+    sendJson(res, 200, { results });
+    return;
   }
 
-  for (const id of deliveryIds) {
-    if (!(deliveries ?? []).some((d) => d.id === id) && !results.some((r) => r.deliveryId === id)) {
-      results.push({ deliveryId: id, ok: false, error: 'Entrega não encontrada.' });
-    }
+  const byId = new Map<string, MelhorEnvioOrderDetail>();
+  const byInvoiceNumber = new Map<string, MelhorEnvioOrderDetail>();
+  const byInvoiceKey = new Map<string, MelhorEnvioOrderDetail>();
+  for (const order of orders) {
+    byId.set(order.id, order);
+    const num = order.invoice?.number != null ? String(order.invoice.number) : null;
+    const key = order.invoice?.key ?? null;
+    if (num && !byInvoiceNumber.has(num)) byInvoiceNumber.set(num, order);
+    if (key && !byInvoiceKey.has(key)) byInvoiceKey.set(key, order);
   }
 
   const nowIso = new Date().toISOString();
 
-  for (const r of resolved) {
-    let orderDetail;
-    try {
-      orderDetail = await fetchMelhorEnvioOrderDetail(accessToken, r.melhorEnvioId);
-    } catch (err) {
+  for (const id of deliveryIds) {
+    const delivery = (deliveries ?? []).find((d) => d.id === id);
+    if (!delivery) {
+      results.push({ deliveryId: id, ok: false, error: 'Entrega não encontrada.' });
+      continue;
+    }
+
+    let order: MelhorEnvioOrderDetail | undefined;
+    let isNew = false;
+    if (delivery.melhor_envio_id) {
+      order = byId.get(delivery.melhor_envio_id);
+    } else {
+      order = byInvoiceNumber.get(delivery.nfe) ?? (delivery.chave_acesso_nfe ? byInvoiceKey.get(delivery.chave_acesso_nfe) : undefined);
+      isNew = !!order;
+    }
+
+    if (!order) {
       results.push({
-        deliveryId: r.delivery.id,
+        deliveryId: delivery.id,
         ok: false,
-        error: err instanceof Error ? err.message : 'Falha ao consultar o pedido na Melhor Envio.',
+        error: delivery.melhor_envio_id
+          ? 'Pedido não encontrado na Melhor Envio (ID pode estar desatualizado).'
+          : 'Não foi encontrado nenhum pedido na Melhor Envio com essa NF-e.',
       });
       continue;
     }
 
     const patch: Record<string, unknown> = { melhor_envio_last_sync_at: nowIso };
-    if (r.isNew) {
-      patch.melhor_envio_id = r.melhorEnvioId;
-      if (!r.delivery.codigo_rastreio && r.trackingCode) patch.codigo_rastreio = r.trackingCode;
+    if (isNew) {
+      patch.melhor_envio_id = order.id;
+      if (!delivery.codigo_rastreio && order.tracking) patch.codigo_rastreio = order.tracking;
     }
 
-    const rawStatus = orderDetail.status;
+    const rawStatus = order.status;
     const mappedStatus = rawStatus ? mapTrackingStatus(rawStatus) : null;
     if (mappedStatus) {
       patch.status = mappedStatus;
       if (mappedStatus === 'ENTREGUE') {
-        patch.data_entrega = (orderDetail.delivered_at ?? nowIso).split(/[ T]/)[0];
+        patch.data_entrega = (order.delivered_at ?? nowIso).split(/[ T]/)[0];
       }
     }
 
-    const previsao = computePrevisaoEntrega(orderDetail);
+    const previsao = computePrevisaoEntrega(order);
     if (previsao) patch.previsao = previsao;
 
     const { error: updateError } = await userClient
       .from('deliveries')
       .update(patch)
-      .eq('id', r.delivery.id);
+      .eq('id', delivery.id);
 
     results.push({
-      deliveryId: r.delivery.id,
+      deliveryId: delivery.id,
       ok: !updateError,
       rawStatus: rawStatus ?? undefined,
       mappedStatus,

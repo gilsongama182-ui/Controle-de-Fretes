@@ -160,48 +160,6 @@ export async function getValidAccessToken(): Promise<string> {
 
 export const ME_USER_AGENT = 'WLOGIS (suporte@wlogis.com.br)';
 
-export interface MelhorEnvioOrderMatch {
-  id: string;
-  trackingCode: string | null;
-}
-
-// Varre as páginas de GET /me/orders (mais recentes primeiro) procurando o
-// pedido cujo número ou chave de acesso da NF-e bate com o informado —
-// descoberto inspecionando um pedido real: o campo vem em "invoice.number"
-// / "invoice.key". Cobre um número limitado de páginas por chamada pra não
-// estourar o tempo de execução da função serverless.
-export async function findMelhorEnvioOrder(
-  accessToken: string,
-  { nfe, chaveAcessoNfe }: { nfe: string; chaveAcessoNfe: string }
-): Promise<MelhorEnvioOrderMatch | null> {
-  const maxPages = 15;
-  for (let page = 1; page <= maxPages; page++) {
-    const resp = await fetch(`${ME_BASE_URL}/api/v2/me/orders?page=${page}`, {
-      headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json', 'User-Agent': ME_USER_AGENT },
-    });
-    if (!resp.ok) break;
-
-    const body = (await resp.json()) as { data?: Array<Record<string, unknown>>; last_page?: number };
-    const items = body.data ?? [];
-    if (items.length === 0) break;
-
-    for (const item of items) {
-      const invoice = item.invoice as Record<string, unknown> | undefined;
-      const invNumber = invoice?.number != null ? String(invoice.number) : null;
-      const invKey = invoice?.key != null ? String(invoice.key) : null;
-      if ((nfe && invNumber === nfe) || (chaveAcessoNfe && invKey === chaveAcessoNfe)) {
-        return {
-          id: String(item.id),
-          trackingCode: item.tracking != null ? String(item.tracking) : null,
-        };
-      }
-    }
-
-    if (body.last_page && page >= body.last_page) break;
-  }
-  return null;
-}
-
 export interface MelhorEnvioOrderDetail {
   id: string;
   status: string;
@@ -212,22 +170,45 @@ export interface MelhorEnvioOrderDetail {
   generated_at: string | null;
   created_at: string | null;
   tracking: string | null;
+  invoice?: { number?: string | number | null; key?: string | null } | null;
 }
 
-// GET /me/orders/{id} — mesmo endpoint usado pra inspecionar a estrutura
-// real de um pedido. Traz status, prazo em dias úteis e as datas do ciclo
-// de vida num único lugar, com nomes de campo confirmados (não é mais
-// preciso "adivinhar" onde o status vem, como acontecia com o endpoint de
-// rastreio em lote).
-export async function fetchMelhorEnvioOrderDetail(accessToken: string, orderId: string): Promise<MelhorEnvioOrderDetail> {
-  const resp = await fetch(`${ME_BASE_URL}/api/v2/me/orders/${orderId}`, {
+interface MelhorEnvioOrdersPage {
+  data?: MelhorEnvioOrderDetail[];
+  last_page?: number;
+}
+
+async function fetchOrdersPage(accessToken: string, page: number): Promise<MelhorEnvioOrdersPage> {
+  const resp = await fetch(`${ME_BASE_URL}/api/v2/me/orders?page=${page}`, {
     headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json', 'User-Agent': ME_USER_AGENT },
   });
-  if (!resp.ok) {
-    const errText = await resp.text().catch(() => '');
-    throw new Error(`Melhor Envio retornou HTTP ${resp.status} ao consultar o pedido: ${errText}`);
+  if (!resp.ok) return { data: [] };
+  return (await resp.json()) as MelhorEnvioOrdersPage;
+}
+
+// Busca TODAS as páginas de GET /me/orders — mas só UMA VEZ por chamada de
+// sincronização, não uma vez por nota fiscal. Cada item já vem com status,
+// prazo em dias úteis, datas do ciclo de vida e a NF-e (invoice.number /
+// invoice.key), então uma única varredura serve pra combinar todas as
+// entregas selecionadas de uma vez — antes, sincronizar várias notas sem
+// "ID Melhor Envio" salvo rescaneava as páginas para cada uma, e com
+// muitas notas selecionadas isso estourava o tempo da função (HTTP 504).
+// Busca a primeira página pra saber quantas existem, depois busca o resto
+// em paralelo. Limite de páginas é só uma proteção contra contas com um
+// histórico muito grande de pedidos.
+export async function fetchAllMelhorEnvioOrders(accessToken: string, maxPages = 40): Promise<MelhorEnvioOrderDetail[]> {
+  const first = await fetchOrdersPage(accessToken, 1);
+  const items = [...(first.data ?? [])];
+  const lastPage = Math.min(first.last_page ?? 1, maxPages);
+
+  if (lastPage > 1) {
+    const remaining = await Promise.all(
+      Array.from({ length: lastPage - 1 }, (_, i) => fetchOrdersPage(accessToken, i + 2))
+    );
+    for (const page of remaining) items.push(...(page.data ?? []));
   }
-  return (await resp.json()) as MelhorEnvioOrderDetail;
+
+  return items;
 }
 
 function parseMelhorEnvioDate(value: string | null): Date | null {
