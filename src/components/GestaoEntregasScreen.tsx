@@ -105,7 +105,11 @@ export default function GestaoEntregasScreen({
         d.nfe.toLowerCase().includes(term) ||
         d.cliente.toLowerCase().includes(term) ||
         d.nomeRazaoSocial.toLowerCase().includes(term) ||
-        (termDigits.length > 0 && d.cnpjCpf.replace(/\D/g, '').includes(termDigits))
+        (termDigits.length > 0 && d.cnpjCpf.replace(/\D/g, '').includes(termDigits)) ||
+        // Busca também pela chave de acesso da NF-e (não aparece em tela, só
+        // no banco) — permite ao time da operação usar leitor de código de
+        // barras na nota impressa em vez de digitar qualquer informação.
+        (termDigits.length > 0 && d.chaveAcessoNfe.includes(termDigits))
       );
     }
 

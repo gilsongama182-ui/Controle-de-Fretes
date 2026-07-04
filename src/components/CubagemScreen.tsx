@@ -45,11 +45,16 @@ export default function CubagemScreen({
   const filteredDeliveries = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
     if (!term) return deliveries;
+    const termDigits = term.replace(/\D/g, '');
     return deliveries.filter((d) =>
       d.nfe.toLowerCase().includes(term) ||
       d.pedido.toLowerCase().includes(term) ||
       d.nomeRazaoSocial.toLowerCase().includes(term) ||
-      d.cnpjCpf.replace(/\D/g, '').includes(term.replace(/\D/g, ''))
+      (termDigits.length > 0 && d.cnpjCpf.replace(/\D/g, '').includes(termDigits)) ||
+      // Chave de acesso da NF-e não aparece em tela, mas dá pra buscar por
+      // ela — o time da operação lê o código de barras da nota impressa
+      // direto no campo de busca, sem digitar nada.
+      (termDigits.length > 0 && d.chaveAcessoNfe.includes(termDigits))
     );
   }, [deliveries, searchTerm]);
 

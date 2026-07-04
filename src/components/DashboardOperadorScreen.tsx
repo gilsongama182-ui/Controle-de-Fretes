@@ -71,11 +71,15 @@ export default function DashboardOperadorScreen({
   const filteredDeliveries = useMemo(() => {
     const term = searchTerm.toLowerCase().trim();
     if (!term) return deliveries.slice(0, 5); // display top 5 on dashboard
+    const termDigits = term.replace(/\D/g, '');
     return deliveries.filter(d =>
       d.codigo.toLowerCase().includes(term) ||
       d.cliente.toLowerCase().includes(term) ||
       d.nfe.toLowerCase().includes(term) ||
-      d.municipio.toLowerCase().includes(term)
+      d.municipio.toLowerCase().includes(term) ||
+      // Chave de acesso da NF-e não aparece em tela — leitor de código de
+      // barras na nota impressa preenche o campo de busca sem precisar digitar.
+      (termDigits.length > 0 && d.chaveAcessoNfe.includes(termDigits))
     );
   }, [deliveries, searchTerm]);
 
