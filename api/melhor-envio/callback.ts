@@ -13,7 +13,12 @@ function parseCookies(req: IncomingMessage): Record<string, string> {
 }
 
 function redirectToApp(res: ServerResponse, status: 'connected' | 'error', message?: string) {
-  const url = new URL('/', `https://${process.env.VERCEL_URL ?? 'hemmersbach-logistics.vercel.app'}`);
+  // NUNCA usar process.env.VERCEL_URL aqui — essa variável aponta pro
+  // deployment especifico ativo no momento do build (uma URL que muda a
+  // cada deploy e nunca mais é atualizada), não pro domínio estável. Isso
+  // deixava o usuário "preso" numa versão congelada do app depois de
+  // conectar a Melhor Envio.
+  const url = new URL('/', 'https://hemmersbach-logistics.vercel.app');
   url.searchParams.set('melhor_envio', status);
   if (message) url.searchParams.set('message', message);
   res.statusCode = 302;
