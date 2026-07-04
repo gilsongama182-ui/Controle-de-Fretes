@@ -5,6 +5,7 @@ import {
 import { ActivePage, Delivery, DeliveryStatus, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
 import { formatNfe } from '../lib/formatNfe';
+import { formatDateBR } from '../lib/formatDate';
 import { SyncItemResult } from '../lib/melhorEnvio';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
@@ -149,10 +150,12 @@ export default function EdicaoEntregaScreen({
         alert('Não foi possível sincronizar: nenhum resultado retornado.');
       } else if (!result.ok) {
         alert(`Não foi possível sincronizar: ${result.error ?? 'erro desconhecido'}`);
-      } else if (!result.mappedStatus) {
-        alert(`Rastreio consultado, mas o status "${result.rawStatus ?? '(vazio)'}" ainda não é reconhecido pelo sistema. Nada foi alterado.`);
       } else {
-        alert('Rastreio atualizado com sucesso!');
+        const parts: string[] = [];
+        if (result.mappedStatus) parts.push(`status atualizado para "${result.mappedStatus}"`);
+        else parts.push(`status "${result.rawStatus ?? '(vazio)'}" ainda não é reconhecido pelo sistema`);
+        if (result.previsao) parts.push(`previsão de entrega: ${formatDateBR(result.previsao)}`);
+        alert(`Rastreio consultado — ${parts.join('; ')}.`);
       }
     } catch (err) {
       alert(err instanceof Error ? `Não foi possível sincronizar: ${err.message}` : 'Não foi possível sincronizar o rastreio.');

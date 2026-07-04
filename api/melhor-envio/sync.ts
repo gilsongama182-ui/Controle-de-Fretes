@@ -5,10 +5,10 @@ import {
   getValidAccessToken,
   mapTrackingStatus,
   findMelhorEnvioOrder,
+  fetchMelhorEnvioOrderDetail,
+  computePrevisaoEntrega,
   sendJson,
   readJsonBody,
-  ME_BASE_URL,
-  ME_USER_AGENT,
 } from './_shared.js';
 
 interface SyncRequestBody {
@@ -20,25 +20,8 @@ interface SyncItemResult {
   ok: boolean;
   rawStatus?: string;
   mappedStatus?: string | null;
+  previsao?: string | null;
   error?: string;
-}
-
-// Formato exato da resposta do endpoint de rastreio da Melhor Envio não foi
-// confirmado contra uma chamada real (ver plano da integração) — por isso
-// a extração abaixo tenta alguns formatos plausíveis e sempre devolve o
-// payload cru (`raw`) na resposta, pra dar pra inspecionar/ajustar rápido.
-function extractStatusText(entry: unknown): string | null {
-  if (!entry || typeof entry !== 'object') return null;
-  const obj = entry as Record<string, unknown>;
-  const direct = obj.status ?? obj.situacao ?? obj.tracking_status;
-  if (typeof direct === 'string') return direct;
-  const tracking = obj.tracking;
-  if (Array.isArray(tracking) && tracking.length > 0) {
-    const last = tracking[tracking.length - 1] as Record<string, unknown>;
-    const status = last?.status ?? last?.description ?? last?.descricao;
-    if (typeof status === 'string') return status;
-  }
-  return null;
 }
 
 interface DeliveryRow {
@@ -143,44 +126,20 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
   }
 
-  if (resolved.length === 0) {
-    sendJson(res, 200, { results });
-    return;
-  }
-
-  let trackingResponse: unknown;
-  try {
-    const resp = await fetch(`${ME_BASE_URL}/api/v2/me/shipment/tracking`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-        'User-Agent': ME_USER_AGENT,
-      },
-      body: JSON.stringify({ orders: resolved.map((r) => r.melhorEnvioId) }),
-    });
-    if (!resp.ok) {
-      const errText = await resp.text().catch(() => '');
-      throw new Error(`Melhor Envio retornou HTTP ${resp.status}: ${errText}`);
-    }
-    trackingResponse = await resp.json();
-  } catch (err) {
-    const message = err instanceof Error ? err.message : 'Falha ao consultar rastreio na Melhor Envio.';
-    for (const r of resolved) results.push({ deliveryId: r.delivery.id, ok: false, error: message });
-    sendJson(res, 200, { results });
-    return;
-  }
-
   const nowIso = new Date().toISOString();
-  const responseByOrderId =
-    trackingResponse && typeof trackingResponse === 'object'
-      ? (trackingResponse as Record<string, unknown>)
-      : {};
 
   for (const r of resolved) {
-    const entry = responseByOrderId[r.melhorEnvioId];
-    const rawStatus = extractStatusText(entry);
+    let orderDetail;
+    try {
+      orderDetail = await fetchMelhorEnvioOrderDetail(accessToken, r.melhorEnvioId);
+    } catch (err) {
+      results.push({
+        deliveryId: r.delivery.id,
+        ok: false,
+        error: err instanceof Error ? err.message : 'Falha ao consultar o pedido na Melhor Envio.',
+      });
+      continue;
+    }
 
     const patch: Record<string, unknown> = { melhor_envio_last_sync_at: nowIso };
     if (r.isNew) {
@@ -188,14 +147,17 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (!r.delivery.codigo_rastreio && r.trackingCode) patch.codigo_rastreio = r.trackingCode;
     }
 
-    let mappedStatus: string | null = null;
-    if (rawStatus) {
-      mappedStatus = mapTrackingStatus(rawStatus);
-      if (mappedStatus) {
-        patch.status = mappedStatus;
-        if (mappedStatus === 'ENTREGUE') patch.data_entrega = nowIso.split('T')[0];
+    const rawStatus = orderDetail.status;
+    const mappedStatus = rawStatus ? mapTrackingStatus(rawStatus) : null;
+    if (mappedStatus) {
+      patch.status = mappedStatus;
+      if (mappedStatus === 'ENTREGUE') {
+        patch.data_entrega = (orderDetail.delivered_at ?? nowIso).split(/[ T]/)[0];
       }
     }
+
+    const previsao = computePrevisaoEntrega(orderDetail);
+    if (previsao) patch.previsao = previsao;
 
     const { error: updateError } = await userClient
       .from('deliveries')
@@ -207,9 +169,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       ok: !updateError,
       rawStatus: rawStatus ?? undefined,
       mappedStatus,
+      previsao,
       error: updateError?.message,
     });
   }
 
-  sendJson(res, 200, { results, raw: trackingResponse });
+  sendJson(res, 200, { results });
 }

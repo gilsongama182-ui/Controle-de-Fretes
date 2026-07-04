@@ -202,6 +202,69 @@ export async function findMelhorEnvioOrder(
   return null;
 }
 
+export interface MelhorEnvioOrderDetail {
+  id: string;
+  status: string;
+  delivery_min: number | null;
+  delivery_max: number | null;
+  posted_at: string | null;
+  delivered_at: string | null;
+  generated_at: string | null;
+  created_at: string | null;
+  tracking: string | null;
+}
+
+// GET /me/orders/{id} — mesmo endpoint usado pra inspecionar a estrutura
+// real de um pedido. Traz status, prazo em dias úteis e as datas do ciclo
+// de vida num único lugar, com nomes de campo confirmados (não é mais
+// preciso "adivinhar" onde o status vem, como acontecia com o endpoint de
+// rastreio em lote).
+export async function fetchMelhorEnvioOrderDetail(accessToken: string, orderId: string): Promise<MelhorEnvioOrderDetail> {
+  const resp = await fetch(`${ME_BASE_URL}/api/v2/me/orders/${orderId}`, {
+    headers: { Authorization: `Bearer ${accessToken}`, Accept: 'application/json', 'User-Agent': ME_USER_AGENT },
+  });
+  if (!resp.ok) {
+    const errText = await resp.text().catch(() => '');
+    throw new Error(`Melhor Envio retornou HTTP ${resp.status} ao consultar o pedido: ${errText}`);
+  }
+  return (await resp.json()) as MelhorEnvioOrderDetail;
+}
+
+function parseMelhorEnvioDate(value: string | null): Date | null {
+  if (!value) return null;
+  // Formato "2026-07-03 17:34:16" — troca o espaço por "T" pra virar ISO
+  // 8601 válido em qualquer motor JS (sem isso alguns navegadores/Node
+  // recusam a string ou interpretam com fuso errado).
+  const parsed = new Date(value.replace(' ', 'T'));
+  return isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function addBusinessDays(start: Date, days: number): Date {
+  const result = new Date(start);
+  let added = 0;
+  while (added < days) {
+    result.setDate(result.getDate() + 1);
+    const weekday = result.getDay(); // 0 = domingo, 6 = sábado
+    if (weekday !== 0 && weekday !== 6) added++;
+  }
+  return result;
+}
+
+// Calcula a previsão de entrega a partir do prazo em dias úteis que a
+// Melhor Envio devolve (não existe uma data absoluta de previsão — só um
+// intervalo de dias). Usa "delivery_max" (estimativa mais conservadora) a
+// partir da data de postagem; se ainda não foi postado, usa a data de
+// geração da etiqueta como base (fica mais otimista, mas é a única
+// referência disponível até o envio ser postado de fato). Não considera
+// feriados, só fins de semana.
+export function computePrevisaoEntrega(order: MelhorEnvioOrderDetail): string | null {
+  if (order.delivery_max == null) return null;
+  const baseDate = parseMelhorEnvioDate(order.posted_at) ?? parseMelhorEnvioDate(order.generated_at) ?? parseMelhorEnvioDate(order.created_at);
+  if (!baseDate) return null;
+  const forecast = addBusinessDays(baseDate, order.delivery_max);
+  return forecast.toISOString().split('T')[0];
+}
+
 // "received" confirmado contra uma resposta real da API de rastreio (23h
 // da entrega de teste NF-e 5548 — status "Postado no Ponto Parceiro" no
 // painel da Melhor Envio). Os demais são inferência sobre o vocabulário

@@ -39,6 +39,7 @@ export interface SyncItemResult {
   ok: boolean;
   rawStatus?: string;
   mappedStatus?: string | null;
+  previsao?: string | null;
   error?: string;
 }
 
