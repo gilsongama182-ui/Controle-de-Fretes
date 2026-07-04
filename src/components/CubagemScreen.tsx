@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import { useState, useMemo } from 'react';
 import { ChevronRight, ChevronLeft, Ruler, Package, Tag } from 'lucide-react';
 import { ActivePage, Delivery, User } from '../types';
 import { Volume, VolumeInput } from '../lib/deliveryVolumes';

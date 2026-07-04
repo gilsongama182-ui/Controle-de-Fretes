@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Plug, CheckCircle2, AlertCircle, ExternalLink } from 'lucide-react';
 import { ActivePage, User, Delivery } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';

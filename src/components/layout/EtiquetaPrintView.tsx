@@ -1,4 +1,3 @@
-import React from 'react';
 import { X, Printer } from 'lucide-react';
 import { Delivery } from '../../types';
 import { encodeCode128C } from '../../lib/barcode128';

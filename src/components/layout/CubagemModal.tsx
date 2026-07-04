@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { X, Plus, Trash2, Loader2 } from 'lucide-react';
 import { Delivery } from '../../types';
 import { formatNfe } from '../../lib/formatNfe';
@@ -33,7 +33,10 @@ export default function CubagemModal({ delivery, volumes, onClose, onSave }: Cub
   if (!delivery) return null;
 
   const updateDraft = (index: number, field: keyof VolumeInput, value: number) => {
-    setDrafts((prev) => prev.map((d, i) => (i === index ? { ...d, [field]: value } : d)));
+    // O atributo min="0" do input não bloqueia digitação manual de negativo
+    // em todos os navegadores — trava aqui também, na fonte do estado.
+    const safeValue = Number.isFinite(value) ? Math.max(0, value) : 0;
+    setDrafts((prev) => prev.map((d, i) => (i === index ? { ...d, [field]: safeValue } : d)));
   };
 
   const addVolume = () => setDrafts((prev) => [...prev, { ...EMPTY_VOLUME }]);

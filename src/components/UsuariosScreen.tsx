@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Shield, Mail, Check, X as XIcon } from 'lucide-react';
 import { ActivePage, User, Genero, Delivery, AccountStatus } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';

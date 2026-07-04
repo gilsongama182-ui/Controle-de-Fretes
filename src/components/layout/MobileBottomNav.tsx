@@ -1,4 +1,3 @@
-import React from 'react';
 import { LayoutDashboard, Truck, FileUp } from 'lucide-react';
 import { ActivePage } from '../../types';
 

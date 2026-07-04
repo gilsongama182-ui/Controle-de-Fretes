@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
 import { Truck, AlertTriangle } from 'lucide-react';
 import { ActivePage, Delivery } from './types';
 import { AuthProvider, useAuth } from './contexts/AuthContext';

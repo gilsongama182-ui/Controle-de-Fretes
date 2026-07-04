@@ -1,4 +1,3 @@
-import React from 'react';
 import { LayoutDashboard, Truck, Users, FileUp, PlusCircle, Settings, LogOut, Ruler } from 'lucide-react';
 import { ActivePage } from '../../types';
 

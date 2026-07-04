@@ -1,4 +1,3 @@
-import React from 'react';
 import { HelpCircle, Bell, LogOut } from 'lucide-react';
 import { User } from '../../types';
 import Avatar from './Avatar';
