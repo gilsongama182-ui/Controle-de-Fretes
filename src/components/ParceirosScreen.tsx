@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { ChevronRight, ChevronLeft, PlusCircle, Edit, Trash2, Handshake } from 'lucide-react';
 import { ActivePage, User } from '../types';
 import { Partner, fetchPartners, deletePartner } from '../lib/partners';
+import { getErrorMessage } from '../lib/errorMessage';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -74,7 +75,7 @@ export default function ParceirosScreen({
       await deletePartner(id);
       setPartners((prev) => prev.filter((p) => p.id !== id));
     } catch (err) {
-      alert(err instanceof Error ? `Não foi possível remover: ${err.message}` : 'Não foi possível remover o cadastro.');
+      alert(`Não foi possível remover: ${getErrorMessage(err, 'erro desconhecido')}`);
     }
   };
 

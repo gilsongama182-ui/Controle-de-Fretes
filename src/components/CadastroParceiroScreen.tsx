@@ -17,6 +17,7 @@ import {
   getPartnerDocumentUrl,
   removePartnerDocument,
 } from '../lib/partnerDocuments';
+import { getErrorMessage } from '../lib/errorMessage';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 
@@ -161,7 +162,7 @@ export default function CadastroParceiroScreen({ onNavigate, onLogout, user, par
       }
       alert('Cadastro salvo com sucesso!');
     } catch (err) {
-      alert(err instanceof Error ? `Não foi possível salvar: ${err.message}` : 'Não foi possível salvar o cadastro.');
+      alert(`Não foi possível salvar: ${getErrorMessage(err, 'erro desconhecido')}`);
     } finally {
       setIsSaving(false);
     }
@@ -185,7 +186,7 @@ export default function CadastroParceiroScreen({ onNavigate, onLogout, user, par
       setDocuments((prev) => [...prev, doc]);
       setDocLabelCustom('');
     } catch (err) {
-      setDocError(err instanceof Error ? err.message : 'Não foi possível anexar o documento.');
+      setDocError(getErrorMessage(err, 'Não foi possível anexar o documento.'));
     } finally {
       setIsUploadingDoc(false);
     }
@@ -197,7 +198,7 @@ export default function CadastroParceiroScreen({ onNavigate, onLogout, user, par
       const url = await getPartnerDocumentUrl(doc.arquivoPath);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (err) {
-      alert(err instanceof Error ? `Não foi possível abrir o documento: ${err.message}` : 'Não foi possível abrir o documento.');
+      alert(`Não foi possível abrir o documento: ${getErrorMessage(err, 'erro desconhecido')}`);
     } finally {
       setOpeningDocId(null);
     }
@@ -210,7 +211,7 @@ export default function CadastroParceiroScreen({ onNavigate, onLogout, user, par
       await removePartnerDocument(doc.id, doc.arquivoPath);
       setDocuments((prev) => prev.filter((d) => d.id !== doc.id));
     } catch (err) {
-      alert(err instanceof Error ? `Não foi possível remover: ${err.message}` : 'Não foi possível remover o documento.');
+      alert(`Não foi possível remover: ${getErrorMessage(err, 'erro desconhecido')}`);
     } finally {
       setRemovingDocId(null);
     }
