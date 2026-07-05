@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronRight, ChevronLeft, PlusCircle, Edit, Trash2, Handshake } from 'lucide-react';
+import { ChevronRight, ChevronLeft, PlusCircle, Edit, Trash2, Handshake, Download } from 'lucide-react';
 import { ActivePage, User } from '../types';
 import { Partner, fetchPartners, deletePartner } from '../lib/partners';
+import { exportPartnersToCsv } from '../lib/exportPartnersCsv';
 import { getErrorMessage } from '../lib/errorMessage';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
@@ -106,13 +107,22 @@ export default function ParceirosScreen({
               </div>
             </div>
 
-            <button
-              onClick={onNovoCadastro}
-              className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg font-bold text-sm hover:opacity-90 shadow-sm transition-all"
-            >
-              <PlusCircle className="w-4 h-4" />
-              <span>Novo Cadastro</span>
-            </button>
+            <div className="flex gap-2">
+              <button
+                onClick={() => exportPartnersToCsv(filteredPartners, `agregados-parceiros-${new Date().toISOString().split('T')[0]}.csv`)}
+                className="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface-variant rounded-lg font-bold text-sm hover:bg-surface-container transition-all shadow-sm bg-white"
+              >
+                <Download className="w-4 h-4" />
+                <span>Exportar Relatório</span>
+              </button>
+              <button
+                onClick={onNovoCadastro}
+                className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg font-bold text-sm hover:opacity-90 shadow-sm transition-all"
+              >
+                <PlusCircle className="w-4 h-4" />
+                <span>Novo Cadastro</span>
+              </button>
+            </div>
           </div>
 
           <div className="bg-white rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
