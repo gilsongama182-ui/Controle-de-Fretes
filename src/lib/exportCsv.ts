@@ -27,7 +27,7 @@ function cellValue(delivery: Delivery, key: keyof Delivery): unknown {
     return delivery.codigoRastreio ? `="${delivery.codigoRastreio}"` : '';
   }
   if (key === 'atrasoResponsabilidade') {
-    return delivery.atrasoResponsabilidade === 'cliente' ? 'Cliente' : 'Próprio';
+    return delivery.atrasoResponsabilidade === 'cliente' ? 'CLIENTE' : 'PRÓPRIO';
   }
   return delivery[key];
 }
