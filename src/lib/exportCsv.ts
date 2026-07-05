@@ -2,6 +2,7 @@ import { Delivery } from '../types';
 import { formatNfe } from './formatNfe';
 import { DELIVERY_FIELDS } from './deliveryFields';
 import { Volume } from './deliveryVolumes';
+import { isForaDoPrazoBruto } from './deliveryStatus';
 
 function escapeCsvValue(value: unknown): string {
   const str = String(value ?? '');
@@ -27,6 +28,9 @@ function cellValue(delivery: Delivery, key: keyof Delivery): unknown {
     return delivery.codigoRastreio ? `="${delivery.codigoRastreio}"` : '';
   }
   if (key === 'atrasoResponsabilidade') {
+    // Só faz sentido informar responsável quando a entrega realmente saiu do
+    // prazo — sem isso, fica em branco (não é "PRÓPRIO" por padrão).
+    if (!isForaDoPrazoBruto(delivery)) return '';
     return delivery.atrasoResponsabilidade === 'cliente' ? 'CLIENTE' : 'PRÓPRIO';
   }
   return delivery[key];

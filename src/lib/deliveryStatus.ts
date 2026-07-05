@@ -49,3 +49,15 @@ export function isEntregueForaDoPrazo(d: Delivery): boolean {
 export function isEntregueNoPrazo(d: Delivery): boolean {
   return d.status === 'ENTREGUE' && !isEntregueForaDoPrazo(d);
 }
+
+// Data de Entrega depois da Previsão, sem considerar quem é o responsável —
+// usado só para decidir se faz sentido exibir a coluna "Responsável pelo
+// Atraso" (no relatório e na tela de edição): ela só existe quando a entrega
+// realmente saiu do prazo.
+export function isForaDoPrazoBruto(d: Delivery): boolean {
+  if (!d.dataEntrega) return false;
+  const previsaoIso = toIsoDate(d.previsao);
+  const entregaIso = toIsoDate(d.dataEntrega);
+  if (!previsaoIso || !entregaIso) return false;
+  return entregaIso > previsaoIso;
+}
