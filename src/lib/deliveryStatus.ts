@@ -1,26 +1,44 @@
 import { Delivery } from '../types';
 
-// Mesma checagem de "é uma data de verdade" usada no preenchimento automático
-// de status em EdicaoEntregaScreen.tsx — previsao aceita texto livre além de
-// datas (ex: "Reagendado"), então nem sempre dá pra comparar.
-const isValidDate = (value: string) => /^\d{4}-\d{2}-\d{2}$/.test(value);
+// previsao/dataEntrega às vezes vêm em formato BR (DD/MM/AAAA) de importações
+// antigas, além do ISO (AAAA-MM-DD) usado pelos campos de data atuais —
+// normaliza pra ISO antes de comparar. Retorna null quando não é uma data
+// reconhecível (previsao aceita texto livre, ex: "Reagendado").
+function toIsoDate(value: string): string | null {
+  const trimmed = value.trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(trimmed)) return trimmed;
+  const br = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(trimmed);
+  if (br) return `${br[3]}-${br[2]}-${br[1]}`;
+  return null;
+}
+
+// Data de hoje no fuso local (não UTC) — evita virar o dia errado perto da
+// meia-noite quando comparado com toISOString(), que é sempre UTC.
+function hojeIso(): string {
+  const now = new Date();
+  const mm = String(now.getMonth() + 1).padStart(2, '0');
+  const dd = String(now.getDate()).padStart(2, '0');
+  return `${now.getFullYear()}-${mm}-${dd}`;
+}
 
 // Ainda não entregue e com a previsão já vencida. Cálculo só para os cards de
 // performance — não altera o status gravado no banco nem o badge das listas.
 export function isAtrasadoEfetivo(d: Delivery): boolean {
   if (d.status === 'ENTREGUE' || d.status === 'FALHA') return false;
-  if (!isValidDate(d.previsao)) return false;
-  const hojeStr = new Date().toISOString().split('T')[0];
-  return d.previsao < hojeStr;
+  const previsaoIso = toIsoDate(d.previsao);
+  if (!previsaoIso) return false;
+  return previsaoIso < hojeIso();
 }
 
 // Entregue, porém depois da previsão — ainda conta como sucesso na Taxa de
 // Entrega, só não foi dentro do prazo. Quando a previsão não é uma data (texto
 // livre) ou falta a data de entrega, assume dentro do prazo.
 export function isEntregueForaDoPrazo(d: Delivery): boolean {
-  if (d.status !== 'ENTREGUE') return false;
-  if (!d.dataEntrega || !isValidDate(d.previsao) || !isValidDate(d.dataEntrega)) return false;
-  return d.dataEntrega > d.previsao;
+  if (d.status !== 'ENTREGUE' || !d.dataEntrega) return false;
+  const previsaoIso = toIsoDate(d.previsao);
+  const entregaIso = toIsoDate(d.dataEntrega);
+  if (!previsaoIso || !entregaIso) return false;
+  return entregaIso > previsaoIso;
 }
 
 export function isEntregueNoPrazo(d: Delivery): boolean {
