@@ -114,11 +114,17 @@ export default function EdicaoEntregaScreen({
   // é reservado pra quem ainda está em rota (não muda aqui). A comparação com
   // a Previsão de Entrega vira um indicador de performance nos cards dos
   // dashboards (ver src/lib/deliveryStatus.ts), não o status em si. Limpar o
-  // campo não mexe no status (o operador pode ajustar manualmente).
+  // campo volta o status pra EM ROTA quando ele tinha sido setado como
+  // ENTREGUE por essa mesma tela — sem isso, ficava "ENTREGUE" sem nenhuma
+  // data de entrega, contando errado nos indicadores. Se o status foi
+  // ajustado manualmente pra outra coisa (ex: FALHA), não mexe.
   const handleDataEntregaChange = (value: string) => {
     setDataEntrega(value);
+    if (!value) {
+      if (status === 'ENTREGUE') setStatus('EM ROTA');
+      return;
+    }
     if (foraDoPrazo(value, previsao)) setAtrasoResponsabilidade('');
-    if (!value) return;
     setStatus('ENTREGUE');
   };
 
