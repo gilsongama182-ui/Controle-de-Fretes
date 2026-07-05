@@ -52,6 +52,7 @@ create table if not exists public.deliveries (
   status text not null check (status in ('ENTREGUE', 'EM ROTA', 'EM ATRASO', 'FALHA')) default 'EM ROTA',
   ocorrencia text,
   atraso_responsabilidade text not null check (atraso_responsabilidade in ('proprio', 'cliente')) default 'proprio',
+  falha_lida_em timestamptz,
   valor_cobranca numeric(12, 2) not null default 0,
   valor_pagamento numeric(12, 2) not null default 0,
   codigo_rastreio text,
@@ -201,6 +202,26 @@ create trigger partners_set_updated_at
   before update on public.partners
   for each row execute function public.set_updated_at();
 
+-- Reabre o alerta de FALHA (sino de notificações do cliente) sempre que o
+-- status (re)entra em FALHA — inclusive se essa mesma entrega já tinha uma
+-- FALHA anterior marcada como lida.
+create or replace function public.reset_falha_lida_em()
+returns trigger
+language plpgsql
+as $$
+begin
+  if new.status = 'FALHA' and old.status is distinct from 'FALHA' then
+    new.falha_lida_em = null;
+  end if;
+  return new;
+end;
+$$;
+
+drop trigger if exists deliveries_reset_falha_lida_em on public.deliveries;
+create trigger deliveries_reset_falha_lida_em
+  before update on public.deliveries
+  for each row execute function public.reset_falha_lida_em();
+
 -- =========================================================
 -- 3. Criação automática de profiles no signup
 -- =========================================================
@@ -319,6 +340,43 @@ create policy deliveries_delete
     public.current_profile_status() = 'aprovado'
     and public.current_profile_type() in ('operador', 'master')
   );
+
+-- Permite o cliente marcar como lida uma FALHA da própria empresa (CNPJ do
+-- remetente = document do perfil), sem abrir uma policy de UPDATE genérica
+-- em deliveries para o papel cliente (hoje não existe nenhuma). security
+-- definer só pra validar o CNPJ e gravar essa única coluna — o resto da
+-- linha continua protegido pelas policies de update acima (só operador/master).
+create or replace function public.marcar_falha_lida(p_delivery_id uuid)
+returns public.deliveries
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_result public.deliveries;
+begin
+  update public.deliveries d
+  set falha_lida_em = now()
+  where d.id = p_delivery_id
+    and d.status = 'FALHA'
+    and public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() = 'cliente'
+    and regexp_replace(coalesce(d.remetente_cnpj, ''), '\D', '', 'g') = (
+      select regexp_replace(document, '\D', '', 'g')
+      from public.profiles
+      where id = auth.uid()
+    )
+  returning d.* into v_result;
+
+  if v_result.id is null then
+    raise exception 'Entrega não encontrada ou sem permissão para marcar como lida.';
+  end if;
+
+  return v_result;
+end;
+$$;
+
+grant execute on function public.marcar_falha_lida(uuid) to authenticated;
 
 -- delivery_volumes: operador/master (relatório de exportação) e operador_log
 -- (tela de cubagem) leem; só operador_log/master criam/editam/removem.

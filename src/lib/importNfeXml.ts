@@ -134,6 +134,7 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
     status: 'EM ROTA',
     ocorrencia: 'Nenhuma',
     atrasoResponsabilidade: 'proprio',
+    falhaLidaEm: '',
     valorCobranca: 0,
     valorPagamento: 0,
     codigoRastreio: '',

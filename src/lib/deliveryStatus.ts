@@ -61,3 +61,18 @@ export function isForaDoPrazoBruto(d: Delivery): boolean {
   if (!previsaoIso || !entregaIso) return false;
   return entregaIso > previsaoIso;
 }
+
+// FALHA ainda não lida pelo cliente — dispara o alerta no sino da área do
+// cliente. Fica não lida até falhaLidaEm ser preenchido (marcar como lida)
+// ou até o status sair e voltar a ser FALHA (o trigger reset_falha_lida_em
+// reabre o alerta nesse caso).
+export function isFalhaNaoLida(d: Delivery): boolean {
+  return d.status === 'FALHA' && !d.falhaLidaEm;
+}
+
+// Últimas 20 ocorrências de FALHA (lidas ou não) — histórico do sino de
+// notificações do cliente. `deliveries` já chega ordenado por created_at
+// desc (fetchDeliveries), então basta filtrar e cortar as 20 primeiras.
+export function ultimasFalhas(deliveries: Delivery[]): Delivery[] {
+  return deliveries.filter((d) => d.status === 'FALHA').slice(0, 20);
+}

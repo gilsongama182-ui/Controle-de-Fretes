@@ -77,6 +77,7 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       status: 'EM ROTA',
       ocorrencia: 'Nenhuma',
       atrasoResponsabilidade: 'proprio',
+      falhaLidaEm: '',
       valorCobranca: valorNumerico,
       valorPagamento: valorNumerico * 0.65,
       codigoRastreio: `HB2024TX${randomIdNumber}`,

@@ -37,6 +37,7 @@ interface DeliveryRow {
   status: DeliveryStatus;
   ocorrencia: string | null;
   atraso_responsabilidade: AtrasoResponsabilidade;
+  falha_lida_em: string | null;
   valor_cobranca: number;
   valor_pagamento: number;
   codigo_rastreio: string | null;
@@ -81,6 +82,7 @@ function fromRow(row: DeliveryRow): Delivery {
     status: row.status,
     ocorrencia: row.ocorrencia ?? '',
     atrasoResponsabilidade: row.atraso_responsabilidade ?? 'proprio',
+    falhaLidaEm: row.falha_lida_em ?? '',
     valorCobranca: row.valor_cobranca,
     valorPagamento: row.valor_pagamento,
     codigoRastreio: row.codigo_rastreio ?? '',
@@ -130,6 +132,7 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.status !== undefined) row.status = input.status;
   if (input.ocorrencia !== undefined) row.ocorrencia = upper(input.ocorrencia);
   if (input.atrasoResponsabilidade !== undefined) row.atraso_responsabilidade = input.atrasoResponsabilidade;
+  if (input.falhaLidaEm !== undefined) row.falha_lida_em = input.falhaLidaEm || null;
   if (input.valorCobranca !== undefined) row.valor_cobranca = input.valorCobranca;
   if (input.valorPagamento !== undefined) row.valor_pagamento = input.valorPagamento;
   if (input.codigoRastreio !== undefined) row.codigo_rastreio = upper(input.codigoRastreio);
@@ -192,6 +195,15 @@ export async function updateDelivery(id: string, patch: Partial<Delivery>): Prom
     .select('*')
     .single();
 
+  if (error) throw error;
+  return fromRow(data as DeliveryRow);
+}
+
+// Marca uma FALHA como lida no sino de notificações do cliente — via RPC
+// (não um update comum) porque o cliente não tem policy de UPDATE em
+// deliveries; a função valida o CNPJ internamente e grava só essa coluna.
+export async function marcarFalhaLida(id: string): Promise<Delivery> {
+  const { data, error } = await supabase.rpc('marcar_falha_lida', { p_delivery_id: id });
   if (error) throw error;
   return fromRow(data as DeliveryRow);
 }

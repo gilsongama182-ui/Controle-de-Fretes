@@ -36,6 +36,10 @@ export interface Delivery {
   // nos indicadores de performance) ou "cliente" (destinatário indisponível,
   // recusou recebimento etc. — não conta contra a nossa performance).
   atrasoResponsabilidade: AtrasoResponsabilidade;
+  // ISO datetime de quando o cliente marcou a FALHA como lida no sino de
+  // notificações; vazio enquanto não lida (reaberto automaticamente se a
+  // entrega voltar a ficar em FALHA).
+  falhaLidaEm: string;
   valorCobranca: number; // receita
   valorPagamento: number; // custo
   codigoRastreio: string;

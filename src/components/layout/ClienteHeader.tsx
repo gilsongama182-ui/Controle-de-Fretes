@@ -1,13 +1,16 @@
-import { HelpCircle, Bell, LogOut } from 'lucide-react';
-import { User } from '../../types';
+import { HelpCircle, LogOut } from 'lucide-react';
+import { Delivery, User } from '../../types';
 import Avatar from './Avatar';
+import NotificacoesFalha from './NotificacoesFalha';
 
 interface ClienteHeaderProps {
   profile: User;
   onLogout: () => void;
+  deliveries: Delivery[];
+  onMarkFalhaLida: (id: string) => Promise<void>;
 }
 
-export default function ClienteHeader({ profile, onLogout }: ClienteHeaderProps) {
+export default function ClienteHeader({ profile, onLogout, deliveries, onMarkFalhaLida }: ClienteHeaderProps) {
   return (
     <header className="sticky top-0 z-50 flex justify-between items-center w-full px-6 h-16 bg-surface border-b border-outline-variant">
       <div className="flex items-center gap-2">
@@ -23,13 +26,7 @@ export default function ClienteHeader({ profile, onLogout }: ClienteHeaderProps)
           <HelpCircle className="w-5 h-5" />
         </button>
 
-        <button
-          onClick={() => alert('Sem novos alertas para sua conta de cliente.')}
-          className="p-2 hover:bg-secondary-container/50 transition-colors duration-200 rounded-full text-secondary relative"
-          title="Notificações"
-        >
-          <Bell className="w-5 h-5" />
-        </button>
+        <NotificacoesFalha deliveries={deliveries} onMarkRead={onMarkFalhaLida} />
 
         <div className="h-8 w-px bg-outline-variant hidden sm:block"></div>
 

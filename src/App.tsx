@@ -9,6 +9,7 @@ import {
   createDeliveries,
   updateDelivery,
   deleteDelivery,
+  marcarFalhaLida,
   NewDeliveryInput,
 } from './lib/deliveries';
 import { syncTracking, SyncItemResult } from './lib/melhorEnvio';
@@ -173,6 +174,11 @@ function AppShell() {
     setSelectedDelivery(updated);
   };
 
+  const handleMarkFalhaLida = async (id: string) => {
+    const updated = await marcarFalhaLida(id);
+    setDeliveries((prev) => prev.map((d) => (d.id === id ? updated : d)));
+  };
+
   const handleSelectPartnerForEdit = (partner: Partner) => {
     setSelectedPartner(partner);
     setActivePage('cadastro-parceiro');
@@ -235,6 +241,7 @@ function AppShell() {
           onLogout={handleLogout}
           user={profile}
           deliveries={deliveries}
+          onMarkFalhaLida={handleMarkFalhaLida}
         />
       );
 

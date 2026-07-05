@@ -143,6 +143,7 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       status,
       ocorrencia: get('ocorrencia'),
       atrasoResponsabilidade: 'proprio',
+      falhaLidaEm: '',
       valorCobranca: get('valorCobranca') ? normalizeNumber(get('valorCobranca')) : 0,
       valorPagamento: get('valorPagamento') ? normalizeNumber(get('valorPagamento')) : 0,
       codigoRastreio: get('codigoRastreio'),
