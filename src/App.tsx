@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { Truck, AlertTriangle } from 'lucide-react';
 import { ActivePage, Delivery } from './types';
+import { Partner } from './lib/partners';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import {
   fetchDeliveries,
@@ -25,6 +26,8 @@ import AccountStatusScreen from './components/AccountStatusScreen';
 import ResetPasswordScreen from './components/ResetPasswordScreen';
 import IntegracoesScreen from './components/IntegracoesScreen';
 import CubagemScreen from './components/CubagemScreen';
+import ParceirosScreen from './components/ParceirosScreen';
+import CadastroParceiroScreen from './components/CadastroParceiroScreen';
 
 function LoadingScreen() {
   return (
@@ -65,6 +68,7 @@ function AppShell() {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [volumes, setVolumes] = useState<Volume[]>([]);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
+  const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const lastHandledSessionId = useRef<string | null>(null);
 
   // Deriva a tela inicial a partir da sessão restaurada (login persiste após F5)
@@ -167,6 +171,16 @@ function AppShell() {
     const updated = await updateDelivery(id, patch);
     setDeliveries((prev) => prev.map((d) => (d.id === id ? updated : d)));
     setSelectedDelivery(updated);
+  };
+
+  const handleSelectPartnerForEdit = (partner: Partner) => {
+    setSelectedPartner(partner);
+    setActivePage('cadastro-parceiro');
+  };
+
+  const handleNovoCadastroParceiro = () => {
+    setSelectedPartner(null);
+    setActivePage('cadastro-parceiro');
   };
 
   const handleSaveVolumes = async (deliveryId: string, volumeInputs: VolumeInput[]) => {
@@ -294,6 +308,29 @@ function AppShell() {
           deliveries={deliveries}
           volumesByDeliveryId={volumesByDeliveryId}
           onSaveVolumes={handleSaveVolumes}
+        />
+      );
+
+    case 'parceiros':
+      if (!profile) return <LoadingScreen />;
+      return (
+        <ParceirosScreen
+          onNavigate={setActivePage}
+          onLogout={handleLogout}
+          user={profile}
+          onNovoCadastro={handleNovoCadastroParceiro}
+          onSelectForEdit={handleSelectPartnerForEdit}
+        />
+      );
+
+    case 'cadastro-parceiro':
+      if (!profile) return <LoadingScreen />;
+      return (
+        <CadastroParceiroScreen
+          onNavigate={setActivePage}
+          onLogout={handleLogout}
+          user={profile}
+          partner={selectedPartner}
         />
       );
 

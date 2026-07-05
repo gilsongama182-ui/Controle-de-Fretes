@@ -65,4 +65,6 @@ export type ActivePage =
   | 'edicao-entrega'
   | 'usuarios'
   | 'integracoes'
-  | 'cubagem';
+  | 'cubagem'
+  | 'parceiros'
+  | 'cadastro-parceiro';

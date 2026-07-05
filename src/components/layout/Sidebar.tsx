@@ -1,4 +1,4 @@
-import { LayoutDashboard, Truck, Users, FileUp, PlusCircle, Settings, LogOut, Ruler } from 'lucide-react';
+import { LayoutDashboard, Truck, Users, FileUp, PlusCircle, Settings, LogOut, Ruler, Handshake } from 'lucide-react';
 import { ActivePage } from '../../types';
 
 interface SidebarProps {
@@ -61,6 +61,18 @@ export default function Sidebar({
             >
               <Users className="w-5 h-5" />
               <span>Usuários</span>
+            </button>
+
+            <button
+              onClick={() => onNavigate('parceiros')}
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-left text-sm transition-colors ${
+                activePage === 'parceiros' || activePage === 'cadastro-parceiro'
+                  ? 'bg-secondary-container text-on-secondary-container font-bold'
+                  : 'text-on-surface-variant hover:bg-surface-variant/40'
+              }`}
+            >
+              <Handshake className="w-5 h-5" />
+              <span>Agregados e Parceiros</span>
             </button>
           </>
         )}
