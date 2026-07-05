@@ -42,7 +42,12 @@ export default function EdicaoEntregaScreen({
   const [isSyncing, setIsSyncing] = useState(false);
 
   // Editable Form states (inicializados com fallback vazio; sincronizados abaixo quando `delivery` existe)
-  const [status, setStatus] = useState<DeliveryStatus>(delivery?.status ?? 'EM ROTA');
+  // ENTREGUE sem nenhuma Data de Entrega é um estado inconsistente (pode ter
+  // ficado salvo assim de antes desse ajuste) — corrige já na abertura da
+  // tela, em vez de depender só da mudança ao vivo no campo de data.
+  const [status, setStatus] = useState<DeliveryStatus>(
+    delivery && delivery.status === 'ENTREGUE' && !delivery.dataEntrega ? 'EM ROTA' : delivery?.status ?? 'EM ROTA'
+  );
   const [ocorrencia, setOcorrencia] = useState(delivery?.ocorrencia ?? '');
   const [previsao, setPrevisao] = useState(delivery?.previsao ?? '');
   const [nfe, setNfe] = useState(formatNfe(delivery?.nfe));
