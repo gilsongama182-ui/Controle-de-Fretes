@@ -4,7 +4,7 @@ import { Delivery, User } from '../types';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
 import { formatNfe } from '../lib/formatNfe';
-import { isAtrasadoEfetivo, isEntregueNoPrazo, isEntregueForaDoPrazo } from '../lib/deliveryStatus';
+import { isAtrasadoEfetivo, isEntregueForaDoPrazo } from '../lib/deliveryStatus';
 import ClienteHeader from './layout/ClienteHeader';
 
 interface DashboardClienteProps {
@@ -60,20 +60,17 @@ export default function DashboardClienteScreen({
     // fora do prazo — não depende de ninguém marcar EM ATRASO manualmente.
     const atrasado = deliveries.filter(isAtrasadoEfetivo).length;
     const entregueForaDoPrazo = deliveries.filter(isEntregueForaDoPrazo).length;
-    const entregueNoPrazo = deliveries.filter(isEntregueNoPrazo).length;
     const delayed = atrasado + failed + entregueForaDoPrazo;
 
-    // % Entregue mede a performance real de prazo: das entregas já
-    // concluídas (entregue ou falha), quantas foram feitas dentro do prazo.
-    const finalizedCount = delivered + failed;
-    const pctDelivered = finalizedCount > 0 ? ((entregueNoPrazo / finalizedCount) * 100).toFixed(1) : '0.0';
+    // % Entregue na tela do cliente mostra o total simples de entregas já
+    // concluídas (sem quebrar por dentro/fora do prazo) — a visão de
+    // performance de prazo fica só nos dashboards internos.
+    const pctDelivered = total > 0 ? ((delivered / total) * 100).toFixed(1) : '0.0';
     const pctEnRoute = total > 0 ? ((enRoute / total) * 100).toFixed(1) : '0.0';
     const pctDelayed = total > 0 ? ((delayed / total) * 100).toFixed(1) : '0.0';
 
     return {
       total,
-      entregueNoPrazo,
-      entregueForaDoPrazo,
       pctDelivered: `${pctDelivered}%`,
       pctEnRoute: `${pctEnRoute}%`,
       pctDelayed: `${pctDelayed}%`
@@ -167,9 +164,6 @@ export default function DashboardClienteScreen({
               <div>
                 <span className="text-xs font-bold tracking-wider text-secondary block mb-1">% ENTREGUE</span>
                 <span className="text-3xl font-bold text-on-tertiary-container">{metrics.pctDelivered}</span>
-                <p className="text-xs text-secondary mt-1">
-                  {metrics.entregueNoPrazo} no prazo · {metrics.entregueForaDoPrazo} fora do prazo
-                </p>
               </div>
             </div>
 
