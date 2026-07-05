@@ -21,6 +21,7 @@ export default function DashboardClienteScreen({
   onMarkFalhaLida
 }: DashboardClienteProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
@@ -30,15 +31,16 @@ export default function DashboardClienteScreen({
     setSelectedCity(null);
   };
 
-  // Filter deliveries based on the chart selection (UF / cidade) and on search input (NF-e ou Cliente)
-  const filteredDeliveries = useMemo(() => {
+  // Filter deliveries based on the chart selection (UF / cidade), status e busca (NF-e ou Cliente).
+  // Separado do corte de "top 5" abaixo pra servir de fonte completa pro relatório exportado.
+  const filteredDeliveriesFull = useMemo(() => {
     let base = deliveries;
     if (selectedUf) base = base.filter(d => d.uf === selectedUf);
     if (selectedCity) base = base.filter(d => d.municipio === selectedCity);
+    if (statusFilter) base = base.filter(d => d.status === statusFilter);
 
     const term = searchTerm.toLowerCase().trim();
-    const list = showAll ? base : base.slice(0, 5);
-    if (!term) return list;
+    if (!term) return base;
     const termDigits = term.replace(/\D/g, '');
 
     return base.filter(d =>
@@ -50,7 +52,13 @@ export default function DashboardClienteScreen({
       // barras na nota impressa preenche o campo de busca sem precisar digitar.
       (termDigits.length > 0 && d.chaveAcessoNfe.includes(termDigits))
     );
-  }, [deliveries, searchTerm, showAll, selectedUf, selectedCity]);
+  }, [deliveries, searchTerm, selectedUf, selectedCity, statusFilter]);
+
+  // Lista exibida em tela: só as 5 mais recentes até o usuário clicar "Ver todas".
+  const filteredDeliveries = useMemo(
+    () => (showAll ? filteredDeliveriesFull : filteredDeliveriesFull.slice(0, 5)),
+    [filteredDeliveriesFull, showAll]
+  );
 
   // Computed metrics for customer view
   const metrics = useMemo(() => {
@@ -137,10 +145,23 @@ export default function DashboardClienteScreen({
                 <Search className="w-5 h-5 absolute left-3 top-1/2 -translate-y-1/2 text-secondary" />
               </div>
 
-              {/* Export report: exporta a busca ativa, ou todas as entregas do cliente se não houver busca */}
+              {/* Status filter */}
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="h-11 px-3 border border-outline-variant rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none cursor-pointer shadow-sm w-full sm:w-auto"
+              >
+                <option value="">Status: Todos</option>
+                <option value="ENTREGUE">Entregue</option>
+                <option value="EM ROTA">Em Rota</option>
+                <option value="EM ATRASO">Em Atraso</option>
+                <option value="FALHA">Falha</option>
+              </select>
+
+              {/* Export report: exporta a busca/filtro ativo (lista completa, sem o corte de 5), ou todas as entregas do cliente se nenhum estiver aplicado */}
               <button
                 onClick={() => exportDeliveriesToCsv(
-                  searchTerm.trim() ? filteredDeliveries : deliveries,
+                  searchTerm.trim() || statusFilter || selectedUf || selectedCity ? filteredDeliveriesFull : deliveries,
                   `minhas-entregas-${new Date().toISOString().split('T')[0]}.csv`,
                   ['codigo', 'valorCobranca', 'valorPagamento', 'codigoRastreio']
                 )}
