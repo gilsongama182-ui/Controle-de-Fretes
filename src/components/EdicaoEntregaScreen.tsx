@@ -102,6 +102,19 @@ export default function EdicaoEntregaScreen({
     alert(`Código de rastreamento ${delivery.codigoRastreio} copiado!`);
   };
 
+  // Ao preencher a Data de Entrega, o status é ajustado sozinho: ENTREGUE se
+  // ainda está dentro da Previsão de Entrega, EM ATRASO se passou dela. Se a
+  // Previsão não é uma data válida (aceita texto livre, ex: "Reagendado"),
+  // não dá pra comparar — assume ENTREGUE, já que uma data foi informada.
+  // Limpar o campo não mexe no status (o operador pode ajustar manualmente).
+  const handleDataEntregaChange = (value: string) => {
+    setDataEntrega(value);
+    if (!value) return;
+    const previsaoValida = /^\d{4}-\d{2}-\d{2}$/.test(previsao);
+    const dentroDoPrazo = !previsaoValida || value <= previsao;
+    setStatus(dentroDoPrazo ? 'ENTREGUE' : 'EM ATRASO');
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsSaving(true);
@@ -574,7 +587,7 @@ export default function EdicaoEntregaScreen({
                   <input
                     type="date"
                     value={dataEntrega}
-                    onChange={(e) => setDataEntrega(e.target.value)}
+                    onChange={(e) => handleDataEntregaChange(e.target.value)}
                     className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
                   />
                 </div>
