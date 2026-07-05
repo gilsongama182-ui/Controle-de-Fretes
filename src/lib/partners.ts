@@ -1,5 +1,6 @@
 import { supabase } from './supabaseClient';
 import { formatCpfCnpj } from './formatCpfCnpj';
+import { formatPhoneBR } from './formatPhone';
 
 export type PartnerType = 'agregado' | 'parceiro';
 export type PartnerStatus = 'ativo' | 'inativo';
@@ -159,7 +160,7 @@ function toRow(input: NewPartnerInput | Partial<Partner>) {
   if (input.cpfCnpj !== undefined) row.cpf_cnpj = formatCpfCnpj(input.cpfCnpj);
   if (input.rg !== undefined) row.rg = input.rg ? upper(input.rg) : null;
   if (input.inscricaoEstadual !== undefined) row.inscricao_estadual = input.inscricaoEstadual ? upper(input.inscricaoEstadual) : null;
-  if (input.telefone !== undefined) row.telefone = input.telefone ? upper(input.telefone) : null;
+  if (input.telefone !== undefined) row.telefone = input.telefone ? formatPhoneBR(input.telefone) : null;
   if (input.email !== undefined) row.email = input.email || null;
   if (input.responsavel !== undefined) row.responsavel = input.responsavel ? upper(input.responsavel) : null;
   if (input.cep !== undefined) row.cep = input.cep || null;

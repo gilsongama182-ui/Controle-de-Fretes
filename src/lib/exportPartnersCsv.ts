@@ -1,6 +1,7 @@
 import { Partner } from './partners';
 import { formatDateBR } from './formatDate';
 import { formatCpfCnpj } from './formatCpfCnpj';
+import { formatPhoneBR } from './formatPhone';
 
 function escapeCsvValue(value: unknown): string {
   const str = String(value ?? '');
@@ -41,7 +42,7 @@ function partnerRow(p: Partner): string {
     asText(formatCpfCnpj(p.cpfCnpj)),
     asText(p.rg),
     p.inscricaoEstadual,
-    p.telefone,
+    formatPhoneBR(p.telefone),
     p.email,
     p.responsavel,
     p.cep,

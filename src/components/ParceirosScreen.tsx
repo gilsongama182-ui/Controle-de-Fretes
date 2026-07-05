@@ -4,6 +4,7 @@ import { ActivePage, User } from '../types';
 import { Partner, fetchPartners, deletePartner } from '../lib/partners';
 import { exportPartnersToCsv } from '../lib/exportPartnersCsv';
 import { formatCpfCnpj } from '../lib/formatCpfCnpj';
+import { formatPhoneBR } from '../lib/formatPhone';
 import { getErrorMessage } from '../lib/errorMessage';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
@@ -188,7 +189,7 @@ export default function ParceirosScreen({
                         </td>
                         <td className="px-5 py-4 text-sm font-semibold text-on-surface">{p.nome}</td>
                         <td className="px-5 py-4 font-mono text-xs">{formatCpfCnpj(p.cpfCnpj)}</td>
-                        <td className="px-5 py-4 font-mono text-xs">{p.telefone || '—'}</td>
+                        <td className="px-5 py-4 font-mono text-xs">{formatPhoneBR(p.telefone) || '—'}</td>
                         <td className="px-5 py-4">
                           <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider w-fit ${
                             p.status === 'ativo' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
