@@ -167,7 +167,8 @@ export default function DashboardOperadorScreen({
               </div>
               <div className="mt-4">
                 <h4 className="font-headline text-3xl font-bold text-primary">{metrics.pctDelivered}</h4>
-                <p className="text-xs text-secondary mt-1">
+                <p className="text-xs text-secondary mt-1">Meta: 98,5%</p>
+                <p className="text-xs text-secondary">
                   {metrics.entregueNoPrazoCount} no prazo · {metrics.entregueForaDoPrazoCount} fora do prazo
                 </p>
               </div>
