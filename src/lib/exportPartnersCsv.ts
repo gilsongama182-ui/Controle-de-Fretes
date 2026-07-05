@@ -1,5 +1,6 @@
 import { Partner } from './partners';
 import { formatDateBR } from './formatDate';
+import { formatCpfCnpj } from './formatCpfCnpj';
 
 function escapeCsvValue(value: unknown): string {
   const str = String(value ?? '');
@@ -37,7 +38,7 @@ function partnerRow(p: Partner): string {
     TIPO_LABEL[p.tipo],
     p.nome,
     p.nomeFantasia,
-    asText(p.cpfCnpj),
+    asText(formatCpfCnpj(p.cpfCnpj)),
     asText(p.rg),
     p.inscricaoEstadual,
     p.telefone,

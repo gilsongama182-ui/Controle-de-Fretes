@@ -3,6 +3,7 @@ import { ChevronRight, ChevronLeft, PlusCircle, Edit, Trash2, Handshake, Downloa
 import { ActivePage, User } from '../types';
 import { Partner, fetchPartners, deletePartner } from '../lib/partners';
 import { exportPartnersToCsv } from '../lib/exportPartnersCsv';
+import { formatCpfCnpj } from '../lib/formatCpfCnpj';
 import { getErrorMessage } from '../lib/errorMessage';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
@@ -186,7 +187,7 @@ export default function ParceirosScreen({
                           </span>
                         </td>
                         <td className="px-5 py-4 text-sm font-semibold text-on-surface">{p.nome}</td>
-                        <td className="px-5 py-4 font-mono text-xs">{p.cpfCnpj}</td>
+                        <td className="px-5 py-4 font-mono text-xs">{formatCpfCnpj(p.cpfCnpj)}</td>
                         <td className="px-5 py-4 font-mono text-xs">{p.telefone || '—'}</td>
                         <td className="px-5 py-4">
                           <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider w-fit ${

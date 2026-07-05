@@ -1,4 +1,5 @@
 import { supabase } from './supabaseClient';
+import { formatCpfCnpj } from './formatCpfCnpj';
 
 export type PartnerType = 'agregado' | 'parceiro';
 export type PartnerStatus = 'ativo' | 'inativo';
@@ -143,47 +144,54 @@ function fromRow(row: PartnerRow): Partner {
   };
 }
 
+// Texto livre sempre em caixa alta pra visual consistente na tabela/relatório
+// (mesmo padrão já usado em src/lib/deliveries.ts) — fica de fora e-mail
+// (convenção é minúsculo), CPF/CNPJ (ganha máscara própria) e os campos de
+// enum (tipo/status/homologado), que precisam bater exatamente com o check
+// constraint do banco.
+const upper = (v: string) => v.toUpperCase();
+
 function toRow(input: NewPartnerInput | Partial<Partner>) {
   const row: Record<string, unknown> = {};
   if (input.tipo !== undefined) row.tipo = input.tipo;
-  if (input.nome !== undefined) row.nome = input.nome;
-  if (input.nomeFantasia !== undefined) row.nome_fantasia = input.nomeFantasia || null;
-  if (input.cpfCnpj !== undefined) row.cpf_cnpj = input.cpfCnpj;
-  if (input.rg !== undefined) row.rg = input.rg || null;
-  if (input.inscricaoEstadual !== undefined) row.inscricao_estadual = input.inscricaoEstadual || null;
-  if (input.telefone !== undefined) row.telefone = input.telefone || null;
+  if (input.nome !== undefined) row.nome = upper(input.nome);
+  if (input.nomeFantasia !== undefined) row.nome_fantasia = input.nomeFantasia ? upper(input.nomeFantasia) : null;
+  if (input.cpfCnpj !== undefined) row.cpf_cnpj = formatCpfCnpj(input.cpfCnpj);
+  if (input.rg !== undefined) row.rg = input.rg ? upper(input.rg) : null;
+  if (input.inscricaoEstadual !== undefined) row.inscricao_estadual = input.inscricaoEstadual ? upper(input.inscricaoEstadual) : null;
+  if (input.telefone !== undefined) row.telefone = input.telefone ? upper(input.telefone) : null;
   if (input.email !== undefined) row.email = input.email || null;
-  if (input.responsavel !== undefined) row.responsavel = input.responsavel || null;
+  if (input.responsavel !== undefined) row.responsavel = input.responsavel ? upper(input.responsavel) : null;
   if (input.cep !== undefined) row.cep = input.cep || null;
-  if (input.endereco !== undefined) row.endereco = input.endereco || null;
-  if (input.numero !== undefined) row.numero = input.numero || null;
-  if (input.complemento !== undefined) row.complemento = input.complemento || null;
-  if (input.bairro !== undefined) row.bairro = input.bairro || null;
-  if (input.municipio !== undefined) row.municipio = input.municipio || null;
-  if (input.uf !== undefined) row.uf = input.uf || null;
-  if (input.banco !== undefined) row.banco = input.banco || null;
+  if (input.endereco !== undefined) row.endereco = input.endereco ? upper(input.endereco) : null;
+  if (input.numero !== undefined) row.numero = input.numero ? upper(input.numero) : null;
+  if (input.complemento !== undefined) row.complemento = input.complemento ? upper(input.complemento) : null;
+  if (input.bairro !== undefined) row.bairro = input.bairro ? upper(input.bairro) : null;
+  if (input.municipio !== undefined) row.municipio = input.municipio ? upper(input.municipio) : null;
+  if (input.uf !== undefined) row.uf = input.uf ? upper(input.uf) : null;
+  if (input.banco !== undefined) row.banco = input.banco ? upper(input.banco) : null;
   if (input.agencia !== undefined) row.agencia = input.agencia || null;
   if (input.conta !== undefined) row.conta = input.conta || null;
-  if (input.tipoConta !== undefined) row.tipo_conta = input.tipoConta || null;
-  if (input.pix !== undefined) row.pix = input.pix || null;
-  if (input.veiculoPlaca !== undefined) row.veiculo_placa = input.veiculoPlaca || null;
-  if (input.veiculoTipo !== undefined) row.veiculo_tipo = input.veiculoTipo || null;
-  if (input.veiculoModelo !== undefined) row.veiculo_modelo = input.veiculoModelo || null;
+  if (input.tipoConta !== undefined) row.tipo_conta = input.tipoConta ? upper(input.tipoConta) : null;
+  if (input.pix !== undefined) row.pix = input.pix ? upper(input.pix) : null;
+  if (input.veiculoPlaca !== undefined) row.veiculo_placa = input.veiculoPlaca ? upper(input.veiculoPlaca) : null;
+  if (input.veiculoTipo !== undefined) row.veiculo_tipo = input.veiculoTipo ? upper(input.veiculoTipo) : null;
+  if (input.veiculoModelo !== undefined) row.veiculo_modelo = input.veiculoModelo ? upper(input.veiculoModelo) : null;
   if (input.veiculoAno !== undefined) row.veiculo_ano = input.veiculoAno || null;
   if (input.veiculoRenavam !== undefined) row.veiculo_renavam = input.veiculoRenavam || null;
   if (input.capacidadePesoKg !== undefined) row.capacidade_peso_kg = input.capacidadePesoKg || null;
   if (input.capacidadeVolumeM3 !== undefined) row.capacidade_volume_m3 = input.capacidadeVolumeM3 || null;
   if (input.cnhNumero !== undefined) row.cnh_numero = input.cnhNumero || null;
-  if (input.cnhCategoria !== undefined) row.cnh_categoria = input.cnhCategoria || null;
+  if (input.cnhCategoria !== undefined) row.cnh_categoria = input.cnhCategoria ? upper(input.cnhCategoria) : null;
   if (input.cnhValidade !== undefined) row.cnh_validade = input.cnhValidade || null;
   if (input.seguroApolice !== undefined) row.seguro_apolice = input.seguroApolice || null;
   if (input.seguroValidade !== undefined) row.seguro_validade = input.seguroValidade || null;
-  if (input.segmento !== undefined) row.segmento = input.segmento || null;
-  if (input.regiaoAtuacao !== undefined) row.regiao_atuacao = input.regiaoAtuacao || null;
+  if (input.segmento !== undefined) row.segmento = input.segmento ? upper(input.segmento) : null;
+  if (input.regiaoAtuacao !== undefined) row.regiao_atuacao = input.regiaoAtuacao ? upper(input.regiaoAtuacao) : null;
   if (input.dataInicioParceria !== undefined) row.data_inicio_parceria = input.dataInicioParceria || null;
   if (input.homologadoQualidade !== undefined) row.homologado_qualidade = input.homologadoQualidade || null;
   if (input.status !== undefined) row.status = input.status;
-  if (input.observacoes !== undefined) row.observacoes = input.observacoes || null;
+  if (input.observacoes !== undefined) row.observacoes = input.observacoes ? upper(input.observacoes) : null;
   return row;
 }
 
