@@ -517,7 +517,7 @@ export default function GestaoEntregasScreen({
                       <SortableTh sortField="status" label="Status / Ocorrência" />
                       <SortableTh sortField="valorCobranca" label="Valor Cobrança" className="px-4 text-right" />
                       <SortableTh sortField="valorPagamento" label="Valor Pagto" className="px-4 text-right" />
-                      <th className="px-4 py-3 text-right sticky right-0 bg-surface-container-low shadow-[-4px_0_12px_rgba(0,0,0,0.05)]">Ações</th>
+                      <th className="px-4 py-3 text-right sticky right-0 bg-surface-container-low shadow-[-4px_0_12px_rgba(0,0,0,0.05)] will-change-transform">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant">
@@ -572,7 +572,7 @@ export default function GestaoEntregasScreen({
                             R$ {del.valorPagamento.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           {/* Sticky Action controls */}
-                          <td className="px-4 py-4 text-right sticky right-0 bg-white group-hover:bg-[#f6f8fa] transition-colors shadow-[-4px_0_12px_rgba(0,0,0,0.05)]">
+                          <td className="px-4 py-4 text-right sticky right-0 bg-white group-hover:bg-[#f6f8fa] transition-colors shadow-[-4px_0_12px_rgba(0,0,0,0.05)] will-change-transform">
                             <div className="flex justify-end gap-1">
                               <button
                                 onClick={() => setComprovanteDeliveryId(del.id)}
