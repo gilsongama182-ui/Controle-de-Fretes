@@ -484,7 +484,7 @@ export default function GestaoEntregasScreen({
             <div className="overflow-x-auto md:flex-1 md:min-h-0 md:overflow-y-auto">
               {detailedMode ? (
                 /* DENSE WIDE TABLE WITH HORIZONTAL SCROLL */
-                <table className="w-full text-left border-collapse min-w-[3240px]">
+                <table className="w-full text-left border-separate border-spacing-0 min-w-[3240px]">
                   <thead className="bg-surface-container-low border-b border-outline-variant text-xs font-bold uppercase tracking-wider text-on-surface-variant sticky top-0">
                     <tr>
                       <th className="px-4 py-3 w-10">
@@ -517,7 +517,7 @@ export default function GestaoEntregasScreen({
                       <SortableTh sortField="status" label="Status / Ocorrência" />
                       <SortableTh sortField="valorCobranca" label="Valor Cobrança" className="px-4 text-right" />
                       <SortableTh sortField="valorPagamento" label="Valor Pagto" className="px-4 text-right" />
-                      <th className="px-4 py-3 text-right sticky right-0 bg-surface-container-low shadow-[-4px_0_12px_rgba(0,0,0,0.05)] will-change-transform">Ações</th>
+                      <th className="px-4 py-3 text-right sticky right-0 bg-surface-container-low shadow-[-4px_0_12px_rgba(0,0,0,0.05)]">Ações</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant">
@@ -572,7 +572,7 @@ export default function GestaoEntregasScreen({
                             R$ {del.valorPagamento.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
                           {/* Sticky Action controls */}
-                          <td className="px-4 py-4 text-right sticky right-0 bg-white group-hover:bg-[#f6f8fa] transition-colors shadow-[-4px_0_12px_rgba(0,0,0,0.05)] will-change-transform">
+                          <td className="px-4 py-4 text-right sticky right-0 bg-white group-hover:bg-[#f6f8fa] transition-colors shadow-[-4px_0_12px_rgba(0,0,0,0.05)]">
                             <div className="flex justify-end gap-1">
                               <button
                                 onClick={() => setComprovanteDeliveryId(del.id)}
