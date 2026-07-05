@@ -48,10 +48,11 @@ export default function EdicaoEntregaScreen({
   const [nfe, setNfe] = useState(formatNfe(delivery?.nfe));
   const [pedido, setPedido] = useState(delivery?.pedido ?? '');
   const [dataEntrega, setDataEntrega] = useState(delivery?.dataEntrega ?? '');
-  // '' = ainda não confirmado pelo operador. Sempre começa em branco (mesmo
-  // que o registro já estivesse fora do prazo antes de abrir a tela) —
-  // obriga a confirmar de novo a cada edição, sem herdar valor default.
-  const [atrasoResponsabilidade, setAtrasoResponsabilidade] = useState<AtrasoResponsabilidade | ''>('');
+  // '' = ainda não confirmado pelo operador nesta edição. Começa com o valor
+  // já salvo (se o registro já estava fora do prazo e já foi confirmado
+  // antes, mostra o que foi escolhido); só limpa de novo quando uma mudança
+  // de data, aqui na tela, torna a entrega atrasada agora.
+  const [atrasoResponsabilidade, setAtrasoResponsabilidade] = useState<AtrasoResponsabilidade | ''>(delivery?.atrasoResponsabilidade ?? '');
   const [remetente, setRemetente] = useState(delivery?.remetente ?? '');
   const [remetenteCnpj, setRemetenteCnpj] = useState(delivery?.remetenteCnpj ?? '');
   const [remetenteEndereco, setRemetenteEndereco] = useState(delivery?.remetenteEndereco ?? '');
