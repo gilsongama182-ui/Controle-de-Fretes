@@ -26,6 +26,9 @@ function cellValue(delivery: Delivery, key: keyof Delivery): unknown {
     // notação científica no Excel se não for forçado como texto.
     return delivery.codigoRastreio ? `="${delivery.codigoRastreio}"` : '';
   }
+  if (key === 'atrasoResponsabilidade') {
+    return delivery.atrasoResponsabilidade === 'cliente' ? 'Cliente' : 'Próprio';
+  }
   return delivery[key];
 }
 
@@ -35,6 +38,7 @@ function cellValue(delivery: Delivery, key: keyof Delivery): unknown {
 const EXPORT_ONLY_FIELDS: { key: keyof Delivery; label: string }[] = [
   { key: 'chaveAcessoNfe', label: 'Chave de Acesso NF-e' },
   { key: 'valorTotalNota', label: 'Valor Total da Nota' },
+  { key: 'atrasoResponsabilidade', label: 'Responsável pelo Atraso' },
 ];
 
 // Colunas de cubagem (peso/altura/largura/comprimento) não são um campo de

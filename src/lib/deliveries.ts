@@ -1,5 +1,5 @@
 import { supabase } from './supabaseClient';
-import { Delivery, DeliveryStatus } from '../types';
+import { AtrasoResponsabilidade, Delivery, DeliveryStatus } from '../types';
 import { formatNfe } from './formatNfe';
 import { formatPhoneBR } from './formatPhone';
 
@@ -36,6 +36,7 @@ interface DeliveryRow {
   fone_fax: string | null;
   status: DeliveryStatus;
   ocorrencia: string | null;
+  atraso_responsabilidade: AtrasoResponsabilidade;
   valor_cobranca: number;
   valor_pagamento: number;
   codigo_rastreio: string | null;
@@ -79,6 +80,7 @@ function fromRow(row: DeliveryRow): Delivery {
     foneFax: row.fone_fax ?? '',
     status: row.status,
     ocorrencia: row.ocorrencia ?? '',
+    atrasoResponsabilidade: row.atraso_responsabilidade ?? 'proprio',
     valorCobranca: row.valor_cobranca,
     valorPagamento: row.valor_pagamento,
     codigoRastreio: row.codigo_rastreio ?? '',
@@ -127,6 +129,7 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.foneFax !== undefined) row.fone_fax = formatPhoneBR(input.foneFax);
   if (input.status !== undefined) row.status = input.status;
   if (input.ocorrencia !== undefined) row.ocorrencia = upper(input.ocorrencia);
+  if (input.atrasoResponsabilidade !== undefined) row.atraso_responsabilidade = input.atrasoResponsabilidade;
   if (input.valorCobranca !== undefined) row.valor_cobranca = input.valorCobranca;
   if (input.valorPagamento !== undefined) row.valor_pagamento = input.valorPagamento;
   if (input.codigoRastreio !== undefined) row.codigo_rastreio = upper(input.codigoRastreio);

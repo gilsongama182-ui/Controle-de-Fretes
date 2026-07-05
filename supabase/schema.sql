@@ -51,6 +51,7 @@ create table if not exists public.deliveries (
   fone_fax text,
   status text not null check (status in ('ENTREGUE', 'EM ROTA', 'EM ATRASO', 'FALHA')) default 'EM ROTA',
   ocorrencia text,
+  atraso_responsabilidade text not null check (atraso_responsabilidade in ('proprio', 'cliente')) default 'proprio',
   valor_cobranca numeric(12, 2) not null default 0,
   valor_pagamento numeric(12, 2) not null default 0,
   codigo_rastreio text,

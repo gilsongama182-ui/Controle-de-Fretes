@@ -142,6 +142,7 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       foneFax: get('foneFax'),
       status,
       ocorrencia: get('ocorrencia'),
+      atrasoResponsabilidade: 'proprio',
       valorCobranca: get('valorCobranca') ? normalizeNumber(get('valorCobranca')) : 0,
       valorPagamento: get('valorPagamento') ? normalizeNumber(get('valorPagamento')) : 0,
       codigoRastreio: get('codigoRastreio'),

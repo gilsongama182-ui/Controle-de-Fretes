@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   ChevronRight, Calendar, Landmark, MapPin, Save, ArrowLeft, ClipboardCopy, RefreshCw
 } from 'lucide-react';
-import { ActivePage, Delivery, DeliveryStatus, User } from '../types';
+import { ActivePage, AtrasoResponsabilidade, Delivery, DeliveryStatus, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
 import { formatNfe } from '../lib/formatNfe';
 import { formatDateBR } from '../lib/formatDate';
@@ -48,6 +48,7 @@ export default function EdicaoEntregaScreen({
   const [nfe, setNfe] = useState(formatNfe(delivery?.nfe));
   const [pedido, setPedido] = useState(delivery?.pedido ?? '');
   const [dataEntrega, setDataEntrega] = useState(delivery?.dataEntrega ?? '');
+  const [atrasoResponsabilidade, setAtrasoResponsabilidade] = useState<AtrasoResponsabilidade>(delivery?.atrasoResponsabilidade ?? 'proprio');
   const [remetente, setRemetente] = useState(delivery?.remetente ?? '');
   const [remetenteCnpj, setRemetenteCnpj] = useState(delivery?.remetenteCnpj ?? '');
   const [remetenteEndereco, setRemetenteEndereco] = useState(delivery?.remetenteEndereco ?? '');
@@ -134,6 +135,7 @@ export default function EdicaoEntregaScreen({
         ocorrencia,
         previsao,
         dataEntrega,
+        atrasoResponsabilidade,
         cliente,
         nomeRazaoSocial: razaoSocial,
         cnpjCpf,
@@ -589,6 +591,20 @@ export default function EdicaoEntregaScreen({
                     onChange={(e) => handleDataEntregaChange(e.target.value)}
                     className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
                   />
+                </div>
+
+                {/* Responsável por um eventual atraso — quando é do cliente, não conta
+                    contra os indicadores de performance de prazo */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Responsável pelo Atraso</label>
+                  <select
+                    value={atrasoResponsabilidade}
+                    onChange={(e) => setAtrasoResponsabilidade(e.target.value as AtrasoResponsabilidade)}
+                    className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
+                  >
+                    <option value="proprio">Próprio</option>
+                    <option value="cliente">Cliente</option>
+                  </select>
                 </div>
 
                 {/* Tracking Code (Read-Only Copyable field) */}

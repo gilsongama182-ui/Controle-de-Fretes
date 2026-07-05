@@ -1,4 +1,5 @@
 export type DeliveryStatus = 'ENTREGUE' | 'EM ROTA' | 'EM ATRASO' | 'FALHA';
+export type AtrasoResponsabilidade = 'proprio' | 'cliente';
 
 export interface Delivery {
   id: string; // uuid (chave real no banco)
@@ -31,6 +32,10 @@ export interface Delivery {
   foneFax: string;
   status: DeliveryStatus;
   ocorrencia: string;
+  // Quem causou um eventual atraso: "proprio" (nossa responsabilidade, conta
+  // nos indicadores de performance) ou "cliente" (destinatário indisponível,
+  // recusou recebimento etc. — não conta contra a nossa performance).
+  atrasoResponsabilidade: AtrasoResponsabilidade;
   valorCobranca: number; // receita
   valorPagamento: number; // custo
   codigoRastreio: string;

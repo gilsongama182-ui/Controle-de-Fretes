@@ -76,6 +76,7 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       foneFax: '(11) 99999-8888',
       status: 'EM ROTA',
       ocorrencia: 'Nenhuma',
+      atrasoResponsabilidade: 'proprio',
       valorCobranca: valorNumerico,
       valorPagamento: valorNumerico * 0.65,
       codigoRastreio: `HB2024TX${randomIdNumber}`,
