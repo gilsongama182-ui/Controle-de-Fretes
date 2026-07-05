@@ -252,7 +252,7 @@ export default function GestaoEntregasScreen({
   );
 
   return (
-    <div className="bg-surface text-on-surface font-sans min-h-screen flex flex-col md:flex-row">
+    <div className="bg-surface text-on-surface font-sans min-h-screen md:h-screen md:overflow-hidden flex flex-col md:flex-row">
 
       <Sidebar
         activePage="gestao-entregas"
@@ -265,14 +265,14 @@ export default function GestaoEntregasScreen({
         onCubagem={user.profileType === 'master' ? () => onNavigate('cubagem') : undefined}
       />
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 md:min-h-0">
         <OperadorTopBar profile={user} />
 
         {/* Main Content Area */}
-        <main className="flex-1 p-6 w-full overflow-hidden">
+        <main className="flex-1 p-6 w-full overflow-hidden md:flex md:flex-col md:min-h-0">
 
           {/* Header Breadcrumbs Row */}
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6">
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-6 md:shrink-0">
             <div>
               <h1 className="font-headline text-3xl font-bold text-primary mb-1">Gestão de Entregas</h1>
               <div className="flex items-center text-on-surface-variant gap-2 text-xs">
@@ -319,7 +319,7 @@ export default function GestaoEntregasScreen({
           </div>
 
           {/* Quick Insights Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 md:shrink-0">
 
             {/* Active Deliveries */}
             <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
@@ -370,10 +370,10 @@ export default function GestaoEntregasScreen({
           </div>
 
           {/* Main Data Table Container */}
-          <div className="bg-white rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
+          <div className="bg-white rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col md:flex-1 md:min-h-0">
 
             {/* Table Controls */}
-            <div className="p-4 border-b border-outline-variant flex flex-wrap gap-3 items-center justify-between bg-surface-container-low/30">
+            <div className="p-4 border-b border-outline-variant flex flex-wrap gap-3 items-center justify-between bg-surface-container-low/30 md:shrink-0">
               <div className="flex flex-wrap gap-2 items-center">
 
                 {/* Search input */}
@@ -481,7 +481,7 @@ export default function GestaoEntregasScreen({
             </div>
 
             {/* Table Content */}
-            <div className="overflow-x-auto">
+            <div className="overflow-x-auto md:flex-1 md:min-h-0 md:overflow-y-auto">
               {detailedMode ? (
                 /* DENSE WIDE TABLE WITH HORIZONTAL SCROLL */
                 <table className="w-full text-left border-collapse min-w-[3240px]">
@@ -698,7 +698,7 @@ export default function GestaoEntregasScreen({
             </div>
 
             {/* Pagination Footer */}
-            <div className="p-4 border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-4 bg-surface-container-low/40">
+            <div className="p-4 border-t border-outline-variant flex flex-col sm:flex-row items-center justify-between gap-4 bg-surface-container-low/40 md:shrink-0">
               <div className="flex items-center gap-2 text-sm text-on-surface-variant">
                 <span>Linhas por página:</span>
                 <select
