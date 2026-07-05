@@ -102,17 +102,16 @@ export default function EdicaoEntregaScreen({
     alert(`Código de rastreamento ${delivery.codigoRastreio} copiado!`);
   };
 
-  // Ao preencher a Data de Entrega, o status é ajustado sozinho: ENTREGUE se
-  // ainda está dentro da Previsão de Entrega, EM ATRASO se passou dela. Se a
-  // Previsão não é uma data válida (aceita texto livre, ex: "Reagendado"),
-  // não dá pra comparar — assume ENTREGUE, já que uma data foi informada.
-  // Limpar o campo não mexe no status (o operador pode ajustar manualmente).
+  // Ao preencher a Data de Entrega, o status vira ENTREGUE sempre — a carga
+  // foi entregue, independente de ter sido dentro ou fora do prazo. EM ATRASO
+  // é reservado pra quem ainda está em rota (não muda aqui). A comparação com
+  // a Previsão de Entrega vira um indicador de performance nos cards dos
+  // dashboards (ver src/lib/deliveryStatus.ts), não o status em si. Limpar o
+  // campo não mexe no status (o operador pode ajustar manualmente).
   const handleDataEntregaChange = (value: string) => {
     setDataEntrega(value);
     if (!value) return;
-    const previsaoValida = /^\d{4}-\d{2}-\d{2}$/.test(previsao);
-    const dentroDoPrazo = !previsaoValida || value <= previsao;
-    setStatus(dentroDoPrazo ? 'ENTREGUE' : 'EM ATRASO');
+    setStatus('ENTREGUE');
   };
 
   const handleSave = async (e: React.FormEvent) => {

@@ -4,6 +4,7 @@ import { Delivery, User } from '../types';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
 import { formatNfe } from '../lib/formatNfe';
+import { isAtrasadoEfetivo, isEntregueNoPrazo, isEntregueForaDoPrazo } from '../lib/deliveryStatus';
 import ClienteHeader from './layout/ClienteHeader';
 
 interface DashboardClienteProps {
@@ -54,7 +55,13 @@ export default function DashboardClienteScreen({
     const total = deliveries.length;
     const delivered = deliveries.filter(d => d.status === 'ENTREGUE').length;
     const enRoute = deliveries.filter(d => d.status === 'EM ROTA').length;
-    const delayed = deliveries.filter(d => d.status === 'EM ATRASO' || d.status === 'FALHA').length;
+    const failed = deliveries.filter(d => d.status === 'FALHA').length;
+    // Junta quem ainda está em rota com previsão vencida e quem foi entregue
+    // fora do prazo — não depende de ninguém marcar EM ATRASO manualmente.
+    const atrasado = deliveries.filter(isAtrasadoEfetivo).length;
+    const entregueForaDoPrazo = deliveries.filter(isEntregueForaDoPrazo).length;
+    const entregueNoPrazo = deliveries.filter(isEntregueNoPrazo).length;
+    const delayed = atrasado + failed + entregueForaDoPrazo;
 
     const pctDelivered = total > 0 ? ((delivered / total) * 100).toFixed(1) : '0.0';
     const pctEnRoute = total > 0 ? ((enRoute / total) * 100).toFixed(1) : '0.0';
@@ -62,6 +69,8 @@ export default function DashboardClienteScreen({
 
     return {
       total,
+      entregueNoPrazo,
+      entregueForaDoPrazo,
       pctDelivered: `${pctDelivered}%`,
       pctEnRoute: `${pctEnRoute}%`,
       pctDelayed: `${pctDelayed}%`
@@ -155,6 +164,9 @@ export default function DashboardClienteScreen({
               <div>
                 <span className="text-xs font-bold tracking-wider text-secondary block mb-1">% ENTREGUE</span>
                 <span className="text-3xl font-bold text-on-tertiary-container">{metrics.pctDelivered}</span>
+                <p className="text-xs text-secondary mt-1">
+                  {metrics.entregueNoPrazo} no prazo · {metrics.entregueForaDoPrazo} fora do prazo
+                </p>
               </div>
             </div>
 

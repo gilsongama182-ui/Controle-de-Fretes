@@ -5,6 +5,7 @@ import { NewDeliveryInput } from '../lib/deliveries';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
 import { formatNfe } from '../lib/formatNfe';
+import { isAtrasadoEfetivo, isEntregueNoPrazo, isEntregueForaDoPrazo } from '../lib/deliveryStatus';
 import { Volume } from '../lib/deliveryVolumes';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
@@ -42,13 +43,19 @@ export default function DashboardOperadorScreen({
     const total = deliveries.length;
     const deliveredCount = deliveries.filter(d => d.status === 'ENTREGUE').length;
     const enRouteCount = deliveries.filter(d => d.status === 'EM ROTA').length;
-    const delayedCount = deliveries.filter(d => d.status === 'EM ATRASO').length;
     const failedCount = deliveries.filter(d => d.status === 'FALHA').length;
+    // "Fora do prazo" junta quem ainda está em rota com previsão vencida e
+    // quem já foi entregue mas depois do prazo — não depende de ninguém
+    // marcar EM ATRASO manualmente.
+    const atrasadoCount = deliveries.filter(isAtrasadoEfetivo).length;
+    const entregueForaDoPrazoCount = deliveries.filter(isEntregueForaDoPrazo).length;
+    const entregueNoPrazoCount = deliveries.filter(isEntregueNoPrazo).length;
+    const offTrackCount = atrasadoCount + failedCount + entregueForaDoPrazoCount;
 
     // Proporções reais sobre o total de entregas (0 quando não há dados)
     const pct = (n: number) => (total > 0 ? ((n / total) * 100).toFixed(1) : '0.0');
-    const pctOnTrack = total > 0 ? (((total - delayedCount - failedCount) / total) * 100).toFixed(1) : '0.0';
-    const pctOffTrack = total > 0 ? (((delayedCount + failedCount) / total) * 100).toFixed(1) : '0.0';
+    const pctOnTrack = total > 0 ? (((total - offTrackCount) / total) * 100).toFixed(1) : '0.0';
+    const pctOffTrack = total > 0 ? ((offTrackCount / total) * 100).toFixed(1) : '0.0';
 
     // % Entregue mede sucesso sobre as entregas já CONCLUÍDAS (entregue ou
     // falha) — não sobre o total, senão o indicador fica artificialmente
@@ -60,6 +67,8 @@ export default function DashboardOperadorScreen({
     return {
       total,
       enRouteCount,
+      entregueNoPrazoCount,
+      entregueForaDoPrazoCount,
       pctDelivered: `${pctDelivered}%`,
       pctEnRoute: `${pct(enRouteCount)}%`,
       pctOnTrack: `${pctOnTrack}%`,
@@ -157,7 +166,9 @@ export default function DashboardOperadorScreen({
               </div>
               <div className="mt-4">
                 <h4 className="font-headline text-3xl font-bold text-primary">{metrics.pctDelivered}</h4>
-                <p className="text-xs text-secondary mt-1">Meta: 98,5%</p>
+                <p className="text-xs text-secondary mt-1">
+                  {metrics.entregueNoPrazoCount} no prazo · {metrics.entregueForaDoPrazoCount} fora do prazo
+                </p>
               </div>
             </div>
 

@@ -9,6 +9,7 @@ import { NewDeliveryInput } from '../lib/deliveries';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
 import { formatNfe } from '../lib/formatNfe';
+import { isAtrasadoEfetivo, isEntregueNoPrazo, isEntregueForaDoPrazo } from '../lib/deliveryStatus';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -74,7 +75,9 @@ export default function GestaoEntregasScreen({
     const total = deliveries.length;
     const deliveredCount = deliveries.filter(d => d.status === 'ENTREGUE').length;
     const failedCount = deliveries.filter(d => d.status === 'FALHA').length;
-    const delayedCount = deliveries.filter(d => d.status === 'EM ATRASO').length;
+    // "Em atraso" mede quem ainda está em rota e já passou da previsão —
+    // não depende de alguém marcar EM ATRASO manualmente.
+    const delayedCount = deliveries.filter(isAtrasadoEfetivo).length;
     const todayStr = new Date().toISOString().split('T')[0];
     const dueTodayCount = deliveries.filter(d =>
       d.previsao === todayStr || d.previsao.toLowerCase().includes('hoje')
@@ -85,8 +88,10 @@ export default function GestaoEntregasScreen({
     // ainda em rota, que nem teve chance de ser entregue ainda.
     const finalizedCount = deliveredCount + failedCount;
     const pctSuccess = finalizedCount > 0 ? ((deliveredCount / finalizedCount) * 100).toFixed(1) : '0.0';
+    const noPrazoCount = deliveries.filter(isEntregueNoPrazo).length;
+    const foraDoPrazoCount = deliveries.filter(isEntregueForaDoPrazo).length;
 
-    return { total, delayedCount, dueTodayCount, pctSuccess };
+    return { total, delayedCount, dueTodayCount, pctSuccess, noPrazoCount, foraDoPrazoCount };
   }, [deliveries]);
 
   // Apply filters to deliveries
@@ -343,6 +348,9 @@ export default function GestaoEntregasScreen({
               <div className="w-full bg-surface-container rounded-full h-1.5 mt-2">
                 <div className="bg-on-tertiary-container h-1.5 rounded-full" style={{ width: `${metrics.pctSuccess}%` }}></div>
               </div>
+              <p className="text-[10px] text-on-surface-variant mt-1.5">
+                {metrics.noPrazoCount} no prazo · {metrics.foraDoPrazoCount} fora do prazo
+              </p>
             </div>
 
             {/* Delays count */}
