@@ -87,23 +87,31 @@ export default function DashboardClienteScreen({
     };
   }, [deliveries]);
 
+  // Base do gráfico: respeita o filtro de Status, sem depender da seleção de
+  // UF/cidade do próprio gráfico (essa seleção é o nível 2, não deve
+  // "filtrar a si mesma" no nível 1).
+  const deliveriesForChart = useMemo(
+    () => (statusFilter ? deliveries.filter((d) => d.status === statusFilter) : deliveries),
+    [deliveries, statusFilter]
+  );
+
   // Entregas por UF (nível 1 do gráfico)
   const ufBreakdown = useMemo(() => {
     const counts = new Map<string, number>();
-    deliveries.forEach((d) => {
+    deliveriesForChart.forEach((d) => {
       if (!d.uf) return;
       counts.set(d.uf, (counts.get(d.uf) ?? 0) + 1);
     });
     return Array.from(counts.entries())
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count);
-  }, [deliveries]);
+  }, [deliveriesForChart]);
 
   // Top 10 cidades da UF selecionada (nível 2, drill-down)
   const cityBreakdown = useMemo(() => {
     if (!selectedUf) return [];
     const counts = new Map<string, number>();
-    deliveries.forEach((d) => {
+    deliveriesForChart.forEach((d) => {
       if (d.uf !== selectedUf || !d.municipio) return;
       counts.set(d.municipio, (counts.get(d.municipio) ?? 0) + 1);
     });
@@ -111,7 +119,7 @@ export default function DashboardClienteScreen({
       .map(([label, count]) => ({ label, count }))
       .sort((a, b) => b.count - a.count)
       .slice(0, 10);
-  }, [deliveries, selectedUf]);
+  }, [deliveriesForChart, selectedUf]);
 
   const chartData = selectedUf ? cityBreakdown : ufBreakdown;
   const chartMax = chartData.length > 0 ? Math.max(...chartData.map((r) => r.count)) : 0;
