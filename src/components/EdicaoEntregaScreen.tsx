@@ -48,7 +48,11 @@ export default function EdicaoEntregaScreen({
   const [nfe, setNfe] = useState(formatNfe(delivery?.nfe));
   const [pedido, setPedido] = useState(delivery?.pedido ?? '');
   const [dataEntrega, setDataEntrega] = useState(delivery?.dataEntrega ?? '');
-  const [atrasoResponsabilidade, setAtrasoResponsabilidade] = useState<AtrasoResponsabilidade>(delivery?.atrasoResponsabilidade ?? 'proprio');
+  // '' = ainda não confirmado pelo operador. Só começa preenchido quando o
+  // registro já estava fora do prazo antes de abrir a tela (já foi
+  // confirmado antes); qualquer mudança de data que torne a entrega
+  // atrasada agora limpa de novo, obrigando a confirmar de novo.
+  const [atrasoResponsabilidade, setAtrasoResponsabilidade] = useState<AtrasoResponsabilidade | ''>(delivery?.atrasoResponsabilidade ?? '');
   const [remetente, setRemetente] = useState(delivery?.remetente ?? '');
   const [remetenteCnpj, setRemetenteCnpj] = useState(delivery?.remetenteCnpj ?? '');
   const [remetenteEndereco, setRemetenteEndereco] = useState(delivery?.remetenteEndereco ?? '');
@@ -103,6 +107,8 @@ export default function EdicaoEntregaScreen({
     alert(`Código de rastreamento ${delivery.codigoRastreio} copiado!`);
   };
 
+  const foraDoPrazo = (entrega: string, prev: string) => !!entrega && !!prev && entrega > prev;
+
   // Ao preencher a Data de Entrega, o status vira ENTREGUE sempre — a carga
   // foi entregue, independente de ter sido dentro ou fora do prazo. EM ATRASO
   // é reservado pra quem ainda está em rota (não muda aqui). A comparação com
@@ -111,12 +117,24 @@ export default function EdicaoEntregaScreen({
   // campo não mexe no status (o operador pode ajustar manualmente).
   const handleDataEntregaChange = (value: string) => {
     setDataEntrega(value);
+    if (foraDoPrazo(value, previsao)) setAtrasoResponsabilidade('');
     if (!value) return;
     setStatus('ENTREGUE');
   };
 
+  // Editar a Previsão também pode tornar (ou deixar de tornar) a entrega
+  // atrasada — mesma lógica de obrigar a reconfirmar quem é o responsável.
+  const handlePrevisaoChange = (value: string) => {
+    setPrevisao(value);
+    if (foraDoPrazo(dataEntrega, value)) setAtrasoResponsabilidade('');
+  };
+
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (foraDoPrazo(dataEntrega, previsao) && !atrasoResponsabilidade) {
+      alert('Selecione o Responsável pelo Atraso (Próprio ou Cliente) antes de salvar.');
+      return;
+    }
     setIsSaving(true);
     try {
       await onUpdateDelivery(delivery.id, {
@@ -135,7 +153,7 @@ export default function EdicaoEntregaScreen({
         ocorrencia,
         previsao,
         dataEntrega,
-        atrasoResponsabilidade,
+        atrasoResponsabilidade: atrasoResponsabilidade || 'proprio',
         cliente,
         nomeRazaoSocial: razaoSocial,
         cnpjCpf,
@@ -577,7 +595,7 @@ export default function EdicaoEntregaScreen({
                   <input
                     type="date"
                     value={previsao}
-                    onChange={(e) => setPrevisao(e.target.value)}
+                    onChange={(e) => handlePrevisaoChange(e.target.value)}
                     className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
                   />
                 </div>
@@ -596,14 +614,16 @@ export default function EdicaoEntregaScreen({
                 {/* Responsável por um eventual atraso — só faz sentido perguntar quando
                     a entrega realmente saiu do prazo. Quando é do cliente, não conta
                     contra os indicadores de performance de prazo. */}
-                {!!dataEntrega && !!previsao && dataEntrega > previsao && (
+                {foraDoPrazo(dataEntrega, previsao) && (
                   <div className="space-y-1">
                     <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Responsável pelo Atraso</label>
                     <select
                       value={atrasoResponsabilidade}
                       onChange={(e) => setAtrasoResponsabilidade(e.target.value as AtrasoResponsabilidade)}
+                      required
                       className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
                     >
+                      <option value="" disabled>SELECIONE...</option>
                       <option value="proprio">PRÓPRIO</option>
                       <option value="cliente">CLIENTE</option>
                     </select>
