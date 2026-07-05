@@ -82,14 +82,15 @@ export default function GestaoEntregasScreen({
     const dueTodayCount = deliveries.filter(d =>
       d.previsao === todayStr || d.previsao.toLowerCase().includes('hoje')
     ).length;
-    // Mesma lógica do Painel de Controle: mede sucesso sobre as entregas já
-    // concluídas (entregue ou falha), não sobre o total geral — senão o
-    // indicador fica artificialmente baixo enquanto houver muita entrega
-    // ainda em rota, que nem teve chance de ser entregue ainda.
+    // Mesma lógica do Painel de Controle: mede a performance real de prazo
+    // sobre as entregas já concluídas (entregue ou falha), não sobre o total
+    // geral — senão o indicador fica artificialmente baixo enquanto houver
+    // muita entrega ainda em rota, que nem teve chance de ser entregue ainda.
+    // Entregue fora do prazo conta como sucesso, mas não como performance.
     const finalizedCount = deliveredCount + failedCount;
-    const pctSuccess = finalizedCount > 0 ? ((deliveredCount / finalizedCount) * 100).toFixed(1) : '0.0';
     const noPrazoCount = deliveries.filter(isEntregueNoPrazo).length;
     const foraDoPrazoCount = deliveries.filter(isEntregueForaDoPrazo).length;
+    const pctSuccess = finalizedCount > 0 ? ((noPrazoCount / finalizedCount) * 100).toFixed(1) : '0.0';
 
     return { total, delayedCount, dueTodayCount, pctSuccess, noPrazoCount, foraDoPrazoCount };
   }, [deliveries]);

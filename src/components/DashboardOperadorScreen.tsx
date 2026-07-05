@@ -57,12 +57,13 @@ export default function DashboardOperadorScreen({
     const pctOnTrack = total > 0 ? (((total - offTrackCount) / total) * 100).toFixed(1) : '0.0';
     const pctOffTrack = total > 0 ? ((offTrackCount / total) * 100).toFixed(1) : '0.0';
 
-    // % Entregue mede sucesso sobre as entregas já CONCLUÍDAS (entregue ou
-    // falha) — não sobre o total, senão o indicador fica artificialmente
-    // baixo enquanto houver entregas ainda em rota/atraso que nem tiveram
-    // chance de ser entregues ainda.
+    // % Entregue mede a performance real de prazo: das entregas já
+    // CONCLUÍDAS (entregue ou falha, não sobre o total — senão o indicador
+    // fica artificialmente baixo enquanto houver entrega ainda em rota),
+    // quantas foram feitas dentro do prazo. Uma entrega feita fora do prazo
+    // conta como sucesso (foi entregue), mas não como performance.
     const finalizedCount = deliveredCount + failedCount;
-    const pctDelivered = finalizedCount > 0 ? ((deliveredCount / finalizedCount) * 100).toFixed(1) : '0.0';
+    const pctDelivered = finalizedCount > 0 ? ((entregueNoPrazoCount / finalizedCount) * 100).toFixed(1) : '0.0';
 
     return {
       total,

@@ -63,7 +63,10 @@ export default function DashboardClienteScreen({
     const entregueNoPrazo = deliveries.filter(isEntregueNoPrazo).length;
     const delayed = atrasado + failed + entregueForaDoPrazo;
 
-    const pctDelivered = total > 0 ? ((delivered / total) * 100).toFixed(1) : '0.0';
+    // % Entregue mede a performance real de prazo: das entregas já
+    // concluídas (entregue ou falha), quantas foram feitas dentro do prazo.
+    const finalizedCount = delivered + failed;
+    const pctDelivered = finalizedCount > 0 ? ((entregueNoPrazo / finalizedCount) * 100).toFixed(1) : '0.0';
     const pctEnRoute = total > 0 ? ((enRoute / total) * 100).toFixed(1) : '0.0';
     const pctDelayed = total > 0 ? ((delayed / total) * 100).toFixed(1) : '0.0';
 
