@@ -5,6 +5,7 @@ import { NewDeliveryInput } from '../../lib/deliveries';
 import { parseDeliveriesCsv, downloadCsvTemplate } from '../../lib/importCsv';
 import { parseNfeXmlFile } from '../../lib/importNfeXml';
 import { formatNfe } from '../../lib/formatNfe';
+import { getErrorMessage } from '../../lib/errorMessage';
 
 interface ImportModalProps {
   open: boolean;
@@ -148,7 +149,7 @@ export default function ImportModal({ open, onClose, onImport, existingDeliverie
       alert(`${inputs.length} entrega(s) importada(s) com sucesso!`);
       handleClose();
     } catch (err) {
-      alert(err instanceof Error ? `Falha ao importar: ${err.message}` : 'Falha ao importar.');
+      alert(`Falha ao importar: ${getErrorMessage(err, 'motivo desconhecido')}`);
     } finally {
       setIsImporting(false);
     }
