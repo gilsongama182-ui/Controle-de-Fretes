@@ -34,17 +34,19 @@ function todayIso(): string {
 }
 
 // A tag <infCpl> costuma trazer um texto livre com várias informações
-// separadas por "|" (ex: "...|CPF:090.995.476-33|PEDIDO:6584799"). Extraímos
-// só o valor do pedido (sempre numérico, 7 dígitos), procurando o rótulo
-// "PEDIDO" em qualquer posição — algumas NFs trazem "CNI" no lugar de
-// "PEDIDO" com o mesmo significado, então aceitamos os dois rótulos.
-// \b evita casar "CNI" no meio de outra palavra (ex: "TECNICA"). Pega tudo
-// até o próximo "|" (ou fim do texto) e descarta qualquer coisa que não
-// seja dígito — isso cobre casos em que o número vem com ponto, espaço ou
-// pontuação extra no meio, que antes faziam a captura parar cedo demais e
-// perder parte do pedido.
+// separadas por "|" (ex: "...|CPF:090.995.476-33|PEDIDO:6584799", ou
+// "...|CNI_6615274_REQ0189430.SCTASK0216044."). Extraímos só o valor do
+// pedido (sempre numérico, 7 dígitos), procurando o rótulo "PEDIDO" ou seu
+// equivalente "CNI" em qualquer posição. O \b antes do rótulo evita casar
+// no meio de outra palavra (ex: "TECNICA") — sem \b depois, porque "_" conta
+// como caractere de palavra e quebraria a fronteira quando o rótulo vem
+// colado com underscore (caso do CNI). A captura pega só a sequência de
+// dígitos (com ponto/espaço/underscore intercalado, se houver) logo após o
+// rótulo, parando no primeiro caractere que não seja isso — assim não gruda
+// o número de ticket/requisição (REQ..., SCTASK...) que vem em seguida no
+// mesmo campo.
 function extractPedido(infCpl: string): string {
-  const match = /\b(?:PEDIDO|CNI)\b[:\s]*([^|]*)/i.exec(infCpl);
+  const match = /\b(?:PEDIDO|CNI)[:_\s]*([0-9][0-9.\s_]*)/i.exec(infCpl);
   return match ? match[1].replace(/\D/g, '') : '';
 }
 
