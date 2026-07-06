@@ -80,7 +80,7 @@ export default function GestaoEntregasScreen({
     const delayedCount = deliveries.filter(isAtrasadoEfetivo).length;
     const todayStr = new Date().toISOString().split('T')[0];
     const dueTodayCount = deliveries.filter(d =>
-      d.previsao === todayStr || d.previsao.toLowerCase().includes('hoje')
+      !d.dataEntrega && (d.previsao === todayStr || d.previsao.toLowerCase().includes('hoje'))
     ).length;
     // Mesma lógica do Painel de Controle: mede a performance real de prazo
     // sobre as entregas já concluídas (entregue ou falha), não sobre o total
