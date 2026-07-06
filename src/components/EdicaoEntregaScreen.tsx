@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ChevronRight, Calendar, Landmark, MapPin, Save, ArrowLeft, ClipboardCopy, RefreshCw
+  ChevronRight, Calendar, Landmark, MapPin, Save, ArrowLeft, ClipboardCopy, RefreshCw, Paperclip
 } from 'lucide-react';
 import { ActivePage, AtrasoResponsabilidade, Delivery, DeliveryStatus, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
@@ -12,6 +12,7 @@ import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
 import NovaEntregaModal from './layout/NovaEntregaModal';
 import ImportModal from './layout/ImportModal';
+import ComprovanteModal from './layout/ComprovanteModal';
 
 interface EdicaoEntregaProps {
   onNavigate: (page: ActivePage) => void;
@@ -38,6 +39,7 @@ export default function EdicaoEntregaScreen({
 }: EdicaoEntregaProps) {
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  const [isComprovanteOpen, setIsComprovanteOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
 
@@ -615,7 +617,18 @@ export default function EdicaoEntregaScreen({
 
                 {/* Actual Delivery Date */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Data de Entrega</label>
+                  <div className="flex items-center justify-between gap-2">
+                    <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Data de Entrega</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsComprovanteOpen(true)}
+                      className={`flex items-center gap-1 text-[11px] font-bold hover:underline ${delivery.comprovantePath ? 'text-secondary' : 'text-on-surface-variant'}`}
+                      title={delivery.comprovantePath ? 'Comprovante anexado' : 'Anexar comprovante de entrega'}
+                    >
+                      <Paperclip className="w-3.5 h-3.5" />
+                      {delivery.comprovantePath ? 'Comprovante anexado' : 'Anexar comprovante'}
+                    </button>
+                  </div>
                   <input
                     type="date"
                     value={dataEntrega}
@@ -769,6 +782,12 @@ export default function EdicaoEntregaScreen({
         onClose={() => setIsImportOpen(false)}
         onImport={onImportDeliveries}
         existingDeliveries={deliveries}
+      />
+
+      <ComprovanteModal
+        delivery={isComprovanteOpen ? delivery : null}
+        onClose={() => setIsComprovanteOpen(false)}
+        onUpdateDelivery={onUpdateDelivery}
       />
 
     </div>
