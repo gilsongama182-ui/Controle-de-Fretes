@@ -84,6 +84,8 @@ export default function CubagemScreen({
         onNovaEntrega={() => {}}
         onImportar={() => {}}
         onLogout={onLogout}
+        onUsuarios={user.profileType === 'master' ? () => onNavigate('usuarios') : undefined}
+        onIntegracoes={user.profileType === 'master' ? () => onNavigate('integracoes') : undefined}
         onCubagem={user.profileType === 'master' ? () => onNavigate('cubagem') : undefined}
         restrictedToCubagem={user.profileType === 'operador_log'}
       />
