@@ -41,6 +41,7 @@ create table if not exists public.deliveries (
   data_expedicao date,
   previsao text,
   data_entrega date,        -- data real de entrega (preenchida quando status = ENTREGUE)
+  nome_recebedor text,      -- quem assinou/recebeu a entrega, preenchido manualmente pelo operador
   endereco_completo text not null,
   numero text,              -- número do endereço (<nro> no XML)
   complemento text,         -- complemento do endereço (<xCpl> no XML)

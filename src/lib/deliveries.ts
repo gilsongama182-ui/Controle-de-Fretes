@@ -26,6 +26,7 @@ interface DeliveryRow {
   data_expedicao: string | null;
   previsao: string | null;
   data_entrega: string | null;
+  nome_recebedor: string | null;
   endereco_completo: string;
   numero: string | null;
   complemento: string | null;
@@ -71,6 +72,7 @@ function fromRow(row: DeliveryRow): Delivery {
     dataExpedicao: row.data_expedicao ?? '',
     previsao: row.previsao ?? '',
     dataEntrega: row.data_entrega ?? '',
+    nomeRecebedor: row.nome_recebedor ?? '',
     enderecoCompleto: row.endereco_completo,
     numero: row.numero ?? '',
     complemento: row.complemento ?? '',
@@ -121,6 +123,7 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.dataExpedicao !== undefined) row.data_expedicao = input.dataExpedicao || null;
   if (input.previsao !== undefined) row.previsao = upper(input.previsao);
   if (input.dataEntrega !== undefined) row.data_entrega = input.dataEntrega || null;
+  if (input.nomeRecebedor !== undefined) row.nome_recebedor = upper(input.nomeRecebedor) || null;
   if (input.enderecoCompleto !== undefined) row.endereco_completo = upper(input.enderecoCompleto);
   if (input.numero !== undefined) row.numero = upper(input.numero);
   if (input.complemento !== undefined) row.complemento = upper(input.complemento);

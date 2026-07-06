@@ -128,6 +128,7 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
     dataExpedicao: '',
     previsao: '',
     dataEntrega: '',
+    nomeRecebedor: '',
     enderecoCompleto: logradouro,
     numero,
     complemento,

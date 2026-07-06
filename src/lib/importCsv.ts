@@ -132,6 +132,7 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       dataExpedicao: get('dataExpedicao') ? normalizeDate(get('dataExpedicao')) : '',
       previsao: get('previsao') ? normalizeDate(get('previsao')) : '',
       dataEntrega: get('dataEntrega') ? normalizeDate(get('dataEntrega')) : '',
+      nomeRecebedor: '',
       enderecoCompleto: get('enderecoCompleto'),
       numero: get('numero'),
       complemento: get('complemento'),

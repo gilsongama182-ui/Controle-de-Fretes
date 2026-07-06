@@ -22,6 +22,7 @@ export interface Delivery {
   dataExpedicao: string; // YYYY-MM-DD
   previsao: string; // YYYY-MM-DD
   dataEntrega: string; // YYYY-MM-DD, data real de entrega (vazio se ainda não entregue)
+  nomeRecebedor: string; // quem assinou/recebeu a entrega, preenchido manualmente pelo operador
   enderecoCompleto: string;
   numero: string; // número do endereço
   complemento: string; // complemento do endereço

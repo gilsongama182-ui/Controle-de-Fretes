@@ -53,6 +53,7 @@ export default function EdicaoEntregaScreen({
   const [nfe, setNfe] = useState(formatNfe(delivery?.nfe));
   const [pedido, setPedido] = useState(delivery?.pedido ?? '');
   const [dataEntrega, setDataEntrega] = useState(delivery?.dataEntrega ?? '');
+  const [nomeRecebedor, setNomeRecebedor] = useState(delivery?.nomeRecebedor ?? '');
   // '' = ainda não confirmado pelo operador nesta edição. Começa com o valor
   // já salvo (se o registro já estava fora do prazo e já foi confirmado
   // antes, mostra o que foi escolhido); só limpa de novo quando uma mudança
@@ -164,6 +165,7 @@ export default function EdicaoEntregaScreen({
         ocorrencia,
         previsao,
         dataEntrega,
+        nomeRecebedor,
         atrasoResponsabilidade: atrasoResponsabilidade || 'proprio',
         cliente,
         nomeRazaoSocial: razaoSocial,
@@ -618,6 +620,18 @@ export default function EdicaoEntregaScreen({
                     type="date"
                     value={dataEntrega}
                     onChange={(e) => handleDataEntregaChange(e.target.value)}
+                    className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+                  />
+                </div>
+
+                {/* Recipient name (who signed for the delivery) */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Nome Recebedor</label>
+                  <input
+                    type="text"
+                    value={nomeRecebedor}
+                    onChange={(e) => setNomeRecebedor(e.target.value)}
+                    placeholder="Nome de quem recebeu a entrega"
                     className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
                   />
                 </div>

@@ -66,6 +66,7 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       dataExpedicao: new Date().toISOString().split('T')[0],
       previsao: new Date().toISOString().split('T')[0],
       dataEntrega: '',
+      nomeRecebedor: '',
       enderecoCompleto: endereco || 'Rua das Logísticas, 1000',
       numero: '',
       complemento: '',
