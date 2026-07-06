@@ -36,12 +36,15 @@ function todayIso(): string {
 // A tag <infCpl> costuma trazer um texto livre com várias informações
 // separadas por "|" (ex: "...|CPF:090.995.476-33|PEDIDO:6584799"). Extraímos
 // só o valor do pedido (sempre numérico, 7 dígitos), procurando o rótulo
-// "PEDIDO" em qualquer posição. Pega tudo até o próximo "|" (ou fim do
-// texto) e descarta qualquer coisa que não seja dígito — isso cobre casos
-// em que o número vem com ponto, espaço ou pontuação extra no meio, que
-// antes faziam a captura parar cedo demais e perder parte do pedido.
+// "PEDIDO" em qualquer posição — algumas NFs trazem "CNI" no lugar de
+// "PEDIDO" com o mesmo significado, então aceitamos os dois rótulos.
+// \b evita casar "CNI" no meio de outra palavra (ex: "TECNICA"). Pega tudo
+// até o próximo "|" (ou fim do texto) e descarta qualquer coisa que não
+// seja dígito — isso cobre casos em que o número vem com ponto, espaço ou
+// pontuação extra no meio, que antes faziam a captura parar cedo demais e
+// perder parte do pedido.
 function extractPedido(infCpl: string): string {
-  const match = /PEDIDO[:\s]*([^|]*)/i.exec(infCpl);
+  const match = /\b(?:PEDIDO|CNI)\b[:\s]*([^|]*)/i.exec(infCpl);
   return match ? match[1].replace(/\D/g, '') : '';
 }
 
