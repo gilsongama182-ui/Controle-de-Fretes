@@ -55,13 +55,12 @@ export default function Sidebar({
               <span>Gerenciamento</span>
             </button>
 
-            <button
-              onClick={onUsuarios ?? (() => alert('Filtro de usuários logísticos simulado.'))}
-              className={onUsuarios ? navItemClass('usuarios') : 'w-full flex items-center gap-3 px-4 py-3 text-on-surface-variant hover:bg-surface-variant/40 rounded-lg text-left text-sm transition-colors'}
-            >
-              <Users className="w-5 h-5" />
-              <span>Usuários</span>
-            </button>
+            {onUsuarios && (
+              <button onClick={onUsuarios} className={navItemClass('usuarios')}>
+                <Users className="w-5 h-5" />
+                <span>Usuários</span>
+              </button>
+            )}
 
             <button
               onClick={() => onNavigate('parceiros')}
