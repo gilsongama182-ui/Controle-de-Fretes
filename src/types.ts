@@ -1,4 +1,4 @@
-export type DeliveryStatus = 'ENTREGUE' | 'EM ROTA' | 'EM ATRASO' | 'FALHA';
+export type DeliveryStatus = 'ENTREGUE' | 'EM ROTA' | 'EM ATRASO' | 'FALHA' | 'DEVOLVIDO';
 export type AtrasoResponsabilidade = 'proprio' | 'cliente';
 
 export interface Delivery {

@@ -26,7 +26,7 @@ function hojeIso(): string {
 // Quando o atraso é de responsabilidade do cliente (destinatário indisponível,
 // recusou recebimento etc.), não conta contra a nossa performance.
 export function isAtrasadoEfetivo(d: Delivery): boolean {
-  if (d.status === 'ENTREGUE' || d.status === 'FALHA') return false;
+  if (d.status === 'ENTREGUE' || d.status === 'FALHA' || d.status === 'DEVOLVIDO') return false;
   if (d.atrasoResponsabilidade === 'cliente') return false;
   const previsaoIso = toIsoDate(d.previsao);
   if (!previsaoIso) return false;

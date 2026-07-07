@@ -355,7 +355,8 @@ export function matchAndBuildPatch(
 export function mapTrackingStatus(meStatus: string): DeliveryStatus | null {
   const s = meStatus.toLowerCase();
   if (s.includes('delivered') || s.includes('entregue')) return 'ENTREGUE';
-  if (s.includes('undelivered') || s.includes('devolvido') || s.includes('returned') || s.includes('failed')) return 'FALHA';
+  if (s.includes('devolvido') || s.includes('returned')) return 'DEVOLVIDO';
+  if (s.includes('undelivered') || s.includes('failed')) return 'FALHA';
   if (
     s.includes('received') ||
     s.includes('posted') ||

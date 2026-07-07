@@ -407,6 +407,7 @@ export default function GestaoEntregasScreen({
                   <option value="EM ROTA">Em Rota</option>
                   <option value="EM ATRASO">Em Atraso</option>
                   <option value="FALHA">Falha</option>
+                  <option value="DEVOLVIDO">Devolvido</option>
                 </select>
 
                 {/* UF Select */}
@@ -565,6 +566,7 @@ export default function GestaoEntregasScreen({
                                 del.status === 'ENTREGUE' ? 'bg-green-100 text-green-800' :
                                 del.status === 'EM ROTA' ? 'bg-blue-100 text-blue-800' :
                                 del.status === 'EM ATRASO' ? 'bg-amber-100 text-amber-800' :
+                                del.status === 'DEVOLVIDO' ? 'bg-gray-200 text-gray-800' :
                                 'bg-red-100 text-red-800'
                               }`}>
                                 {del.status}
@@ -661,6 +663,7 @@ export default function GestaoEntregasScreen({
                               del.status === 'ENTREGUE' ? 'bg-green-100 text-green-800' :
                               del.status === 'EM ROTA' ? 'bg-blue-100 text-blue-800' :
                               del.status === 'EM ATRASO' ? 'bg-amber-100 text-amber-800' :
+                              del.status === 'DEVOLVIDO' ? 'bg-gray-200 text-gray-800' :
                               'bg-red-100 text-red-800'
                             }`}>
                               {del.status}

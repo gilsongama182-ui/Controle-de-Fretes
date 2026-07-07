@@ -582,6 +582,7 @@ export default function EdicaoEntregaScreen({
                       status === 'ENTREGUE' ? 'border-green-300 bg-green-50 text-green-800' :
                       status === 'EM ROTA' ? 'border-blue-300 bg-blue-50 text-blue-800' :
                       status === 'EM ATRASO' ? 'border-amber-300 bg-amber-50 text-amber-800' :
+                      status === 'DEVOLVIDO' ? 'border-gray-300 bg-gray-50 text-gray-800' :
                       'border-red-300 bg-red-50 text-red-800'
                     }`}
                   >
@@ -589,6 +590,7 @@ export default function EdicaoEntregaScreen({
                     <option value="EM ROTA">🚚 EM ROTA</option>
                     <option value="EM ATRASO">⚠️ EM ATRASO</option>
                     <option value="FALHA">🛑 FALHA</option>
+                    <option value="DEVOLVIDO">↩️ DEVOLVIDO</option>
                   </select>
                 </div>
 
