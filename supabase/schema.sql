@@ -311,7 +311,10 @@ $$;
 -- deliveries: operador/master veem tudo; cliente vê só entregas cujo CNPJ do
 -- REMETENTE (normalizado, sem pontuação) bate com o document do seu perfil;
 -- motorista vê só as entregas atribuídas a ele. Em qualquer caso, exige
--- status = 'aprovado' (cadastros pendentes não veem nada).
+-- status = 'aprovado' (cadastros pendentes não veem nada). A cláusula de
+-- CNPJ é restrita ao papel cliente — sem isso, um document "vazio" (ou
+-- coincidente com entregas sem remetente_cnpj) vazaria entregas pra
+-- qualquer outro papel sem policy própria.
 drop policy if exists deliveries_select on public.deliveries;
 create policy deliveries_select
   on public.deliveries
@@ -321,10 +324,13 @@ create policy deliveries_select
     and (
       public.current_profile_type() in ('operador', 'master', 'operador_log')
       or (public.current_profile_type() = 'motorista' and motorista_id = auth.uid())
-      or regexp_replace(coalesce(remetente_cnpj, ''), '\D', '', 'g') = (
-        select regexp_replace(document, '\D', '', 'g')
-        from public.profiles
-        where id = auth.uid()
+      or (
+        public.current_profile_type() = 'cliente'
+        and regexp_replace(coalesce(remetente_cnpj, ''), '\D', '', 'g') = (
+          select regexp_replace(document, '\D', '', 'g')
+          from public.profiles
+          where id = auth.uid()
+        )
       )
     )
   );

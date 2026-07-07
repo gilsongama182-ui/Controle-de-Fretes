@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Truck, LogOut, MapPin, Phone, FileText, ExternalLink, CheckCircle2, XCircle, Undo2, Package } from 'lucide-react';
+import { useMemo, useState } from 'react';
+import { Truck, LogOut, MapPin, Phone, FileText, ExternalLink, CheckCircle2, XCircle, Undo2, Package, Search } from 'lucide-react';
 import { Delivery, User } from '../types';
 import { BaixarEntregaInput } from '../lib/deliveries';
 import { getComprovanteUrl } from '../lib/comprovantes';
@@ -34,13 +34,30 @@ function enderecoResumo(d: Delivery): string {
 
 export default function MotoristaScreen({ user, deliveries, onLogout, onBaixarEntrega }: MotoristaScreenProps) {
   const [tab, setTab] = useState<'pendentes' | 'concluidas'>('pendentes');
+  const [searchTerm, setSearchTerm] = useState('');
   const [baixaDelivery, setBaixaDelivery] = useState<Delivery | null>(null);
   const [comprovanteLoadingId, setComprovanteLoadingId] = useState<string | null>(null);
 
-  const pendentes = deliveries.filter((d) => d.status === 'EM ROTA' || d.status === 'EM ATRASO');
-  const concluidasHoje = deliveries.filter(
+  const pendentesTodas = deliveries.filter((d) => d.status === 'EM ROTA' || d.status === 'EM ATRASO');
+  const concluidasHojeTodas = deliveries.filter(
     (d) => (d.status === 'ENTREGUE' || d.status === 'FALHA' || d.status === 'DEVOLVIDO') && d.updatedAt.slice(0, 10) === todayStr()
   );
+
+  const filtrar = (lista: Delivery[]) => {
+    const term = searchTerm.toLowerCase().trim();
+    if (!term) return lista;
+    return lista.filter((d) =>
+      d.codigo.toLowerCase().includes(term)
+      || d.nfe.toLowerCase().includes(term)
+      || d.cliente.toLowerCase().includes(term)
+      || d.nomeRazaoSocial.toLowerCase().includes(term)
+      || d.municipio.toLowerCase().includes(term)
+      || d.bairroDistrito.toLowerCase().includes(term)
+    );
+  };
+
+  const pendentes = useMemo(() => filtrar(pendentesTodas), [pendentesTodas, searchTerm]);
+  const concluidasHoje = useMemo(() => filtrar(concluidasHojeTodas), [concluidasHojeTodas, searchTerm]);
 
   const handleVerComprovante = async (delivery: Delivery) => {
     if (!delivery.comprovantePath) return;
@@ -82,7 +99,7 @@ export default function MotoristaScreen({ user, deliveries, onLogout, onBaixarEn
             tab === 'pendentes' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'
           }`}
         >
-          Pendentes ({pendentes.length})
+          Pendentes ({pendentesTodas.length})
         </button>
         <button
           onClick={() => setTab('concluidas')}
@@ -90,16 +107,31 @@ export default function MotoristaScreen({ user, deliveries, onLogout, onBaixarEn
             tab === 'concluidas' ? 'border-primary text-primary' : 'border-transparent text-on-surface-variant'
           }`}
         >
-          Concluídas hoje ({concluidasHoje.length})
+          Concluídas hoje ({concluidasHojeTodas.length})
         </button>
       </nav>
+
+      <div className="px-4 pt-3 max-w-lg w-full mx-auto">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            placeholder="Buscar por NF, cliente ou bairro..."
+            className="w-full pl-9 pr-3 py-2.5 bg-white border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+          />
+        </div>
+      </div>
 
       <main className="flex-1 p-4 space-y-3 max-w-lg w-full mx-auto">
         {tab === 'pendentes' && (
           pendentes.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
               <Package className="w-10 h-10 text-outline" />
-              <p className="text-sm text-on-surface-variant font-medium">Nenhuma entrega pendente atribuída a você.</p>
+              <p className="text-sm text-on-surface-variant font-medium">
+                {searchTerm ? 'Nenhuma entrega pendente corresponde à busca.' : 'Nenhuma entrega pendente atribuída a você.'}
+              </p>
             </div>
           ) : (
             pendentes.map((d) => (
@@ -144,7 +176,9 @@ export default function MotoristaScreen({ user, deliveries, onLogout, onBaixarEn
           concluidasHoje.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
               <Package className="w-10 h-10 text-outline" />
-              <p className="text-sm text-on-surface-variant font-medium">Nenhuma entrega concluída hoje ainda.</p>
+              <p className="text-sm text-on-surface-variant font-medium">
+                {searchTerm ? 'Nenhuma entrega concluída corresponde à busca.' : 'Nenhuma entrega concluída hoje ainda.'}
+              </p>
             </div>
           ) : (
             concluidasHoje.map((d) => {
