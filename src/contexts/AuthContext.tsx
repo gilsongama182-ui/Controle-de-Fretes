@@ -39,7 +39,11 @@ interface AuthContextValue {
   profileError: boolean;
   isPasswordRecovery: boolean;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
-  signUp: (email: string, password: string, meta: SignUpMeta) => Promise<{ error: AuthError | null }>;
+  // needsEmailConfirmation: true quando o cadastro deu certo mas o projeto
+  // exige confirmação por e-mail (nesse caso o Supabase não devolve sessão
+  // nenhuma) — a tela de Cadastro usa isso pra avisar o usuário em vez de
+  // deixá-lo achando que já pode logar.
+  signUp: (email: string, password: string, meta: SignUpMeta) => Promise<{ error: AuthError | null; needsEmailConfirmation: boolean }>;
   signOut: () => Promise<void>;
   refreshProfile: () => Promise<void>;
   requestPasswordReset: (email: string) => Promise<{ error: AuthError | null }>;
@@ -108,7 +112,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signUp = async (email: string, password: string, meta: SignUpMeta) => {
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -120,7 +124,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         },
       },
     });
-    return { error };
+    return { error, needsEmailConfirmation: !error && !data.session };
   };
 
   const signOut = async () => {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { User as UserIcon, Shield, Lock, Eye, EyeOff, Mail, ArrowRight, Truck, AlertCircle } from 'lucide-react';
+import { User as UserIcon, Shield, Lock, Eye, EyeOff, Mail, ArrowRight, Truck, AlertCircle, MailCheck } from 'lucide-react';
 import { ActivePage, Genero } from '../types';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -19,6 +19,10 @@ export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+  // true quando o cadastro deu certo mas o projeto exige confirmação por
+  // e-mail — sem isso, o usuário ficava sem nenhum feedback, achando que já
+  // podia logar, e caía em "e-mail ou senha incorretos" na tentativa.
+  const [confirmationSent, setConfirmationSent] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,7 +34,7 @@ export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
     }
 
     setIsSubmitting(true);
-    const { error } = await signUp(email, password, {
+    const { error, needsEmailConfirmation } = await signUp(email, password, {
       name,
       profileType,
       document: document || (profileType === 'operador' ? '00.000.000/0001-00' : '000.000.000-00'),
@@ -42,7 +46,11 @@ export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
       setErrorMessage(error.message);
       return;
     }
-    // Em caso de sucesso, o App.tsx redireciona automaticamente
+    if (needsEmailConfirmation) {
+      setConfirmationSent(true);
+      return;
+    }
+    // Sem exigência de confirmação, o App.tsx redireciona automaticamente
     // com base na sessão + perfil restaurados pelo AuthContext.
   };
 
@@ -61,6 +69,25 @@ export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
 
       {/* Main Registration Card */}
       <main className="w-full max-w-[640px] bg-surface-container-lowest rounded-xl shadow-sm border border-outline-variant overflow-hidden">
+        {confirmationSent ? (
+          <div className="p-8 text-center space-y-4">
+            <div className="mx-auto w-12 h-12 rounded-full bg-green-100 flex items-center justify-center">
+              <MailCheck className="w-6 h-6 text-green-700" />
+            </div>
+            <h2 className="font-headline text-xl font-bold text-on-surface">Confirme seu e-mail</h2>
+            <p className="text-sm text-on-surface-variant">
+              Enviamos um link de confirmação para <strong>{email}</strong>. Clique nele antes de fazer login — sem
+              essa confirmação, o sistema não libera o acesso mesmo com o cadastro aprovado.
+            </p>
+            <button
+              type="button"
+              onClick={() => onNavigate('login')}
+              className="w-full bg-primary text-on-primary text-sm font-semibold py-3 rounded-lg hover:bg-primary-container transition-all"
+            >
+              Ir para o login
+            </button>
+          </div>
+        ) : (
         <form onSubmit={handleSubmit} className="p-8 space-y-6">
 
           {errorMessage && (
@@ -309,6 +336,7 @@ export default function CadastroScreen({ onNavigate }: CadastroScreenProps) {
           </footer>
 
         </form>
+        )}
       </main>
 
       {/* Footer Credits */}
