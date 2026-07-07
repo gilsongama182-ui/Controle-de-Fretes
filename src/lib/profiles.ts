@@ -46,6 +46,21 @@ export async function fetchProfiles(): Promise<ProfileRecord[]> {
   return (data as ProfileRow[]).map(fromRow);
 }
 
+// Motoristas aprovados, pro dropdown de atribuição em Gestão/Edição de
+// Entrega. operador também tem policy de SELECT pra esse subconjunto de
+// profiles (só motorista aprovado, não a base toda de usuários).
+export async function fetchMotoristas(): Promise<ProfileRecord[]> {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select('*')
+    .eq('profile_type', 'motorista')
+    .eq('status', 'aprovado')
+    .order('name', { ascending: true });
+
+  if (error) throw error;
+  return (data as ProfileRow[]).map(fromRow);
+}
+
 export async function updateProfileRole(id: string, profileType: ProfileType): Promise<ProfileRecord> {
   const { data, error } = await supabase
     .from('profiles')

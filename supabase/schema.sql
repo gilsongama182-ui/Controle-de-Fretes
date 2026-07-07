@@ -11,7 +11,7 @@ create table if not exists public.profiles (
   id uuid primary key references auth.users(id) on delete cascade,
   name text not null,
   email text not null,
-  profile_type text not null check (profile_type in ('cliente', 'operador', 'master', 'operador_log')),
+  profile_type text not null check (profile_type in ('cliente', 'operador', 'master', 'operador_log', 'motorista')),
   document text not null,
   genero text not null default 'nao_informado' check (genero in ('masculino', 'feminino', 'nao_informado')),
   status text not null default 'pendente' check (status in ('pendente', 'aprovado', 'rejeitado')),
@@ -63,6 +63,8 @@ create table if not exists public.deliveries (
   comprovante_nome text,          -- nome original do arquivo enviado
   melhor_envio_id text,           -- ID da etiqueta na Melhor Envio (nao e o codigo_rastreio publico)
   melhor_envio_last_sync_at timestamptz,
+  motorista_id uuid references public.profiles(id), -- quem vai fazer a entrega (perfil motorista)
+  motorista_nome text,            -- denormalizado, mesmo padrão de remetente/cliente
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -70,6 +72,7 @@ create table if not exists public.deliveries (
 create index if not exists deliveries_status_idx on public.deliveries (status);
 create index if not exists deliveries_uf_idx on public.deliveries (uf);
 create index if not exists deliveries_cnpj_cpf_idx on public.deliveries (cnpj_cpf);
+create index if not exists deliveries_motorista_id_idx on public.deliveries (motorista_id);
 
 -- Token OAuth da conta Melhor Envio conectada (uma conta só, pra toda a
 -- empresa). Sem nenhuma policy de propósito (default-deny) — só a
@@ -270,12 +273,22 @@ as $$
   select profile_type from public.profiles where id = auth.uid();
 $$;
 
--- profiles: cada usuário lê o próprio perfil; master lê todos (tela de Usuários)
+-- profiles: cada usuário lê o próprio perfil; master lê todos (tela de
+-- Usuários); operador também lê perfis de motoristas aprovados (dropdown de
+-- atribuição em Gestão/Edição de Entrega).
 drop policy if exists profiles_select_own on public.profiles;
 create policy profiles_select_own
   on public.profiles
   for select
-  using (id = auth.uid() or public.current_profile_type() = 'master');
+  using (
+    id = auth.uid()
+    or public.current_profile_type() = 'master'
+    or (
+      public.current_profile_type() = 'operador'
+      and profile_type = 'motorista'
+      and status = 'aprovado'
+    )
+  );
 
 -- profiles: master pode alterar o papel/status de qualquer usuário
 drop policy if exists profiles_update_master on public.profiles;
@@ -296,8 +309,9 @@ as $$
 $$;
 
 -- deliveries: operador/master veem tudo; cliente vê só entregas cujo CNPJ do
--- REMETENTE (normalizado, sem pontuação) bate com o document do seu perfil.
--- Em qualquer caso, exige status = 'aprovado' (cadastros pendentes não veem nada).
+-- REMETENTE (normalizado, sem pontuação) bate com o document do seu perfil;
+-- motorista vê só as entregas atribuídas a ele. Em qualquer caso, exige
+-- status = 'aprovado' (cadastros pendentes não veem nada).
 drop policy if exists deliveries_select on public.deliveries;
 create policy deliveries_select
   on public.deliveries
@@ -306,6 +320,7 @@ create policy deliveries_select
     public.current_profile_status() = 'aprovado'
     and (
       public.current_profile_type() in ('operador', 'master', 'operador_log')
+      or (public.current_profile_type() = 'motorista' and motorista_id = auth.uid())
       or regexp_replace(coalesce(remetente_cnpj, ''), '\D', '', 'g') = (
         select regexp_replace(document, '\D', '', 'g')
         from public.profiles
@@ -378,6 +393,55 @@ end;
 $$;
 
 grant execute on function public.marcar_falha_lida(uuid) to authenticated;
+
+-- Baixa de entrega pelo motorista (nome recebedor, data, ocorrência, status,
+-- comprovante) — não existe policy de UPDATE genérica pra esse papel (evita
+-- liberar qualquer coluna da entrega); só essa função, restrita às colunas do
+-- formulário mobile, e só na entrega que está atribuída a ele.
+create or replace function public.motorista_baixar_entrega(
+  p_delivery_id uuid,
+  p_status text,
+  p_ocorrencia text,
+  p_nome_recebedor text,
+  p_data_entrega date,
+  p_comprovante_path text,
+  p_comprovante_nome text
+)
+returns public.deliveries
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
+  v_result public.deliveries;
+begin
+  if p_status not in ('ENTREGUE', 'FALHA', 'DEVOLVIDO') then
+    raise exception 'Status inválido para baixa pelo motorista.';
+  end if;
+
+  update public.deliveries d
+  set
+    status = p_status,
+    ocorrencia = coalesce(p_ocorrencia, d.ocorrencia),
+    nome_recebedor = coalesce(p_nome_recebedor, d.nome_recebedor),
+    data_entrega = coalesce(p_data_entrega, d.data_entrega),
+    comprovante_path = coalesce(p_comprovante_path, d.comprovante_path),
+    comprovante_nome = coalesce(p_comprovante_nome, d.comprovante_nome)
+  where d.id = p_delivery_id
+    and d.motorista_id = auth.uid()
+    and public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() = 'motorista'
+  returning d.* into v_result;
+
+  if v_result.id is null then
+    raise exception 'Entrega não encontrada ou sem permissão para baixar.';
+  end if;
+
+  return v_result;
+end;
+$$;
+
+grant execute on function public.motorista_baixar_entrega(uuid, text, text, text, date, text, text) to authenticated;
 
 -- delivery_volumes: operador/master (relatório de exportação) e operador_log
 -- (tela de cubagem) leem; só operador_log/master criam/editam/removem.
@@ -546,6 +610,41 @@ create policy comprovantes_delete
     bucket_id = 'comprovantes'
     and public.current_profile_status() = 'aprovado'
     and public.current_profile_type() in ('operador', 'master')
+  );
+
+-- motorista pode anexar (e depois abrir) o comprovante só de entregas
+-- atribuídas a ele. Sem update/delete: a foto só é enviada no momento de
+-- salvar a baixa, não é substituída depois.
+drop policy if exists comprovantes_insert_motorista on storage.objects;
+create policy comprovantes_insert_motorista
+  on storage.objects
+  for insert
+  to authenticated
+  with check (
+    bucket_id = 'comprovantes'
+    and public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() = 'motorista'
+    and exists (
+      select 1 from public.deliveries d
+      where d.id = (split_part(name, '/', 1))::uuid
+        and d.motorista_id = auth.uid()
+    )
+  );
+
+drop policy if exists comprovantes_select_motorista on storage.objects;
+create policy comprovantes_select_motorista
+  on storage.objects
+  for select
+  to authenticated
+  using (
+    bucket_id = 'comprovantes'
+    and public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() = 'motorista'
+    and exists (
+      select 1 from public.deliveries d
+      where d.id = (split_part(name, '/', 1))::uuid
+        and d.motorista_id = auth.uid()
+    )
   );
 
 -- Storage — documentos de Agregados/Parceiros (PNG/JPEG/PDF), bucket privado.

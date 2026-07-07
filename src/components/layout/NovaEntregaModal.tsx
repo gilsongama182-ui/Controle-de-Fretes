@@ -88,6 +88,8 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       comprovanteNome: '',
       melhorEnvioId: '',
       melhorEnvioLastSyncAt: '',
+      motoristaId: '',
+      motoristaNome: '',
     };
 
     setIsSubmitting(true);

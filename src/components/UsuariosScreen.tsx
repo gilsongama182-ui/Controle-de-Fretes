@@ -25,6 +25,7 @@ const ROLE_LABEL: Record<ProfileRecord['profileType'], string> = {
   operador: 'Operador',
   operador_log: 'Operador Log',
   master: 'Master',
+  motorista: 'Motorista',
 };
 
 const GENERO_LABEL: Record<Genero, string> = {

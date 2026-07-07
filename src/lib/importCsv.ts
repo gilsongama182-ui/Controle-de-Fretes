@@ -154,6 +154,8 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       comprovanteNome: '',
       melhorEnvioId: '',
       melhorEnvioLastSyncAt: '',
+      motoristaId: '',
+      motoristaNome: '',
     };
 
     return { line: i + 2, data, errors: [] };

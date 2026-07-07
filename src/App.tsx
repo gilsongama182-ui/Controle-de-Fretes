@@ -10,7 +10,10 @@ import {
   updateDelivery,
   deleteDelivery,
   marcarFalhaLida,
+  baixarEntregaMotorista,
+  assignMotorista,
   NewDeliveryInput,
+  BaixarEntregaInput,
 } from './lib/deliveries';
 import { syncTracking, SyncItemResult } from './lib/melhorEnvio';
 import { fetchAllVolumes, saveVolumesForDelivery, Volume, VolumeInput } from './lib/deliveryVolumes';
@@ -29,6 +32,7 @@ import IntegracoesScreen from './components/IntegracoesScreen';
 import CubagemScreen from './components/CubagemScreen';
 import ParceirosScreen from './components/ParceirosScreen';
 import CadastroParceiroScreen from './components/CadastroParceiroScreen';
+import MotoristaScreen from './components/MotoristaScreen';
 
 function LoadingScreen() {
   return (
@@ -106,6 +110,8 @@ function AppShell() {
         setActivePage('dashboard-cliente');
       } else if (profile.profileType === 'operador_log') {
         setActivePage('cubagem');
+      } else if (profile.profileType === 'motorista') {
+        setActivePage('motorista');
       } else {
         setActivePage('dashboard-operador');
       }
@@ -177,6 +183,16 @@ function AppShell() {
   const handleMarkFalhaLida = async (id: string) => {
     const updated = await marcarFalhaLida(id);
     setDeliveries((prev) => prev.map((d) => (d.id === id ? updated : d)));
+  };
+
+  const handleBaixarEntregaMotorista = async (id: string, input: BaixarEntregaInput) => {
+    const updated = await baixarEntregaMotorista(id, input);
+    setDeliveries((prev) => prev.map((d) => (d.id === id ? updated : d)));
+  };
+
+  const handleAssignMotorista = async (ids: string[], motoristaId: string | null, motoristaNome: string) => {
+    const updated = await assignMotorista(ids, motoristaId, motoristaNome);
+    setDeliveries((prev) => prev.map((d) => updated.find((u) => u.id === d.id) ?? d));
   };
 
   const handleSelectPartnerForEdit = (partner: Partner) => {
@@ -260,6 +276,7 @@ function AppShell() {
           onImportDeliveries={handleImportDeliveries}
           onUpdateDelivery={handleUpdateDelivery}
           onSyncTracking={handleSyncTracking}
+          onAssignMotorista={handleAssignMotorista}
         />
       );
 
@@ -338,6 +355,17 @@ function AppShell() {
           onLogout={handleLogout}
           user={profile}
           partner={selectedPartner}
+        />
+      );
+
+    case 'motorista':
+      if (!profile) return <LoadingScreen />;
+      return (
+        <MotoristaScreen
+          user={profile}
+          deliveries={deliveries}
+          onLogout={handleLogout}
+          onBaixarEntrega={handleBaixarEntregaMotorista}
         />
       );
 

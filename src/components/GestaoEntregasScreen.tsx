@@ -10,6 +10,7 @@ import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
 import { formatNfe } from '../lib/formatNfe';
 import { isAtrasadoEfetivo, isEntregueNoPrazo, isEntregueForaDoPrazo } from '../lib/deliveryStatus';
+import { fetchMotoristas, ProfileRecord } from '../lib/profiles';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -32,6 +33,7 @@ interface GestaoEntregasProps {
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
   onUpdateDelivery: (id: string, patch: Partial<Delivery>) => Promise<void>;
   onSyncTracking: (ids: string[]) => Promise<SyncItemResult[]>;
+  onAssignMotorista: (ids: string[], motoristaId: string | null, motoristaNome: string) => Promise<void>;
 }
 
 export default function GestaoEntregasScreen({
@@ -45,14 +47,18 @@ export default function GestaoEntregasScreen({
   onAddDelivery,
   onImportDeliveries,
   onUpdateDelivery,
-  onSyncTracking
+  onSyncTracking,
+  onAssignMotorista
 }: GestaoEntregasProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [ufFilter, setUfFilter] = useState('');
   const [comprovanteFilter, setComprovanteFilter] = useState<'' | 'com' | 'sem'>('');
+  const [motoristaFilter, setMotoristaFilter] = useState('');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [motoristas, setMotoristas] = useState<ProfileRecord[]>([]);
+  const [isAssigning, setIsAssigning] = useState(false);
   const [sortKey, setSortKey] = useState<keyof Delivery | null>(null);
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc');
   const [detailedMode, setDetailedMode] = useState(true); // default to detailed/wide table
@@ -69,6 +75,12 @@ export default function GestaoEntregasScreen({
   const comprovanteDelivery = comprovanteDeliveryId
     ? deliveries.find((d) => d.id === comprovanteDeliveryId) ?? null
     : null;
+
+  useEffect(() => {
+    fetchMotoristas()
+      .then(setMotoristas)
+      .catch((err) => console.error('Falha ao buscar motoristas:', err));
+  }, []);
 
   // Computed metrics for active data (todos derivados do array real de entregas)
   const metrics = useMemo(() => {
@@ -136,6 +148,11 @@ export default function GestaoEntregasScreen({
       result = result.filter(d => !d.comprovantePath);
     }
 
+    // Motorista atribuído
+    if (motoristaFilter) {
+      result = result.filter(d => d.motoristaId === motoristaFilter);
+    }
+
     // Período (Data do Pedido)
     if (dateFrom) {
       result = result.filter(d => d.dataPedido >= dateFrom);
@@ -145,7 +162,7 @@ export default function GestaoEntregasScreen({
     }
 
     return result;
-  }, [deliveries, searchTerm, statusFilter, ufFilter, comprovanteFilter, dateFrom, dateTo]);
+  }, [deliveries, searchTerm, statusFilter, ufFilter, comprovanteFilter, motoristaFilter, dateFrom, dateTo]);
 
   // Ordenação por coluna — clicar num cabeçalho ordena por aquele campo;
   // clicar de novo no mesmo cabeçalho inverte a direção.
@@ -176,7 +193,7 @@ export default function GestaoEntregasScreen({
   // atual pode ficar além do fim da lista filtrada e a tabela parece vazia.
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, ufFilter, comprovanteFilter, dateFrom, dateTo]);
+  }, [searchTerm, statusFilter, ufFilter, comprovanteFilter, motoristaFilter, dateFrom, dateTo]);
 
   // Pagination logic
   const paginatedDeliveries = useMemo(() => {
@@ -219,6 +236,24 @@ export default function GestaoEntregasScreen({
   };
 
   const selectedDeliveries = deliveries.filter((d) => selectedIds.has(d.id));
+
+  const handleAssignMotorista = async (value: string) => {
+    if (!value) return;
+    setIsAssigning(true);
+    try {
+      const ids = Array.from(selectedIds);
+      if (value === '__clear__') {
+        await onAssignMotorista(ids, null, '');
+      } else {
+        const motorista = motoristas.find((m) => m.id === value);
+        await onAssignMotorista(ids, value, motorista?.name ?? '');
+      }
+    } catch (err) {
+      alert(err instanceof Error ? `Não foi possível atribuir: ${err.message}` : 'Não foi possível atribuir o motorista.');
+    } finally {
+      setIsAssigning(false);
+    }
+  };
 
   const handleSyncTracking = async () => {
     setIsSyncingTracking(true);
@@ -289,6 +324,21 @@ export default function GestaoEntregasScreen({
             </div>
 
             <div className="flex gap-2">
+              <select
+                value=""
+                disabled={selectedIds.size === 0 || isAssigning}
+                onChange={(e) => handleAssignMotorista(e.target.value)}
+                title={selectedIds.size === 0 ? 'Selecione ao menos uma entrega na tabela' : 'Atribuir motorista às entregas selecionadas'}
+                className="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface-variant rounded-lg font-bold text-sm hover:bg-surface-container transition-all shadow-sm bg-white disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+              >
+                <option value="" disabled>
+                  {isAssigning ? 'Atribuindo...' : `Atribuir Motorista${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}
+                </option>
+                <option value="__clear__">— Remover atribuição —</option>
+                {motoristas.map((m) => (
+                  <option key={m.id} value={m.id}>{m.name}</option>
+                ))}
+              </select>
               <button
                 onClick={() => setIsEtiquetaOpen(true)}
                 disabled={selectedIds.size === 0}
@@ -434,6 +484,18 @@ export default function GestaoEntregasScreen({
                   <option value="sem">Sem anexo</option>
                 </select>
 
+                {/* Motorista Select */}
+                <select
+                  value={motoristaFilter}
+                  onChange={(e) => setMotoristaFilter(e.target.value)}
+                  className="px-3 py-2 border border-outline-variant rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                >
+                  <option value="">Motorista: Todos</option>
+                  {motoristas.map((m) => (
+                    <option key={m.id} value={m.id}>{m.name}</option>
+                  ))}
+                </select>
+
                 {/* Filtro por período (Data do Pedido) */}
                 <div className="flex items-center gap-1.5 px-3 py-1.5 border border-outline-variant rounded-lg bg-white">
                   <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Período</span>
@@ -524,6 +586,7 @@ export default function GestaoEntregasScreen({
                       <SortableTh sortField="municipio" label="Município" />
                       <SortableTh sortField="uf" label="UF" />
                       <SortableTh sortField="foneFax" label="Fone / Fax" />
+                      <SortableTh sortField="motoristaNome" label="Motorista" />
                       <SortableTh sortField="status" label="Status / Ocorrência" />
                       <SortableTh sortField="valorCobranca" label="Valor Cobrança" className="px-4 text-right" />
                       <SortableTh sortField="valorPagamento" label="Valor Pagto" className="px-4 text-right" />
@@ -560,6 +623,7 @@ export default function GestaoEntregasScreen({
                           <td className="px-4 py-4 text-xs">{del.municipio}</td>
                           <td className="px-4 py-4 text-xs font-bold">{del.uf}</td>
                           <td className="px-4 py-4 font-mono text-xs">{del.foneFax}</td>
+                          <td className="px-4 py-4 text-xs font-semibold text-secondary">{del.motoristaNome || '—'}</td>
                           <td className="px-4 py-4">
                             <div className="flex flex-col gap-1">
                               <span className={`px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider w-fit ${
@@ -612,7 +676,7 @@ export default function GestaoEntregasScreen({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={23} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={24} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega corresponde aos filtros de busca aplicados.
                         </td>
                       </tr>
@@ -638,6 +702,7 @@ export default function GestaoEntregasScreen({
                       <SortableTh sortField="uf" label="UF" className="px-5" />
                       <SortableTh sortField="previsao" label="Previsão" className="px-5" />
                       <SortableTh sortField="status" label="Status" className="px-5" />
+                      <SortableTh sortField="motoristaNome" label="Motorista" className="px-5" />
                       <th className="px-5 py-3 sticky top-0 z-10 bg-surface-container-low border-b border-outline-variant">Ocorrência</th>
                       <th className="px-5 py-3 text-right sticky top-0 z-10 bg-surface-container-low border-b border-outline-variant">Ações</th>
                     </tr>
@@ -669,6 +734,7 @@ export default function GestaoEntregasScreen({
                               {del.status}
                             </span>
                           </td>
+                          <td className="px-5 py-4 text-xs font-semibold text-secondary">{del.motoristaNome || '—'}</td>
                           <td className="px-5 py-4 text-xs text-on-surface-variant truncate max-w-[200px]" title={del.ocorrencia}>
                             {del.ocorrencia}
                           </td>
@@ -699,7 +765,7 @@ export default function GestaoEntregasScreen({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={8} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={9} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega encontrada para a sua busca.
                         </td>
                       </tr>

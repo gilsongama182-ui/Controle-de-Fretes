@@ -3,7 +3,7 @@ import { AtrasoResponsabilidade, Delivery, DeliveryStatus } from '../types';
 import { formatNfe } from './formatNfe';
 import { formatPhoneBR } from './formatPhone';
 
-export type NewDeliveryInput = Omit<Delivery, 'id'>;
+export type NewDeliveryInput = Omit<Delivery, 'id' | 'updatedAt'>;
 
 interface DeliveryRow {
   id: string;
@@ -48,6 +48,9 @@ interface DeliveryRow {
   comprovante_nome: string | null;
   melhor_envio_id: string | null;
   melhor_envio_last_sync_at: string | null;
+  motorista_id: string | null;
+  motorista_nome: string | null;
+  updated_at: string;
 }
 
 function fromRow(row: DeliveryRow): Delivery {
@@ -94,6 +97,9 @@ function fromRow(row: DeliveryRow): Delivery {
     comprovanteNome: row.comprovante_nome ?? '',
     melhorEnvioId: row.melhor_envio_id ?? '',
     melhorEnvioLastSyncAt: row.melhor_envio_last_sync_at ?? '',
+    motoristaId: row.motorista_id ?? '',
+    motoristaNome: row.motorista_nome ?? '',
+    updatedAt: row.updated_at,
   };
 }
 
@@ -145,6 +151,8 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.comprovanteNome !== undefined) row.comprovante_nome = input.comprovanteNome || null;
   if (input.melhorEnvioId !== undefined) row.melhor_envio_id = input.melhorEnvioId || null;
   if (input.melhorEnvioLastSyncAt !== undefined) row.melhor_envio_last_sync_at = input.melhorEnvioLastSyncAt || null;
+  if (input.motoristaId !== undefined) row.motorista_id = input.motoristaId || null;
+  if (input.motoristaNome !== undefined) row.motorista_nome = upper(input.motoristaNome) || null;
   return row;
 }
 
@@ -214,4 +222,47 @@ export async function marcarFalhaLida(id: string): Promise<Delivery> {
 export async function deleteDelivery(id: string): Promise<void> {
   const { error } = await supabase.from('deliveries').delete().eq('id', id);
   if (error) throw error;
+}
+
+// Atribuição de motorista em lote (tela de Gestão de Entregas, seleção
+// múltipla) — um único update em vez de N chamadas. motoristaId null
+// desatribui (limpa o campo de volta).
+export async function assignMotorista(ids: string[], motoristaId: string | null, motoristaNome: string): Promise<Delivery[]> {
+  if (ids.length === 0) return [];
+  const { data, error } = await supabase
+    .from('deliveries')
+    .update({ motorista_id: motoristaId, motorista_nome: motoristaId ? motoristaNome.toUpperCase() : null })
+    .in('id', ids)
+    .select('*');
+
+  if (error) throw error;
+  return (data as DeliveryRow[]).map(fromRow);
+}
+
+// Baixa de entrega pelo motorista (tela mobile) — via RPC, não update direto:
+// o papel motorista não tem policy de UPDATE em deliveries (só operador/master
+// têm), então só essas colunas específicas podem ser alteradas, e só na
+// entrega que estiver atribuída a ele (validado dentro da função no banco).
+export interface BaixarEntregaInput {
+  status: Extract<DeliveryStatus, 'ENTREGUE' | 'FALHA' | 'DEVOLVIDO'>;
+  ocorrencia: string;
+  nomeRecebedor: string;
+  dataEntrega: string;
+  comprovantePath?: string;
+  comprovanteNome?: string;
+}
+
+export async function baixarEntregaMotorista(id: string, input: BaixarEntregaInput): Promise<Delivery> {
+  const { data, error } = await supabase.rpc('motorista_baixar_entrega', {
+    p_delivery_id: id,
+    p_status: input.status,
+    p_ocorrencia: input.ocorrencia || null,
+    p_nome_recebedor: input.nomeRecebedor || null,
+    p_data_entrega: input.dataEntrega || null,
+    p_comprovante_path: input.comprovantePath || null,
+    p_comprovante_nome: input.comprovanteNome || null,
+  });
+
+  if (error) throw error;
+  return fromRow(data as DeliveryRow);
 }

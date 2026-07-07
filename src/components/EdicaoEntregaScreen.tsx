@@ -4,6 +4,7 @@ import {
 } from 'lucide-react';
 import { ActivePage, AtrasoResponsabilidade, Delivery, DeliveryStatus, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
+import { fetchMotoristas, ProfileRecord } from '../lib/profiles';
 import { formatNfe } from '../lib/formatNfe';
 import { formatDateBR } from '../lib/formatDate';
 import { SyncItemResult } from '../lib/melhorEnvio';
@@ -86,6 +87,14 @@ export default function EdicaoEntregaScreen({
   const [valorCobranca, setValorCobranca] = useState(delivery?.valorCobranca ?? 0);
   const [valorPagamento, setValorPagamento] = useState(delivery?.valorPagamento ?? 0);
   const [melhorEnvioId, setMelhorEnvioId] = useState(delivery?.melhorEnvioId ?? '');
+  const [motoristaId, setMotoristaId] = useState(delivery?.motoristaId ?? '');
+  const [motoristas, setMotoristas] = useState<ProfileRecord[]>([]);
+
+  useEffect(() => {
+    fetchMotoristas()
+      .then(setMotoristas)
+      .catch((err) => console.error('Falha ao buscar motoristas:', err));
+  }, []);
 
   // Se a sincronização descobrir o ID automaticamente (campo estava vazio),
   // reflete no campo assim que a entrega atualizada chegar de volta.
@@ -151,6 +160,7 @@ export default function EdicaoEntregaScreen({
     }
     setIsSaving(true);
     try {
+      const motoristaNome = motoristaId ? motoristas.find((m) => m.id === motoristaId)?.name ?? '' : '';
       await onUpdateDelivery(delivery.id, {
         nfe,
         pedido,
@@ -184,7 +194,9 @@ export default function EdicaoEntregaScreen({
         foneFax,
         valorCobranca,
         valorPagamento,
-        melhorEnvioId
+        melhorEnvioId,
+        motoristaId: motoristaId || '',
+        motoristaNome
       });
       alert('Informações atualizadas com sucesso!');
       onNavigate('gestao-entregas');
@@ -637,6 +649,21 @@ export default function EdicaoEntregaScreen({
                     onChange={(e) => handleDataEntregaChange(e.target.value)}
                     className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
                   />
+                </div>
+
+                {/* Motorista responsável pela entrega */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Motorista Responsável</label>
+                  <select
+                    value={motoristaId}
+                    onChange={(e) => setMotoristaId(e.target.value)}
+                    className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
+                  >
+                    <option value="">Não atribuído</option>
+                    {motoristas.map((m) => (
+                      <option key={m.id} value={m.id}>{m.name}</option>
+                    ))}
+                  </select>
                 </div>
 
                 {/* Recipient name (who signed for the delivery) */}
