@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Truck, LogOut, MapPin, Phone, FileText, ExternalLink, CheckCircle2, XCircle, Undo2, Package, Search } from 'lucide-react';
+import { Truck, LogOut, MapPin, Phone, FileText, ExternalLink, CheckCircle2, XCircle, Undo2, Package, Search, Navigation } from 'lucide-react';
 import { Delivery, User } from '../types';
 import { BaixarEntregaInput } from '../lib/deliveries';
 import { getComprovanteUrl } from '../lib/comprovantes';
@@ -30,6 +30,11 @@ function enderecoResumo(d: Delivery): string {
     [d.municipio, d.uf].filter(Boolean).join('/'),
   ].filter(Boolean);
   return partes.join(' — ');
+}
+
+function gpsUrl(d: Delivery): string {
+  const endereco = [enderecoResumo(d), d.cep].filter(Boolean).join(' — ');
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
 }
 
 export default function MotoristaScreen({ user, deliveries, onLogout, onBaixarEntrega }: MotoristaScreenProps) {
@@ -160,6 +165,17 @@ export default function MotoristaScreen({ user, deliveries, onLogout, onBaixarEn
                     <span>NF-e {formatNfe(d.nfe)}{d.previsao ? ` · previsão ${formatDateBR(d.previsao)}` : ''}</span>
                   </div>
                 </div>
+
+                {enderecoResumo(d) && (
+                  <a
+                    href={gpsUrl(d)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
+                  >
+                    <Navigation className="w-3 h-3" /> Abrir no GPS
+                  </a>
+                )}
 
                 <button
                   onClick={() => setBaixaDelivery(d)}
