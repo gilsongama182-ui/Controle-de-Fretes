@@ -5,6 +5,7 @@ import { BaixarEntregaInput } from '../lib/deliveries';
 import { getComprovanteUrl, DeliveryComprovante } from '../lib/comprovantes';
 import { formatNfe } from '../lib/formatNfe';
 import { formatDateBR } from '../lib/formatDate';
+import { getErrorMessage } from '../lib/errorMessage';
 import Avatar from './layout/Avatar';
 import MotoristaBaixaModal from './layout/MotoristaBaixaModal';
 
@@ -72,7 +73,7 @@ export default function MotoristaScreen({ user, deliveries, comprovantesByDelive
       const url = await getComprovanteUrl(comprovante.arquivoPath);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (err) {
-      alert(err instanceof Error ? err.message : 'Não foi possível abrir o comprovante.');
+      alert(getErrorMessage(err, 'Não foi possível abrir o comprovante.'));
     } finally {
       setComprovanteLoadingId(null);
     }

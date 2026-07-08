@@ -3,6 +3,7 @@ import { X, Camera, Loader2, CheckCircle2, XCircle, Undo2, Trash2 } from 'lucide
 import { Delivery, DeliveryStatus } from '../../types';
 import { formatNfe } from '../../lib/formatNfe';
 import { BaixarEntregaInput } from '../../lib/deliveries';
+import { getErrorMessage } from '../../lib/errorMessage';
 
 type Desfecho = Extract<DeliveryStatus, 'ENTREGUE' | 'FALHA' | 'DEVOLVIDO'>;
 
@@ -70,7 +71,7 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar, onUpl
       });
       onClose();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível registrar a baixa.');
+      setError(getErrorMessage(err, 'Não foi possível registrar a baixa.'));
     } finally {
       setIsSaving(false);
     }

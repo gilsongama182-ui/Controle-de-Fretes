@@ -3,6 +3,7 @@ import { X, Upload, FileText, ExternalLink, Trash2, Loader2 } from 'lucide-react
 import { Delivery } from '../../types';
 import { formatNfe } from '../../lib/formatNfe';
 import { DeliveryComprovante, getComprovanteUrl } from '../../lib/comprovantes';
+import { getErrorMessage } from '../../lib/errorMessage';
 
 interface ComprovanteModalProps {
   delivery: Delivery | null;
@@ -32,7 +33,7 @@ export default function ComprovanteModal({ delivery, comprovantes, onClose, onUp
         await onUpload(delivery.id, file);
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível enviar o comprovante.');
+      setError(getErrorMessage(err, 'Não foi possível enviar o comprovante.'));
     } finally {
       setIsUploading(false);
     }
@@ -45,7 +46,7 @@ export default function ComprovanteModal({ delivery, comprovantes, onClose, onUp
       const url = await getComprovanteUrl(comprovante.arquivoPath);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível abrir o comprovante.');
+      setError(getErrorMessage(err, 'Não foi possível abrir o comprovante.'));
     } finally {
       setOpeningId(null);
     }
@@ -58,7 +59,7 @@ export default function ComprovanteModal({ delivery, comprovantes, onClose, onUp
     try {
       await onRemove(comprovante.id, comprovante.arquivoPath);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Não foi possível remover o comprovante.');
+      setError(getErrorMessage(err, 'Não foi possível remover o comprovante.'));
     } finally {
       setRemovingId(null);
     }
