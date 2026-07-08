@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import { Truck, LogOut, MapPin, Phone, FileText, ExternalLink, CheckCircle2, XCircle, Undo2, Package, Search, Navigation } from 'lucide-react';
 import { Delivery, User } from '../types';
 import { BaixarEntregaInput } from '../lib/deliveries';
-import { getComprovanteUrl } from '../lib/comprovantes';
+import { getComprovanteUrl, DeliveryComprovante } from '../lib/comprovantes';
 import { formatNfe } from '../lib/formatNfe';
 import { formatDateBR } from '../lib/formatDate';
 import Avatar from './layout/Avatar';
@@ -11,8 +11,10 @@ import MotoristaBaixaModal from './layout/MotoristaBaixaModal';
 interface MotoristaScreenProps {
   user: User;
   deliveries: Delivery[];
+  comprovantesByDeliveryId: Map<string, DeliveryComprovante[]>;
   onLogout: () => void;
   onBaixarEntrega: (id: string, input: BaixarEntregaInput) => Promise<void>;
+  onUploadComprovante: (deliveryId: string, file: File) => Promise<void>;
 }
 
 const STATUS_BADGE: Record<string, { label: string; className: string; icon: typeof CheckCircle2 }> = {
@@ -37,7 +39,7 @@ function gpsUrl(d: Delivery): string {
   return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
 }
 
-export default function MotoristaScreen({ user, deliveries, onLogout, onBaixarEntrega }: MotoristaScreenProps) {
+export default function MotoristaScreen({ user, deliveries, comprovantesByDeliveryId, onLogout, onBaixarEntrega, onUploadComprovante }: MotoristaScreenProps) {
   const [tab, setTab] = useState<'pendentes' | 'concluidas'>('pendentes');
   const [searchTerm, setSearchTerm] = useState('');
   const [baixaDelivery, setBaixaDelivery] = useState<Delivery | null>(null);
@@ -64,11 +66,10 @@ export default function MotoristaScreen({ user, deliveries, onLogout, onBaixarEn
   const pendentes = useMemo(() => filtrar(pendentesTodas), [pendentesTodas, searchTerm]);
   const concluidasHoje = useMemo(() => filtrar(concluidasHojeTodas), [concluidasHojeTodas, searchTerm]);
 
-  const handleVerComprovante = async (delivery: Delivery) => {
-    if (!delivery.comprovantePath) return;
-    setComprovanteLoadingId(delivery.id);
+  const handleVerComprovante = async (comprovante: DeliveryComprovante) => {
+    setComprovanteLoadingId(comprovante.id);
     try {
-      const url = await getComprovanteUrl(delivery.comprovantePath);
+      const url = await getComprovanteUrl(comprovante.arquivoPath);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (err) {
       alert(err instanceof Error ? err.message : 'Não foi possível abrir o comprovante.');
@@ -215,15 +216,25 @@ export default function MotoristaScreen({ user, deliveries, onLogout, onBaixarEn
                   </div>
                   {d.nomeRecebedor && <p className="text-xs text-on-surface-variant">Recebedor: {d.nomeRecebedor}</p>}
                   {d.ocorrencia && <p className="text-xs text-on-surface-variant">{d.ocorrencia}</p>}
-                  {d.comprovantePath && (
-                    <button
-                      onClick={() => handleVerComprovante(d)}
-                      disabled={comprovanteLoadingId === d.id}
-                      className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 disabled:opacity-60"
-                    >
-                      <ExternalLink className="w-3 h-3" /> {comprovanteLoadingId === d.id ? 'Abrindo...' : 'Ver comprovante'}
-                    </button>
-                  )}
+                  {(() => {
+                    const comprovantes = comprovantesByDeliveryId.get(d.id) ?? [];
+                    if (comprovantes.length === 0) return null;
+                    return (
+                      <div className="flex flex-wrap gap-x-3 gap-y-1">
+                        {comprovantes.map((c, i) => (
+                          <button
+                            key={c.id}
+                            onClick={() => handleVerComprovante(c)}
+                            disabled={comprovanteLoadingId === c.id}
+                            className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 disabled:opacity-60"
+                          >
+                            <ExternalLink className="w-3 h-3" />
+                            {comprovanteLoadingId === c.id ? 'Abrindo...' : comprovantes.length > 1 ? `Ver comprovante ${i + 1}` : 'Ver comprovante'}
+                          </button>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
               );
             })
@@ -231,7 +242,12 @@ export default function MotoristaScreen({ user, deliveries, onLogout, onBaixarEn
         )}
       </main>
 
-      <MotoristaBaixaModal delivery={baixaDelivery} onClose={() => setBaixaDelivery(null)} onBaixar={onBaixarEntrega} />
+      <MotoristaBaixaModal
+        delivery={baixaDelivery}
+        onClose={() => setBaixaDelivery(null)}
+        onBaixar={onBaixarEntrega}
+        onUploadComprovante={onUploadComprovante}
+      />
     </div>
   );
 }

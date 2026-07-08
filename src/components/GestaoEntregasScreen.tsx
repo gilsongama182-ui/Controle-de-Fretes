@@ -20,6 +20,7 @@ import ComprovanteModal from './layout/ComprovanteModal';
 import EtiquetaPrintView from './layout/EtiquetaPrintView';
 import { SyncItemResult } from '../lib/melhorEnvio';
 import { Volume } from '../lib/deliveryVolumes';
+import { DeliveryComprovante } from '../lib/comprovantes';
 
 interface GestaoEntregasProps {
   onNavigate: (page: ActivePage) => void;
@@ -27,13 +28,15 @@ interface GestaoEntregasProps {
   user: User;
   deliveries: Delivery[];
   volumesByDeliveryId: Map<string, Volume[]>;
+  comprovantesByDeliveryId: Map<string, DeliveryComprovante[]>;
   onDeleteDelivery: (id: string) => Promise<void>;
   onSelectDeliveryForEdit: (delivery: Delivery) => void;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
-  onUpdateDelivery: (id: string, patch: Partial<Delivery>) => Promise<void>;
   onSyncTracking: (ids: string[]) => Promise<SyncItemResult[]>;
   onAssignMotorista: (ids: string[], motoristaId: string | null, motoristaNome: string) => Promise<void>;
+  onUploadComprovante: (deliveryId: string, file: File) => Promise<void>;
+  onRemoveComprovante: (id: string, path: string) => Promise<void>;
 }
 
 export default function GestaoEntregasScreen({
@@ -42,13 +45,15 @@ export default function GestaoEntregasScreen({
   user,
   deliveries,
   volumesByDeliveryId,
+  comprovantesByDeliveryId,
   onDeleteDelivery,
   onSelectDeliveryForEdit,
   onAddDelivery,
   onImportDeliveries,
-  onUpdateDelivery,
   onSyncTracking,
-  onAssignMotorista
+  onAssignMotorista,
+  onUploadComprovante,
+  onRemoveComprovante
 }: GestaoEntregasProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
@@ -71,10 +76,13 @@ export default function GestaoEntregasScreen({
   const [isEtiquetaOpen, setIsEtiquetaOpen] = useState(false);
   const [isSyncingTracking, setIsSyncingTracking] = useState(false);
   // Deriva sempre da lista atual (não guarda uma cópia) para que o modal reflita
-  // o comprovante recém-anexado assim que onUpdateDelivery atualiza o estado do pai.
+  // o comprovante recém-anexado assim que onUploadComprovante atualiza o estado do pai.
   const comprovanteDelivery = comprovanteDeliveryId
     ? deliveries.find((d) => d.id === comprovanteDeliveryId) ?? null
     : null;
+  const comprovanteDeliveryComprovantes = comprovanteDeliveryId
+    ? comprovantesByDeliveryId.get(comprovanteDeliveryId) ?? []
+    : [];
 
   useEffect(() => {
     fetchMotoristas()
@@ -150,9 +158,9 @@ export default function GestaoEntregasScreen({
 
     // Comprovante anexado ou não
     if (comprovanteFilter === 'com') {
-      result = result.filter(d => !!d.comprovantePath);
+      result = result.filter(d => (comprovantesByDeliveryId.get(d.id)?.length ?? 0) > 0);
     } else if (comprovanteFilter === 'sem') {
-      result = result.filter(d => !d.comprovantePath);
+      result = result.filter(d => (comprovantesByDeliveryId.get(d.id)?.length ?? 0) === 0);
     }
 
     // Motorista atribuído
@@ -169,7 +177,7 @@ export default function GestaoEntregasScreen({
     }
 
     return result;
-  }, [deliveries, searchTerm, statusFilter, ufFilter, comprovanteFilter, motoristaFilter, dateFrom, dateTo]);
+  }, [deliveries, searchTerm, statusFilter, ufFilter, comprovanteFilter, comprovantesByDeliveryId, motoristaFilter, dateFrom, dateTo]);
 
   // Ordenação por coluna — clicar num cabeçalho ordena por aquele campo;
   // clicar de novo no mesmo cabeçalho inverte a direção.
@@ -658,8 +666,8 @@ export default function GestaoEntregasScreen({
                             <div className="flex justify-end gap-1">
                               <button
                                 onClick={() => setComprovanteDeliveryId(del.id)}
-                                className={`p-1.5 rounded-lg transition-colors ${del.comprovantePath ? 'text-secondary hover:bg-secondary-container' : 'text-on-surface-variant hover:bg-secondary-container'}`}
-                                title={del.comprovantePath ? 'Comprovante anexado' : 'Anexar comprovante de entrega'}
+                                className={`p-1.5 rounded-lg transition-colors ${(comprovantesByDeliveryId.get(del.id)?.length ?? 0) > 0 ? 'text-secondary hover:bg-secondary-container' : 'text-on-surface-variant hover:bg-secondary-container'}`}
+                                title={(comprovantesByDeliveryId.get(del.id)?.length ?? 0) > 0 ? `${comprovantesByDeliveryId.get(del.id)?.length} comprovante(s) anexado(s)` : 'Anexar comprovante de entrega'}
                               >
                                 <Paperclip className="w-4 h-4" />
                               </button>
@@ -749,8 +757,8 @@ export default function GestaoEntregasScreen({
                             <div className="flex justify-end gap-1">
                               <button
                                 onClick={() => setComprovanteDeliveryId(del.id)}
-                                className={`p-1.5 rounded-lg transition-colors ${del.comprovantePath ? 'text-secondary hover:bg-secondary-container' : 'text-on-surface-variant hover:bg-secondary-container'}`}
-                                title={del.comprovantePath ? 'Comprovante anexado' : 'Anexar comprovante de entrega'}
+                                className={`p-1.5 rounded-lg transition-colors ${(comprovantesByDeliveryId.get(del.id)?.length ?? 0) > 0 ? 'text-secondary hover:bg-secondary-container' : 'text-on-surface-variant hover:bg-secondary-container'}`}
+                                title={(comprovantesByDeliveryId.get(del.id)?.length ?? 0) > 0 ? `${comprovantesByDeliveryId.get(del.id)?.length} comprovante(s) anexado(s)` : 'Anexar comprovante de entrega'}
                               >
                                 <Paperclip className="w-4 h-4" />
                               </button>
@@ -856,8 +864,10 @@ export default function GestaoEntregasScreen({
 
       <ComprovanteModal
         delivery={comprovanteDelivery}
+        comprovantes={comprovanteDeliveryComprovantes}
         onClose={() => setComprovanteDeliveryId(null)}
-        onUpdateDelivery={onUpdateDelivery}
+        onUpload={onUploadComprovante}
+        onRemove={onRemoveComprovante}
       />
 
       {isEtiquetaOpen && (

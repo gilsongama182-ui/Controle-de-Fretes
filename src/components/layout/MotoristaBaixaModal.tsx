@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { X, Camera, Loader2, CheckCircle2, XCircle, Undo2 } from 'lucide-react';
+import { X, Camera, Loader2, CheckCircle2, XCircle, Undo2, Trash2 } from 'lucide-react';
 import { Delivery, DeliveryStatus } from '../../types';
 import { formatNfe } from '../../lib/formatNfe';
-import { uploadComprovante } from '../../lib/comprovantes';
 import { BaixarEntregaInput } from '../../lib/deliveries';
 
 type Desfecho = Extract<DeliveryStatus, 'ENTREGUE' | 'FALHA' | 'DEVOLVIDO'>;
@@ -11,6 +10,7 @@ interface MotoristaBaixaModalProps {
   delivery: Delivery | null;
   onClose: () => void;
   onBaixar: (id: string, input: BaixarEntregaInput) => Promise<void>;
+  onUploadComprovante: (deliveryId: string, file: File) => Promise<void>;
 }
 
 const DESFECHOS: { value: Desfecho; label: string; icon: typeof CheckCircle2; activeClass: string }[] = [
@@ -21,14 +21,25 @@ const DESFECHOS: { value: Desfecho; label: string; icon: typeof CheckCircle2; ac
 
 const todayStr = () => new Date().toISOString().split('T')[0];
 
-export default function MotoristaBaixaModal({ delivery, onClose, onBaixar }: MotoristaBaixaModalProps) {
+export default function MotoristaBaixaModal({ delivery, onClose, onBaixar, onUploadComprovante }: MotoristaBaixaModalProps) {
   const [status, setStatus] = useState<Desfecho>('ENTREGUE');
   const [nomeRecebedor, setNomeRecebedor] = useState('');
   const [dataEntrega, setDataEntrega] = useState(todayStr());
   const [ocorrencia, setOcorrencia] = useState('');
-  const [foto, setFoto] = useState<File | null>(null);
+  const [fotos, setFotos] = useState<File[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+
+  const handleAddFotos = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const selected = Array.from(e.target.files ?? []);
+    e.target.value = '';
+    if (selected.length === 0) return;
+    setFotos((prev) => [...prev, ...selected]);
+  };
+
+  const handleRemoveFoto = (index: number) => {
+    setFotos((prev) => prev.filter((_, i) => i !== index));
+  };
 
   if (!delivery) return null;
 
@@ -47,12 +58,8 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar }: Mot
 
     setIsSaving(true);
     try {
-      let comprovantePath: string | undefined;
-      let comprovanteNome: string | undefined;
-      if (foto) {
-        const uploaded = await uploadComprovante(delivery.id, foto);
-        comprovantePath = uploaded.path;
-        comprovanteNome = uploaded.nome;
+      for (const foto of fotos) {
+        await onUploadComprovante(delivery.id, foto);
       }
 
       await onBaixar(delivery.id, {
@@ -60,8 +67,6 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar }: Mot
         ocorrencia,
         nomeRecebedor,
         dataEntrega,
-        comprovantePath,
-        comprovanteNome,
       });
       onClose();
     } catch (err) {
@@ -148,20 +153,40 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar }: Mot
         </div>
 
         <div className="space-y-1">
-          <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Foto do Comprovante</label>
+          <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Fotos do Comprovante</label>
+
+          {fotos.length > 0 && (
+            <div className="space-y-1.5">
+              {fotos.map((f, i) => (
+                <div key={`${f.name}-${i}`} className="flex items-center gap-2 p-2 bg-surface-container-low rounded-lg border border-outline-variant">
+                  <p className="min-w-0 flex-1 text-xs text-on-surface truncate" title={f.name}>{f.name}</p>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveFoto(i)}
+                    className="text-error shrink-0"
+                    aria-label="Remover foto"
+                  >
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
+
           <label
             className={`flex items-center justify-center gap-2 w-full py-3 border-2 border-dashed rounded-lg text-sm font-bold cursor-pointer transition-colors ${
-              foto ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant hover:border-primary hover:bg-primary/5 text-secondary'
+              fotos.length > 0 ? 'border-primary bg-primary/5 text-primary' : 'border-outline-variant hover:border-primary hover:bg-primary/5 text-secondary'
             }`}
           >
             <Camera className="w-4 h-4" />
-            {foto ? foto.name : 'Tirar foto'}
+            {fotos.length > 0 ? 'Adicionar outra foto' : 'Tirar foto'}
             <input
               type="file"
               accept="image/*"
               capture="environment"
+              multiple
               className="hidden"
-              onChange={(e) => setFoto(e.target.files?.[0] ?? null)}
+              onChange={handleAddFotos}
             />
           </label>
         </div>

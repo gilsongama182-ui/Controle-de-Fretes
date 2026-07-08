@@ -44,8 +44,6 @@ interface DeliveryRow {
   codigo_rastreio: string | null;
   chave_acesso_nfe: string | null;
   valor_total_nota: number | null;
-  comprovante_path: string | null;
-  comprovante_nome: string | null;
   melhor_envio_id: string | null;
   melhor_envio_last_sync_at: string | null;
   motorista_id: string | null;
@@ -93,8 +91,6 @@ function fromRow(row: DeliveryRow): Delivery {
     codigoRastreio: row.codigo_rastreio ?? '',
     chaveAcessoNfe: row.chave_acesso_nfe ?? '',
     valorTotalNota: row.valor_total_nota ?? 0,
-    comprovantePath: row.comprovante_path ?? '',
-    comprovanteNome: row.comprovante_nome ?? '',
     melhorEnvioId: row.melhor_envio_id ?? '',
     melhorEnvioLastSyncAt: row.melhor_envio_last_sync_at ?? '',
     motoristaId: row.motorista_id ?? '',
@@ -147,8 +143,6 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.codigoRastreio !== undefined) row.codigo_rastreio = upper(input.codigoRastreio);
   if (input.chaveAcessoNfe !== undefined) row.chave_acesso_nfe = input.chaveAcessoNfe;
   if (input.valorTotalNota !== undefined) row.valor_total_nota = input.valorTotalNota;
-  if (input.comprovantePath !== undefined) row.comprovante_path = input.comprovantePath || null;
-  if (input.comprovanteNome !== undefined) row.comprovante_nome = input.comprovanteNome || null;
   if (input.melhorEnvioId !== undefined) row.melhor_envio_id = input.melhorEnvioId || null;
   if (input.melhorEnvioLastSyncAt !== undefined) row.melhor_envio_last_sync_at = input.melhorEnvioLastSyncAt || null;
   if (input.motoristaId !== undefined) row.motorista_id = input.motoristaId || null;
@@ -248,8 +242,6 @@ export interface BaixarEntregaInput {
   ocorrencia: string;
   nomeRecebedor: string;
   dataEntrega: string;
-  comprovantePath?: string;
-  comprovanteNome?: string;
 }
 
 export async function baixarEntregaMotorista(id: string, input: BaixarEntregaInput): Promise<Delivery> {
@@ -259,8 +251,6 @@ export async function baixarEntregaMotorista(id: string, input: BaixarEntregaInp
     p_ocorrencia: input.ocorrencia || null,
     p_nome_recebedor: input.nomeRecebedor || null,
     p_data_entrega: input.dataEntrega || null,
-    p_comprovante_path: input.comprovantePath || null,
-    p_comprovante_nome: input.comprovanteNome || null,
   });
 
   if (error) throw error;

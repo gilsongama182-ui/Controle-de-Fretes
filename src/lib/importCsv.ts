@@ -150,8 +150,6 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       codigoRastreio: get('codigoRastreio'),
       chaveAcessoNfe: '',
       valorTotalNota: 0,
-      comprovantePath: '',
-      comprovanteNome: '',
       melhorEnvioId: '',
       melhorEnvioLastSyncAt: '',
       motoristaId: '',

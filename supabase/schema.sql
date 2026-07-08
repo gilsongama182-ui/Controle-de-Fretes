@@ -59,8 +59,6 @@ create table if not exists public.deliveries (
   codigo_rastreio text,
   chave_acesso_nfe text,          -- uso interno, não aparece em tela
   valor_total_nota numeric(12, 2), -- uso interno, não aparece em tela
-  comprovante_path text,          -- caminho do arquivo no Storage (bucket privado "comprovantes")
-  comprovante_nome text,          -- nome original do arquivo enviado
   melhor_envio_id text,           -- ID da etiqueta na Melhor Envio (nao e o codigo_rastreio publico)
   melhor_envio_last_sync_at timestamptz,
   motorista_id uuid references public.profiles(id), -- quem vai fazer a entrega (perfil motorista)
@@ -176,6 +174,18 @@ create table if not exists public.partner_documents (
 );
 create index if not exists partner_documents_partner_id_idx on public.partner_documents (partner_id);
 alter table public.partner_documents enable row level security;
+
+-- Comprovantes de entrega (1:N) — cada linha é 1 arquivo (PNG/JPEG/PDF)
+-- anexado por operador/master ou pelo motorista no momento da baixa.
+create table if not exists public.delivery_comprovantes (
+  id uuid primary key default gen_random_uuid(),
+  delivery_id uuid not null references public.deliveries(id) on delete cascade,
+  arquivo_path text not null,
+  arquivo_nome text not null,
+  created_at timestamptz not null default now()
+);
+create index if not exists delivery_comprovantes_delivery_id_idx on public.delivery_comprovantes (delivery_id);
+alter table public.delivery_comprovantes enable row level security;
 
 -- =========================================================
 -- 2. updated_at automático em deliveries
@@ -400,18 +410,18 @@ $$;
 
 grant execute on function public.marcar_falha_lida(uuid) to authenticated;
 
--- Baixa de entrega pelo motorista (nome recebedor, data, ocorrência, status,
--- comprovante) — não existe policy de UPDATE genérica pra esse papel (evita
--- liberar qualquer coluna da entrega); só essa função, restrita às colunas do
--- formulário mobile, e só na entrega que está atribuída a ele.
+-- Baixa de entrega pelo motorista (nome recebedor, data, ocorrência, status)
+-- — não existe policy de UPDATE genérica pra esse papel (evita liberar
+-- qualquer coluna da entrega); só essa função, restrita às colunas do
+-- formulário mobile, e só na entrega que está atribuída a ele. O comprovante
+-- (1 ou mais fotos) é anexado à parte, via insert direto em
+-- delivery_comprovantes (policy motorista abaixo), não por esta função.
 create or replace function public.motorista_baixar_entrega(
   p_delivery_id uuid,
   p_status text,
   p_ocorrencia text,
   p_nome_recebedor text,
-  p_data_entrega date,
-  p_comprovante_path text,
-  p_comprovante_nome text
+  p_data_entrega date
 )
 returns public.deliveries
 language plpgsql
@@ -430,9 +440,7 @@ begin
     status = p_status,
     ocorrencia = coalesce(p_ocorrencia, d.ocorrencia),
     nome_recebedor = coalesce(p_nome_recebedor, d.nome_recebedor),
-    data_entrega = coalesce(p_data_entrega, d.data_entrega),
-    comprovante_path = coalesce(p_comprovante_path, d.comprovante_path),
-    comprovante_nome = coalesce(p_comprovante_nome, d.comprovante_nome)
+    data_entrega = coalesce(p_data_entrega, d.data_entrega)
   where d.id = p_delivery_id
     and d.motorista_id = auth.uid()
     and public.current_profile_status() = 'aprovado'
@@ -447,7 +455,7 @@ begin
 end;
 $$;
 
-grant execute on function public.motorista_baixar_entrega(uuid, text, text, text, date, text, text) to authenticated;
+grant execute on function public.motorista_baixar_entrega(uuid, text, text, text, date) to authenticated;
 
 -- delivery_volumes: operador/master (relatório de exportação) e operador_log
 -- (tela de cubagem) leem; só operador_log/master criam/editam/removem.
@@ -558,6 +566,64 @@ create policy partner_documents_delete
   using (
     public.current_profile_status() = 'aprovado'
     and public.current_profile_type() in ('operador', 'master')
+  );
+
+-- delivery_comprovantes: operador/master têm CRUD completo; motorista só
+-- lê/insere nos comprovantes das entregas atribuídas a ele (sem update/delete
+-- — a foto é enviada no momento da baixa, não é substituída depois).
+drop policy if exists delivery_comprovantes_select on public.delivery_comprovantes;
+create policy delivery_comprovantes_select
+  on public.delivery_comprovantes
+  for select
+  using (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() in ('operador', 'master')
+  );
+
+drop policy if exists delivery_comprovantes_insert on public.delivery_comprovantes;
+create policy delivery_comprovantes_insert
+  on public.delivery_comprovantes
+  for insert
+  with check (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() in ('operador', 'master')
+  );
+
+drop policy if exists delivery_comprovantes_delete on public.delivery_comprovantes;
+create policy delivery_comprovantes_delete
+  on public.delivery_comprovantes
+  for delete
+  using (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() in ('operador', 'master')
+  );
+
+drop policy if exists delivery_comprovantes_select_motorista on public.delivery_comprovantes;
+create policy delivery_comprovantes_select_motorista
+  on public.delivery_comprovantes
+  for select
+  using (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() = 'motorista'
+    and exists (
+      select 1 from public.deliveries d
+      where d.id = delivery_comprovantes.delivery_id
+        and d.motorista_id = auth.uid()
+    )
+  );
+
+drop policy if exists delivery_comprovantes_insert_motorista on public.delivery_comprovantes;
+create policy delivery_comprovantes_insert_motorista
+  on public.delivery_comprovantes
+  for insert
+  with check (
+    public.current_profile_status() = 'aprovado'
+    and public.current_profile_type() = 'motorista'
+    and exists (
+      select 1 from public.deliveries d
+      where d.id = delivery_comprovantes.delivery_id
+        and d.motorista_id = auth.uid()
+    )
   );
 
 -- =========================================================

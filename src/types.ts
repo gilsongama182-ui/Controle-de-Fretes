@@ -46,8 +46,6 @@ export interface Delivery {
   codigoRastreio: string;
   chaveAcessoNfe: string; // uso interno (não aparece em tela)
   valorTotalNota: number; // uso interno (não aparece em tela)
-  comprovantePath: string; // caminho do arquivo no Storage (privado)
-  comprovanteNome: string; // nome original do arquivo enviado
   melhorEnvioId: string; // ID da etiqueta na Melhor Envio (diferente do codigoRastreio, que é o código público)
   melhorEnvioLastSyncAt: string; // ISO datetime da última sincronização de rastreio, vazio se nunca sincronizado
   motoristaId: string; // uuid do profile do motorista responsável pela entrega, vazio se não atribuída

@@ -2,34 +2,35 @@ import React, { useState } from 'react';
 import { X, Upload, FileText, ExternalLink, Trash2, Loader2 } from 'lucide-react';
 import { Delivery } from '../../types';
 import { formatNfe } from '../../lib/formatNfe';
-import { uploadComprovante, getComprovanteUrl, removeComprovante } from '../../lib/comprovantes';
+import { DeliveryComprovante, getComprovanteUrl } from '../../lib/comprovantes';
 
 interface ComprovanteModalProps {
   delivery: Delivery | null;
+  comprovantes: DeliveryComprovante[];
   onClose: () => void;
-  onUpdateDelivery: (id: string, patch: Partial<Delivery>) => Promise<void>;
+  onUpload: (deliveryId: string, file: File) => Promise<void>;
+  onRemove: (id: string, path: string) => Promise<void>;
 }
 
-export default function ComprovanteModal({ delivery, onClose, onUpdateDelivery }: ComprovanteModalProps) {
+export default function ComprovanteModal({ delivery, comprovantes, onClose, onUpload, onRemove }: ComprovanteModalProps) {
   const [isUploading, setIsUploading] = useState(false);
-  const [isRemoving, setIsRemoving] = useState(false);
-  const [isOpening, setIsOpening] = useState(false);
+  const [openingId, setOpeningId] = useState<string | null>(null);
+  const [removingId, setRemovingId] = useState<string | null>(null);
   const [error, setError] = useState('');
 
   if (!delivery) return null;
 
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+    const files = Array.from(e.target.files ?? []);
     e.target.value = '';
-    if (!file) return;
+    if (files.length === 0) return;
 
-    const previousPath = delivery.comprovantePath;
     setError('');
     setIsUploading(true);
     try {
-      const { path, nome } = await uploadComprovante(delivery.id, file);
-      await onUpdateDelivery(delivery.id, { comprovantePath: path, comprovanteNome: nome });
-      if (previousPath) removeComprovante(previousPath).catch(() => {});
+      for (const file of files) {
+        await onUpload(delivery.id, file);
+      }
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível enviar o comprovante.');
     } finally {
@@ -37,36 +38,31 @@ export default function ComprovanteModal({ delivery, onClose, onUpdateDelivery }
     }
   };
 
-  const handleView = async () => {
-    if (!delivery.comprovantePath) return;
+  const handleView = async (comprovante: DeliveryComprovante) => {
     setError('');
-    setIsOpening(true);
+    setOpeningId(comprovante.id);
     try {
-      const url = await getComprovanteUrl(delivery.comprovantePath);
+      const url = await getComprovanteUrl(comprovante.arquivoPath);
       window.open(url, '_blank', 'noopener,noreferrer');
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível abrir o comprovante.');
     } finally {
-      setIsOpening(false);
+      setOpeningId(null);
     }
   };
 
-  const handleRemove = async () => {
-    if (!delivery.comprovantePath) return;
-    if (!confirm('Remover o comprovante de entrega desta carga?')) return;
+  const handleRemove = async (comprovante: DeliveryComprovante) => {
+    if (!confirm('Remover este comprovante de entrega?')) return;
     setError('');
-    setIsRemoving(true);
+    setRemovingId(comprovante.id);
     try {
-      await removeComprovante(delivery.comprovantePath);
-      await onUpdateDelivery(delivery.id, { comprovantePath: '', comprovanteNome: '' });
+      await onRemove(comprovante.id, comprovante.arquivoPath);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível remover o comprovante.');
     } finally {
-      setIsRemoving(false);
+      setRemovingId(null);
     }
   };
-
-  const hasComprovante = !!delivery.comprovantePath;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
@@ -86,30 +82,37 @@ export default function ComprovanteModal({ delivery, onClose, onUpdateDelivery }
           </button>
         </div>
 
-        {hasComprovante ? (
-          <div className="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg border border-outline-variant">
-            <FileText className="w-8 h-8 text-secondary shrink-0" />
-            <div className="min-w-0 flex-1">
-              <p className="text-xs font-semibold text-on-surface truncate" title={delivery.comprovanteNome}>
-                {delivery.comprovanteNome || 'Comprovante enviado'}
-              </p>
-              <div className="flex gap-3 mt-1">
-                <button
-                  onClick={handleView}
-                  disabled={isOpening}
-                  className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 disabled:opacity-60"
-                >
-                  <ExternalLink className="w-3 h-3" /> {isOpening ? 'Abrindo...' : 'Ver arquivo'}
-                </button>
-                <button
-                  onClick={handleRemove}
-                  disabled={isRemoving}
-                  className="text-[11px] font-bold text-error hover:underline flex items-center gap-1 disabled:opacity-60"
-                >
-                  <Trash2 className="w-3 h-3" /> {isRemoving ? 'Removendo...' : 'Remover'}
-                </button>
+        {comprovantes.length > 0 ? (
+          <div className="space-y-2">
+            {comprovantes.map((comprovante) => (
+              <div
+                key={comprovante.id}
+                className="flex items-center gap-3 p-3 bg-surface-container-low rounded-lg border border-outline-variant"
+              >
+                <FileText className="w-8 h-8 text-secondary shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <p className="text-xs font-semibold text-on-surface truncate" title={comprovante.arquivoNome}>
+                    {comprovante.arquivoNome}
+                  </p>
+                  <div className="flex gap-3 mt-1">
+                    <button
+                      onClick={() => handleView(comprovante)}
+                      disabled={openingId === comprovante.id}
+                      className="text-[11px] font-bold text-primary hover:underline flex items-center gap-1 disabled:opacity-60"
+                    >
+                      <ExternalLink className="w-3 h-3" /> {openingId === comprovante.id ? 'Abrindo...' : 'Ver arquivo'}
+                    </button>
+                    <button
+                      onClick={() => handleRemove(comprovante)}
+                      disabled={removingId === comprovante.id}
+                      className="text-[11px] font-bold text-error hover:underline flex items-center gap-1 disabled:opacity-60"
+                    >
+                      <Trash2 className="w-3 h-3" /> {removingId === comprovante.id ? 'Removendo...' : 'Remover'}
+                    </button>
+                  </div>
+                </div>
               </div>
-            </div>
+            ))}
           </div>
         ) : (
           <p className="text-xs text-on-surface-variant">Nenhum comprovante enviado para esta entrega ainda.</p>
@@ -123,16 +126,17 @@ export default function ComprovanteModal({ delivery, onClose, onUpdateDelivery }
           }`}
         >
           {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Upload className="w-4 h-4" />}
-          {isUploading ? 'Enviando...' : hasComprovante ? 'Substituir arquivo' : 'Selecionar arquivo'}
+          {isUploading ? 'Enviando...' : 'Anexar arquivo(s)'}
           <input
             type="file"
             accept=".png,.jpg,.jpeg,.pdf,image/png,image/jpeg,application/pdf"
+            multiple
             className="hidden"
             onChange={handleFileChange}
             disabled={isUploading}
           />
         </label>
-        <p className="text-[10px] text-on-surface-variant text-center">Formatos aceitos: PNG, JPEG ou PDF · até 10MB</p>
+        <p className="text-[10px] text-on-surface-variant text-center">Formatos aceitos: PNG, JPEG ou PDF · até 10MB cada</p>
 
         {error && <p className="text-xs text-error font-semibold">{error}</p>}
       </div>

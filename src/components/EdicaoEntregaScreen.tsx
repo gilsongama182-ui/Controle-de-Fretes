@@ -14,6 +14,7 @@ import MobileBottomNav from './layout/MobileBottomNav';
 import NovaEntregaModal from './layout/NovaEntregaModal';
 import ImportModal from './layout/ImportModal';
 import ComprovanteModal from './layout/ComprovanteModal';
+import { DeliveryComprovante } from '../lib/comprovantes';
 
 interface EdicaoEntregaProps {
   onNavigate: (page: ActivePage) => void;
@@ -21,10 +22,13 @@ interface EdicaoEntregaProps {
   user: User;
   delivery: Delivery | null;
   deliveries: Delivery[];
+  comprovantesByDeliveryId: Map<string, DeliveryComprovante[]>;
   onUpdateDelivery: (id: string, patch: Partial<Delivery>) => Promise<void>;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
   onSyncTracking: (ids: string[]) => Promise<SyncItemResult[]>;
+  onUploadComprovante: (deliveryId: string, file: File) => Promise<void>;
+  onRemoveComprovante: (id: string, path: string) => Promise<void>;
 }
 
 export default function EdicaoEntregaScreen({
@@ -33,10 +37,13 @@ export default function EdicaoEntregaScreen({
   user,
   delivery,
   deliveries,
+  comprovantesByDeliveryId,
   onUpdateDelivery,
   onAddDelivery,
   onImportDeliveries,
-  onSyncTracking
+  onSyncTracking,
+  onUploadComprovante,
+  onRemoveComprovante
 }: EdicaoEntregaProps) {
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
@@ -118,6 +125,8 @@ export default function EdicaoEntregaScreen({
       </div>
     );
   }
+
+  const deliveryComprovantes = comprovantesByDeliveryId.get(delivery.id) ?? [];
 
   const handleCopyTrackingCode = () => {
     navigator.clipboard.writeText(delivery.codigoRastreio);
@@ -636,11 +645,11 @@ export default function EdicaoEntregaScreen({
                     <button
                       type="button"
                       onClick={() => setIsComprovanteOpen(true)}
-                      className={`flex items-center gap-1 text-[11px] font-bold hover:underline ${delivery.comprovantePath ? 'text-secondary' : 'text-on-surface-variant'}`}
-                      title={delivery.comprovantePath ? 'Comprovante anexado' : 'Anexar comprovante de entrega'}
+                      className={`flex items-center gap-1 text-[11px] font-bold hover:underline ${deliveryComprovantes.length > 0 ? 'text-secondary' : 'text-on-surface-variant'}`}
+                      title={deliveryComprovantes.length > 0 ? `${deliveryComprovantes.length} comprovante(s) anexado(s)` : 'Anexar comprovante de entrega'}
                     >
                       <Paperclip className="w-3.5 h-3.5" />
-                      {delivery.comprovantePath ? 'Comprovante anexado' : 'Anexar comprovante'}
+                      {deliveryComprovantes.length > 0 ? 'Comprovante anexado' : 'Anexar comprovante'}
                     </button>
                   </div>
                   <input
@@ -815,8 +824,10 @@ export default function EdicaoEntregaScreen({
 
       <ComprovanteModal
         delivery={isComprovanteOpen ? delivery : null}
+        comprovantes={deliveryComprovantes}
         onClose={() => setIsComprovanteOpen(false)}
-        onUpdateDelivery={onUpdateDelivery}
+        onUpload={onUploadComprovante}
+        onRemove={onRemoveComprovante}
       />
 
     </div>

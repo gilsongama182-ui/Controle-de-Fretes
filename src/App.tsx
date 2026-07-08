@@ -17,6 +17,7 @@ import {
 } from './lib/deliveries';
 import { syncTracking, SyncItemResult } from './lib/melhorEnvio';
 import { fetchAllVolumes, saveVolumesForDelivery, Volume, VolumeInput } from './lib/deliveryVolumes';
+import { fetchAllComprovantes, uploadComprovante, removeComprovante, DeliveryComprovante } from './lib/comprovantes';
 
 // Import Screen Components
 import LoginScreen from './components/LoginScreen';
@@ -72,6 +73,7 @@ function AppShell() {
   const [activePage, setActivePage] = useState<ActivePage>('login');
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [volumes, setVolumes] = useState<Volume[]>([]);
+  const [comprovantes, setComprovantes] = useState<DeliveryComprovante[]>([]);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const lastHandledSessionId = useRef<string | null>(null);
@@ -87,6 +89,7 @@ function AppShell() {
         setActivePage('login');
         setDeliveries([]);
         setVolumes([]);
+        setComprovantes([]);
         setSelectedDelivery(null);
       }
       lastHandledSessionId.current = null;
@@ -135,6 +138,11 @@ function AppShell() {
         if (active) setVolumes(rows);
       })
       .catch((err) => console.error('Falha ao buscar cubagem:', err));
+    fetchAllComprovantes()
+      .then((rows) => {
+        if (active) setComprovantes(rows);
+      })
+      .catch((err) => console.error('Falha ao buscar comprovantes:', err));
     return () => {
       active = false;
     };
@@ -149,6 +157,16 @@ function AppShell() {
     }
     return map;
   }, [volumes]);
+
+  const comprovantesByDeliveryId = useMemo(() => {
+    const map = new Map<string, DeliveryComprovante[]>();
+    for (const comprovante of comprovantes) {
+      const list = map.get(comprovante.deliveryId);
+      if (list) list.push(comprovante);
+      else map.set(comprovante.deliveryId, [comprovante]);
+    }
+    return map;
+  }, [comprovantes]);
 
   const handleLogout = async () => {
     await signOut();
@@ -208,6 +226,16 @@ function AppShell() {
   const handleSaveVolumes = async (deliveryId: string, volumeInputs: VolumeInput[]) => {
     const saved = await saveVolumesForDelivery(deliveryId, volumeInputs);
     setVolumes((prev) => [...prev.filter((v) => v.deliveryId !== deliveryId), ...saved]);
+  };
+
+  const handleUploadComprovante = async (deliveryId: string, file: File) => {
+    const created = await uploadComprovante(deliveryId, file);
+    setComprovantes((prev) => [...prev, created]);
+  };
+
+  const handleRemoveComprovante = async (id: string, path: string) => {
+    await removeComprovante(id, path);
+    setComprovantes((prev) => prev.filter((c) => c.id !== id));
   };
 
   const handleSyncTracking = async (ids: string[]): Promise<SyncItemResult[]> => {
@@ -270,13 +298,15 @@ function AppShell() {
           user={profile}
           deliveries={deliveries}
           volumesByDeliveryId={volumesByDeliveryId}
+          comprovantesByDeliveryId={comprovantesByDeliveryId}
           onDeleteDelivery={handleDeleteDelivery}
           onSelectDeliveryForEdit={handleSelectDeliveryForEdit}
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
-          onUpdateDelivery={handleUpdateDelivery}
           onSyncTracking={handleSyncTracking}
           onAssignMotorista={handleAssignMotorista}
+          onUploadComprovante={handleUploadComprovante}
+          onRemoveComprovante={handleRemoveComprovante}
         />
       );
 
@@ -289,10 +319,13 @@ function AppShell() {
           user={profile}
           delivery={selectedDelivery}
           deliveries={deliveries}
+          comprovantesByDeliveryId={comprovantesByDeliveryId}
           onUpdateDelivery={handleUpdateDelivery}
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
           onSyncTracking={handleSyncTracking}
+          onUploadComprovante={handleUploadComprovante}
+          onRemoveComprovante={handleRemoveComprovante}
         />
       );
 
@@ -364,8 +397,10 @@ function AppShell() {
         <MotoristaScreen
           user={profile}
           deliveries={deliveries}
+          comprovantesByDeliveryId={comprovantesByDeliveryId}
           onLogout={handleLogout}
           onBaixarEntrega={handleBaixarEntregaMotorista}
+          onUploadComprovante={handleUploadComprovante}
         />
       );
 
