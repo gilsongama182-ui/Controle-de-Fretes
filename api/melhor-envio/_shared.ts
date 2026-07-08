@@ -322,8 +322,12 @@ export function matchAndBuildPatch(
   const patch: Record<string, unknown> = { melhor_envio_last_sync_at: nowIso };
   if (isNew) {
     patch.melhor_envio_id = order.id;
-    if (!delivery.codigo_rastreio && order.tracking) patch.codigo_rastreio = order.tracking;
   }
+  // Independe de isNew: a etiqueta pode ser postada só depois do primeiro
+  // sync (quando o pedido já casa por melhor_envio_id, não por NF-e), então
+  // o tracking precisa continuar sendo preenchido nas sincronizações
+  // seguintes, não só na que descobriu o ID.
+  if (!delivery.codigo_rastreio && order.tracking) patch.codigo_rastreio = order.tracking;
 
   const rawStatus = order.status;
   const mappedStatus = rawStatus ? mapTrackingStatus(rawStatus) : null;
