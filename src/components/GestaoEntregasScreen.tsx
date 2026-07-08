@@ -91,8 +91,13 @@ export default function GestaoEntregasScreen({
     // não depende de alguém marcar EM ATRASO manualmente.
     const delayedCount = deliveries.filter(isAtrasadoEfetivo).length;
     const todayStr = new Date().toISOString().split('T')[0];
+    // Só conta quem ainda está pendente (EM ROTA/EM ATRASO) — uma entrega já
+    // finalizada (ENTREGUE/FALHA/DEVOLVIDO) sem dataEntrega preenchida (ex:
+    // importação antiga sem essa coluna) não deve aparecer como "prevista
+    // para hoje", senão o card diverge da lista de pendentes.
     const dueTodayCount = deliveries.filter(d =>
-      !d.dataEntrega && (d.previsao === todayStr || d.previsao.toLowerCase().includes('hoje'))
+      (d.status === 'EM ROTA' || d.status === 'EM ATRASO')
+      && (d.previsao === todayStr || d.previsao.toLowerCase().includes('hoje'))
     ).length;
     // Mesma lógica do Painel de Controle: mede a performance real de prazo
     // sobre as entregas já concluídas (entregue ou falha), não sobre o total
