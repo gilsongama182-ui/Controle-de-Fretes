@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { X, Camera, Loader2, CheckCircle2, XCircle, Undo2, Trash2 } from 'lucide-react';
 import { Delivery, DeliveryStatus } from '../../types';
 import { formatNfe } from '../../lib/formatNfe';
@@ -30,6 +30,18 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar, onUpl
   const [fotos, setFotos] = useState<File[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
+
+  // O componente continua montado (só o prop `delivery` muda) ao trocar de
+  // entrega ou fechar o modal — sem isso, nome do recebedor, fotos etc. da
+  // entrega anterior ficavam preenchidos na próxima baixa.
+  useEffect(() => {
+    setStatus('ENTREGUE');
+    setNomeRecebedor('');
+    setDataEntrega(todayStr());
+    setOcorrencia('');
+    setFotos([]);
+    setError('');
+  }, [delivery?.id]);
 
   const handleAddFotos = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files ?? []);
