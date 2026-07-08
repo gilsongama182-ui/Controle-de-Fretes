@@ -14,7 +14,7 @@ function toIsoDate(value: string): string | null {
 
 // Data de hoje no fuso local (não UTC) — evita virar o dia errado perto da
 // meia-noite quando comparado com toISOString(), que é sempre UTC.
-function hojeIso(): string {
+export function hojeIso(): string {
   const now = new Date();
   const mm = String(now.getMonth() + 1).padStart(2, '0');
   const dd = String(now.getDate()).padStart(2, '0');

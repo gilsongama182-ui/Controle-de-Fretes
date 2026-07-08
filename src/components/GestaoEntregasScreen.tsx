@@ -9,7 +9,7 @@ import { NewDeliveryInput } from '../lib/deliveries';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
 import { formatNfe } from '../lib/formatNfe';
-import { isAtrasadoEfetivo, isEntregueNoPrazo, isEntregueForaDoPrazo } from '../lib/deliveryStatus';
+import { isAtrasadoEfetivo, isEntregueNoPrazo, isEntregueForaDoPrazo, hojeIso } from '../lib/deliveryStatus';
 import { fetchMotoristas, ProfileRecord } from '../lib/profiles';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
@@ -90,7 +90,10 @@ export default function GestaoEntregasScreen({
     // "Em atraso" mede quem ainda está em rota e já passou da previsão —
     // não depende de alguém marcar EM ATRASO manualmente.
     const delayedCount = deliveries.filter(isAtrasadoEfetivo).length;
-    const todayStr = new Date().toISOString().split('T')[0];
+    // hojeIso() usa o fuso local, não toISOString() (UTC) — perto da meia-
+    // noite (ex: 21h em Brasília já é dia seguinte em UTC) isso contava
+    // entregas do dia seguinte como "previstas para hoje".
+    const todayStr = hojeIso();
     // Só conta quem ainda está EM ROTA — entrega já finalizada
     // (ENTREGUE/FALHA/DEVOLVIDO) ou já marcada EM ATRASO não entra como
     // "prevista para hoje".
