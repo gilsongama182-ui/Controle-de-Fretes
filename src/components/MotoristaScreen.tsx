@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Truck, LogOut, MapPin, Phone, FileText, ExternalLink, CheckCircle2, XCircle, Undo2, Package, Search, Navigation } from 'lucide-react';
+import { Truck, LogOut, MapPin, Phone, FileText, ExternalLink, CheckCircle2, XCircle, Undo2, Package, Search, Navigation, Route, X } from 'lucide-react';
 import { Delivery, User } from '../types';
 import { BaixarEntregaInput } from '../lib/deliveries';
 import { getComprovanteUrl, DeliveryComprovante } from '../lib/comprovantes';
@@ -35,9 +35,25 @@ function enderecoResumo(d: Delivery): string {
   return partes.join(' — ');
 }
 
+function enderecoParaMapa(d: Delivery): string {
+  return [enderecoResumo(d), d.cep].filter(Boolean).join(' — ');
+}
+
 function gpsUrl(d: Delivery): string {
-  const endereco = [enderecoResumo(d), d.cep].filter(Boolean).join(' — ');
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(endereco)}`;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoParaMapa(d))}`;
+}
+
+// Rota com várias paradas: origem fica em branco de propósito (o Maps usa a
+// localização atual do motorista automaticamente). A ordem das paradas segue
+// a ordem em que o motorista selecionou cada entrega, não a da lista.
+function multiStopUrl(deliveries: Delivery[]): string {
+  const enderecos = deliveries.map(enderecoParaMapa).filter(Boolean);
+  if (enderecos.length === 0) return '';
+  const destino = enderecos[enderecos.length - 1];
+  const paradas = enderecos.slice(0, -1);
+  const params = new URLSearchParams({ api: '1', destination: destino, travelmode: 'driving' });
+  if (paradas.length > 0) params.set('waypoints', paradas.join('|'));
+  return `https://www.google.com/maps/dir/?${params.toString()}`;
 }
 
 export default function MotoristaScreen({ user, deliveries, comprovantesByDeliveryId, onLogout, onBaixarEntrega, onUploadComprovante }: MotoristaScreenProps) {
@@ -45,6 +61,8 @@ export default function MotoristaScreen({ user, deliveries, comprovantesByDelive
   const [searchTerm, setSearchTerm] = useState('');
   const [baixaDelivery, setBaixaDelivery] = useState<Delivery | null>(null);
   const [comprovanteLoadingId, setComprovanteLoadingId] = useState<string | null>(null);
+  const [rotaMode, setRotaMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
   const pendentesTodas = deliveries.filter((d) => d.status === 'EM ROTA' || d.status === 'EM ATRASO');
   const concluidasHojeTodas = deliveries.filter(
@@ -66,6 +84,22 @@ export default function MotoristaScreen({ user, deliveries, comprovantesByDelive
 
   const pendentes = useMemo(() => filtrar(pendentesTodas), [pendentesTodas, searchTerm]);
   const concluidasHoje = useMemo(() => filtrar(concluidasHojeTodas), [concluidasHojeTodas, searchTerm]);
+
+  // Mantém a ordem em que o motorista tocou cada entrega (não a da lista) —
+  // é essa ordem que vira a sequência das paradas na rota.
+  const selectedDeliveries = useMemo(
+    () => selectedIds.map((id) => pendentesTodas.find((d) => d.id === id)).filter((d): d is Delivery => !!d),
+    [selectedIds, pendentesTodas]
+  );
+
+  const toggleSelecionada = (id: string) => {
+    setSelectedIds((prev) => (prev.includes(id) ? prev.filter((sid) => sid !== id) : [...prev, id]));
+  };
+
+  const handleToggleRotaMode = () => {
+    setRotaMode((prev) => !prev);
+    setSelectedIds([]);
+  };
 
   const handleVerComprovante = async (comprovante: DeliveryComprovante) => {
     setComprovanteLoadingId(comprovante.id);
@@ -118,7 +152,7 @@ export default function MotoristaScreen({ user, deliveries, comprovantesByDelive
         </button>
       </nav>
 
-      <div className="px-4 pt-3 max-w-lg w-full mx-auto">
+      <div className="px-4 pt-3 max-w-lg w-full mx-auto space-y-2">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-on-surface-variant" />
           <input
@@ -129,9 +163,21 @@ export default function MotoristaScreen({ user, deliveries, comprovantesByDelive
             className="w-full pl-9 pr-3 py-2.5 bg-white border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
+
+        {tab === 'pendentes' && pendentesTodas.length > 0 && (
+          <button
+            onClick={handleToggleRotaMode}
+            className={`w-full flex items-center justify-center gap-1.5 py-2 rounded-lg text-xs font-bold transition-colors ${
+              rotaMode ? 'bg-primary/10 text-primary' : 'border border-outline-variant text-secondary'
+            }`}
+          >
+            {rotaMode ? <X className="w-3.5 h-3.5" /> : <Route className="w-3.5 h-3.5" />}
+            {rotaMode ? 'Cancelar seleção de rota' : 'Selecionar entregas para rota'}
+          </button>
+        )}
       </div>
 
-      <main className="flex-1 p-4 space-y-3 max-w-lg w-full mx-auto">
+      <main className="flex-1 p-4 space-y-3 max-w-lg w-full mx-auto pb-4">
         {tab === 'pendentes' && (
           pendentes.length === 0 ? (
             <div className="flex flex-col items-center justify-center gap-2 py-16 text-center">
@@ -141,12 +187,31 @@ export default function MotoristaScreen({ user, deliveries, comprovantesByDelive
               </p>
             </div>
           ) : (
-            pendentes.map((d) => (
-              <div key={d.id} className="bg-white rounded-xl border border-outline-variant shadow-sm p-4 space-y-3">
+            pendentes.map((d) => {
+              const ordemSelecao = selectedIds.indexOf(d.id);
+              return (
+              <div
+                key={d.id}
+                onClick={rotaMode ? () => toggleSelecionada(d.id) : undefined}
+                className={`bg-white rounded-xl border shadow-sm p-4 space-y-3 ${
+                  rotaMode && ordemSelecao >= 0 ? 'border-primary ring-1 ring-primary' : 'border-outline-variant'
+                } ${rotaMode ? 'cursor-pointer' : ''}`}
+              >
                 <div className="flex items-start justify-between gap-2">
-                  <div className="min-w-0">
-                    <p className="text-sm font-bold text-on-surface truncate">{d.cliente}</p>
-                    <p className="text-[11px] text-on-surface-variant truncate">{d.nomeRazaoSocial}</p>
+                  <div className="flex items-start gap-2 min-w-0">
+                    {rotaMode && (
+                      <span
+                        className={`shrink-0 w-5 h-5 rounded-full border-2 flex items-center justify-center text-[10px] font-bold ${
+                          ordemSelecao >= 0 ? 'bg-primary border-primary text-on-primary' : 'border-outline-variant text-transparent'
+                        }`}
+                      >
+                        {ordemSelecao >= 0 ? ordemSelecao + 1 : ''}
+                      </span>
+                    )}
+                    <div className="min-w-0">
+                      <p className="text-sm font-bold text-on-surface truncate">{d.cliente}</p>
+                      <p className="text-[11px] text-on-surface-variant truncate">{d.nomeRazaoSocial}</p>
+                    </div>
                   </div>
                   <span className="text-[10px] font-mono font-bold text-primary shrink-0">{d.codigo}</span>
                 </div>
@@ -173,20 +238,24 @@ export default function MotoristaScreen({ user, deliveries, comprovantesByDelive
                     href={gpsUrl(d)}
                     target="_blank"
                     rel="noopener noreferrer"
+                    onClick={(e) => e.stopPropagation()}
                     className="inline-flex items-center gap-1 text-[11px] font-bold text-primary hover:underline"
                   >
                     <Navigation className="w-3 h-3" /> Abrir no GPS
                   </a>
                 )}
 
-                <button
-                  onClick={() => setBaixaDelivery(d)}
-                  className="w-full bg-primary text-on-primary py-2.5 rounded-lg font-bold text-sm hover:opacity-95 transition-all"
-                >
-                  Baixar entrega
-                </button>
+                {!rotaMode && (
+                  <button
+                    onClick={() => setBaixaDelivery(d)}
+                    className="w-full bg-primary text-on-primary py-2.5 rounded-lg font-bold text-sm hover:opacity-95 transition-all"
+                  >
+                    Baixar entrega
+                  </button>
+                )}
               </div>
-            ))
+              );
+            })
           )
         )}
 
@@ -242,6 +311,30 @@ export default function MotoristaScreen({ user, deliveries, comprovantesByDelive
           )
         )}
       </main>
+
+      {rotaMode && selectedDeliveries.length > 0 && (
+        <div className="sticky bottom-0 bg-white border-t border-outline-variant p-3 shrink-0">
+          <div className="max-w-lg w-full mx-auto flex items-center gap-3">
+            <p className="text-xs text-on-surface-variant flex-1">
+              {selectedDeliveries.length} entrega{selectedDeliveries.length > 1 ? 's' : ''} selecionada{selectedDeliveries.length > 1 ? 's' : ''}
+            </p>
+            <button
+              onClick={() => setSelectedIds([])}
+              className="text-xs font-bold text-secondary hover:underline"
+            >
+              Limpar
+            </button>
+            <a
+              href={multiStopUrl(selectedDeliveries)}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-1.5 bg-primary text-on-primary py-2.5 px-4 rounded-lg font-bold text-sm hover:opacity-95 transition-all"
+            >
+              <Route className="w-4 h-4" /> Abrir rota
+            </a>
+          </div>
+        </div>
+      )}
 
       <MotoristaBaixaModal
         delivery={baixaDelivery}
