@@ -8,7 +8,7 @@ export interface ParsedRow {
   errors: string[];
 }
 
-const VALID_STATUSES: DeliveryStatus[] = ['ENTREGUE', 'EM ROTA', 'EM ATRASO', 'FALHA', 'DEVOLVIDO'];
+const VALID_STATUSES: DeliveryStatus[] = ['AGUARDANDO EXPEDIÇÃO', 'ENTREGUE', 'EM ROTA', 'EM ATRASO', 'FALHA', 'DEVOLVIDO'];
 
 // Parser de CSV simples: separador é sempre ";" (mesmo que a exportação usa).
 // Não usamos "," como separador porque campos como endereço frequentemente
@@ -104,8 +104,13 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       if (f.required && !get(f.key)) errors.push(`Campo obrigatório vazio: ${f.label}`);
     });
 
+    // Sem status explícito na planilha, o padrão depende da Data de
+    // Expedição: sem ela a carga ainda não foi expedida (AGUARDANDO
+    // EXPEDIÇÃO); com ela, segue o padrão anterior de EM ROTA.
     const statusRaw = get('status').toUpperCase();
-    const status = (VALID_STATUSES as string[]).includes(statusRaw) ? (statusRaw as DeliveryStatus) : 'EM ROTA';
+    const status = (VALID_STATUSES as string[]).includes(statusRaw)
+      ? (statusRaw as DeliveryStatus)
+      : get('dataExpedicao') ? 'EM ROTA' : 'AGUARDANDO EXPEDIÇÃO';
 
     if (errors.length > 0) {
       return { line: i + 2, data: null, errors };

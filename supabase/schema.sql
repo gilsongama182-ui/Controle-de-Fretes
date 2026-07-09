@@ -50,7 +50,7 @@ create table if not exists public.deliveries (
   municipio text,
   uf text not null,
   fone_fax text,
-  status text not null check (status in ('ENTREGUE', 'EM ROTA', 'EM ATRASO', 'FALHA', 'DEVOLVIDO')) default 'EM ROTA',
+  status text not null check (status in ('AGUARDANDO EXPEDIÇÃO', 'ENTREGUE', 'EM ROTA', 'EM ATRASO', 'FALHA', 'DEVOLVIDO')) default 'EM ROTA',
   ocorrencia text,
   atraso_responsabilidade text not null check (atraso_responsabilidade in ('proprio', 'cliente')) default 'proprio',
   falha_lida_em timestamptz,

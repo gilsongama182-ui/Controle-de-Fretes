@@ -260,6 +260,7 @@ export default function DashboardOperadorScreen({
                             del.status === 'EM ROTA' ? 'bg-blue-100 text-blue-800' :
                             del.status === 'EM ATRASO' ? 'bg-amber-100 text-amber-800' :
                             del.status === 'DEVOLVIDO' ? 'bg-gray-200 text-gray-800' :
+                            del.status === 'AGUARDANDO EXPEDIÇÃO' ? 'bg-purple-100 text-purple-800' :
                             'bg-red-100 text-red-800'
                           }`}>
                             {del.status}

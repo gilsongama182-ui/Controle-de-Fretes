@@ -24,9 +24,11 @@ export function hojeIso(): string {
 // Ainda não entregue e com a previsão já vencida. Cálculo só para os cards de
 // performance — não altera o status gravado no banco nem o badge das listas.
 // Quando o atraso é de responsabilidade do cliente (destinatário indisponível,
-// recusou recebimento etc.), não conta contra a nossa performance.
+// recusou recebimento etc.), não conta contra a nossa performance. Carga que
+// ainda nem foi expedida também não conta — o prazo só começa a valer depois
+// que ela sai.
 export function isAtrasadoEfetivo(d: Delivery): boolean {
-  if (d.status === 'ENTREGUE' || d.status === 'FALHA' || d.status === 'DEVOLVIDO') return false;
+  if (d.status === 'ENTREGUE' || d.status === 'FALHA' || d.status === 'DEVOLVIDO' || d.status === 'AGUARDANDO EXPEDIÇÃO') return false;
   if (d.atrasoResponsabilidade === 'cliente') return false;
   const previsaoIso = toIsoDate(d.previsao);
   if (!previsaoIso) return false;

@@ -54,9 +54,13 @@ export default function EdicaoEntregaScreen({
   // Editable Form states (inicializados com fallback vazio; sincronizados abaixo quando `delivery` existe)
   // ENTREGUE sem nenhuma Data de Entrega é um estado inconsistente (pode ter
   // ficado salvo assim de antes desse ajuste) — corrige já na abertura da
-  // tela, em vez de depender só da mudança ao vivo no campo de data.
+  // tela, em vez de depender só da mudança ao vivo no campo de data. Mesma
+  // ideia pra EM ROTA sem nenhuma Data de Expedição: a carga ainda nem foi
+  // expedida, então o status correto é AGUARDANDO EXPEDIÇÃO.
   const [status, setStatus] = useState<DeliveryStatus>(
-    delivery && delivery.status === 'ENTREGUE' && !delivery.dataEntrega ? 'EM ROTA' : delivery?.status ?? 'EM ROTA'
+    delivery && delivery.status === 'ENTREGUE' && !delivery.dataEntrega ? 'EM ROTA' :
+    delivery && delivery.status === 'EM ROTA' && !delivery.dataExpedicao ? 'AGUARDANDO EXPEDIÇÃO' :
+    delivery?.status ?? 'EM ROTA'
   );
   const [ocorrencia, setOcorrencia] = useState(delivery?.ocorrencia ?? '');
   const [previsao, setPrevisao] = useState(delivery?.previsao ?? '');
@@ -152,6 +156,19 @@ export default function EdicaoEntregaScreen({
     }
     if (foraDoPrazo(value, previsao)) setAtrasoResponsabilidade('');
     setStatus('ENTREGUE');
+  };
+
+  // Enquanto não há Data de Expedição, o status é AGUARDANDO EXPEDIÇÃO —
+  // limpar o campo volta pra esse status (quando ele estava em EM ROTA por
+  // essa mesma tela) e preencher tira desse status, liberando pra EM ROTA.
+  // Se o status foi ajustado manualmente pra outra coisa (ex: FALHA), não mexe.
+  const handleDataExpedicaoChange = (value: string) => {
+    setDataExpedicao(value);
+    if (!value) {
+      if (status === 'EM ROTA') setStatus('AGUARDANDO EXPEDIÇÃO');
+      return;
+    }
+    if (status === 'AGUARDANDO EXPEDIÇÃO') setStatus('EM ROTA');
   };
 
   // Editar a Previsão também pode tornar (ou deixar de tornar) a entrega
@@ -435,7 +452,7 @@ export default function EdicaoEntregaScreen({
                       <input
                         type="date"
                         value={dataExpedicao}
-                        onChange={(e) => setDataExpedicao(e.target.value)}
+                        onChange={(e) => handleDataExpedicaoChange(e.target.value)}
                         className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
                       />
                     </div>
@@ -604,9 +621,11 @@ export default function EdicaoEntregaScreen({
                       status === 'EM ROTA' ? 'border-blue-300 bg-blue-50 text-blue-800' :
                       status === 'EM ATRASO' ? 'border-amber-300 bg-amber-50 text-amber-800' :
                       status === 'DEVOLVIDO' ? 'border-gray-300 bg-gray-50 text-gray-800' :
+                      status === 'AGUARDANDO EXPEDIÇÃO' ? 'border-purple-300 bg-purple-50 text-purple-800' :
                       'border-red-300 bg-red-50 text-red-800'
                     }`}
                   >
+                    <option value="AGUARDANDO EXPEDIÇÃO">🕐 AGUARDANDO EXPEDIÇÃO</option>
                     <option value="ENTREGUE">✓ ENTREGUE</option>
                     <option value="EM ROTA">🚚 EM ROTA</option>
                     <option value="EM ATRASO">⚠️ EM ATRASO</option>
