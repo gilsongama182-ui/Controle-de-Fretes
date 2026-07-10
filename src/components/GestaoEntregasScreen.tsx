@@ -60,6 +60,10 @@ export default function GestaoEntregasScreen({
   const [ufFilter, setUfFilter] = useState('');
   const [comprovanteFilter, setComprovanteFilter] = useState<'' | 'com' | 'sem'>('');
   const [motoristaFilter, setMotoristaFilter] = useState('');
+  // Filtro disparado pelos cards de KPI — clicar num card ativa o filtro
+  // correspondente na tabela; clicar de novo (ou no card "Entregas Ativas")
+  // limpa. Combina em AND com os demais filtros (busca, UF, período etc.).
+  const [cardFilter, setCardFilter] = useState<'sucesso' | 'atraso' | 'hoje' | null>(null);
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
   const [motoristas, setMotoristas] = useState<ProfileRecord[]>([]);
@@ -176,8 +180,25 @@ export default function GestaoEntregasScreen({
       result = result.filter(d => d.dataPedido <= dateTo);
     }
 
+    // Filtro disparado pelo clique num card de KPI
+    if (cardFilter === 'sucesso') {
+      result = result.filter(isEntregueNoPrazo);
+    } else if (cardFilter === 'atraso') {
+      result = result.filter(isAtrasadoEfetivo);
+    } else if (cardFilter === 'hoje') {
+      const todayStr = hojeIso();
+      result = result.filter(d =>
+        d.status === 'EM ROTA'
+        && (d.previsao === todayStr || d.previsao.toLowerCase().includes('hoje'))
+      );
+    }
+
     return result;
-  }, [deliveries, searchTerm, statusFilter, ufFilter, comprovanteFilter, comprovantesByDeliveryId, motoristaFilter, dateFrom, dateTo]);
+  }, [deliveries, searchTerm, statusFilter, ufFilter, comprovanteFilter, comprovantesByDeliveryId, motoristaFilter, dateFrom, dateTo, cardFilter]);
+
+  const toggleCardFilter = (key: 'sucesso' | 'atraso' | 'hoje') => {
+    setCardFilter((prev) => (prev === key ? null : key));
+  };
 
   // Ordenação por coluna — clicar num cabeçalho ordena por aquele campo;
   // clicar de novo no mesmo cabeçalho inverte a direção.
@@ -208,7 +229,7 @@ export default function GestaoEntregasScreen({
   // atual pode ficar além do fim da lista filtrada e a tabela parece vazia.
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, ufFilter, comprovanteFilter, motoristaFilter, dateFrom, dateTo]);
+  }, [searchTerm, statusFilter, ufFilter, comprovanteFilter, motoristaFilter, dateFrom, dateTo, cardFilter]);
 
   // Pagination logic
   const paginatedDeliveries = useMemo(() => {
@@ -392,8 +413,15 @@ export default function GestaoEntregasScreen({
           {/* Quick Insights Stats */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6 md:shrink-0">
 
-            {/* Active Deliveries */}
-            <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
+            {/* Active Deliveries — clicar limpa o filtro por card */}
+            <button
+              type="button"
+              onClick={() => setCardFilter(null)}
+              title="Mostrar todas as entregas"
+              className={`text-left bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+                cardFilter === null ? 'border-primary ring-2 ring-primary/30' : 'border-outline-variant hover:border-primary/50'
+              }`}
+            >
               <div className="flex justify-between items-start mb-1">
                 <span className="text-[10px] font-bold text-on-surface-variant tracking-wider uppercase">Entregas Ativas</span>
                 <Truck className="text-primary w-4 h-4" />
@@ -402,10 +430,17 @@ export default function GestaoEntregasScreen({
               <p className="text-xs text-on-surface-variant mt-1">
                 Total de registros na base
               </p>
-            </div>
+            </button>
 
-            {/* Success rate */}
-            <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
+            {/* Success rate — filtra entregas no prazo */}
+            <button
+              type="button"
+              onClick={() => toggleCardFilter('sucesso')}
+              title="Filtrar entregas no prazo"
+              className={`text-left bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+                cardFilter === 'sucesso' ? 'border-on-tertiary-container ring-2 ring-on-tertiary-container/30' : 'border-outline-variant hover:border-on-tertiary-container/50'
+              }`}
+            >
               <div className="flex justify-between items-start mb-1">
                 <span className="text-[10px] font-bold text-on-surface-variant tracking-wider uppercase">Taxa de Sucesso</span>
                 <CheckCircle className="text-on-tertiary-container w-4 h-4" />
@@ -417,10 +452,17 @@ export default function GestaoEntregasScreen({
               <p className="text-[10px] text-on-surface-variant mt-1.5">
                 {metrics.noPrazoCount} no prazo · {metrics.foraDoPrazoCount} fora do prazo
               </p>
-            </div>
+            </button>
 
-            {/* Delays count */}
-            <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
+            {/* Delays count — filtra entregas em atraso */}
+            <button
+              type="button"
+              onClick={() => toggleCardFilter('atraso')}
+              title="Filtrar entregas em atraso"
+              className={`text-left bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+                cardFilter === 'atraso' ? 'border-error ring-2 ring-error/30' : 'border-outline-variant hover:border-error/50'
+              }`}
+            >
               <div className="flex justify-between items-start mb-1">
                 <span className="text-[10px] font-bold text-on-surface-variant tracking-wider uppercase">Em Atraso</span>
                 <AlertTriangle className="text-error w-4 h-4" />
@@ -429,17 +471,24 @@ export default function GestaoEntregasScreen({
               <p className="text-xs text-error font-semibold mt-1">
                 {metrics.delayedCount > 0 ? 'Ação imediata requerida' : 'Nenhuma entrega em atraso'}
               </p>
-            </div>
+            </button>
 
-            {/* Today's forecast */}
-            <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
+            {/* Today's forecast — filtra entregas previstas para hoje */}
+            <button
+              type="button"
+              onClick={() => toggleCardFilter('hoje')}
+              title="Filtrar entregas com previsão para hoje"
+              className={`text-left bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+                cardFilter === 'hoje' ? 'border-secondary ring-2 ring-secondary/30' : 'border-outline-variant hover:border-secondary/50'
+              }`}
+            >
               <div className="flex justify-between items-start mb-1">
                 <span className="text-[10px] font-bold text-on-surface-variant tracking-wider uppercase">Previsão Hoje</span>
                 <Clock className="text-secondary w-4 h-4" />
               </div>
               <p className="text-2xl font-bold text-primary">{metrics.dueTodayCount}</p>
               <p className="text-xs text-on-surface-variant mt-1">Com previsão para hoje</p>
-            </div>
+            </button>
 
           </div>
 

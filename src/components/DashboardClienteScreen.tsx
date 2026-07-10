@@ -25,6 +25,12 @@ export default function DashboardClienteScreen({
   const [showAll, setShowAll] = useState(false);
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
   const [selectedCity, setSelectedCity] = useState<string | null>(null);
+  // Filtro disparado pelos cards de KPI — clicar num card filtra a lista de
+  // entregas pelo critério correspondente; clicar de novo limpa.
+  const [cardFilter, setCardFilter] = useState<'entregue' | 'em-rota' | 'atrasos' | null>(null);
+  const toggleCardFilter = (key: 'entregue' | 'em-rota' | 'atrasos') => {
+    setCardFilter((prev) => (prev === key ? null : key));
+  };
 
   const clearChartSelection = () => {
     setSelectedUf(null);
@@ -39,6 +45,14 @@ export default function DashboardClienteScreen({
     if (selectedCity) base = base.filter(d => d.municipio === selectedCity);
     if (statusFilter) base = base.filter(d => d.status === statusFilter);
 
+    if (cardFilter === 'entregue') {
+      base = base.filter(d => d.status === 'ENTREGUE');
+    } else if (cardFilter === 'em-rota') {
+      base = base.filter(d => d.status === 'EM ROTA');
+    } else if (cardFilter === 'atrasos') {
+      base = base.filter(d => isAtrasadoEfetivo(d) || d.status === 'FALHA' || isEntregueForaDoPrazo(d));
+    }
+
     const term = searchTerm.toLowerCase().trim();
     if (!term) return base;
     const termDigits = term.replace(/\D/g, '');
@@ -52,7 +66,7 @@ export default function DashboardClienteScreen({
       // barras na nota impressa preenche o campo de busca sem precisar digitar.
       (termDigits.length > 0 && d.chaveAcessoNfe.includes(termDigits))
     );
-  }, [deliveries, searchTerm, selectedUf, selectedCity, statusFilter]);
+  }, [deliveries, searchTerm, selectedUf, selectedCity, statusFilter, cardFilter]);
 
   // Lista exibida em tela: só as 5 mais recentes até o usuário clicar "Ver todas".
   const filteredDeliveries = useMemo(
@@ -90,10 +104,17 @@ export default function DashboardClienteScreen({
   // Base do gráfico: respeita o filtro de Status, sem depender da seleção de
   // UF/cidade do próprio gráfico (essa seleção é o nível 2, não deve
   // "filtrar a si mesma" no nível 1).
-  const deliveriesForChart = useMemo(
-    () => (statusFilter ? deliveries.filter((d) => d.status === statusFilter) : deliveries),
-    [deliveries, statusFilter]
-  );
+  const deliveriesForChart = useMemo(() => {
+    let base = statusFilter ? deliveries.filter((d) => d.status === statusFilter) : deliveries;
+    if (cardFilter === 'entregue') {
+      base = base.filter(d => d.status === 'ENTREGUE');
+    } else if (cardFilter === 'em-rota') {
+      base = base.filter(d => d.status === 'EM ROTA');
+    } else if (cardFilter === 'atrasos') {
+      base = base.filter(d => isAtrasadoEfetivo(d) || d.status === 'FALHA' || isEntregueForaDoPrazo(d));
+    }
+    return base;
+  }, [deliveries, statusFilter, cardFilter]);
 
   // Entregas por UF (nível 1 do gráfico)
   const ufBreakdown = useMemo(() => {
@@ -186,33 +207,61 @@ export default function DashboardClienteScreen({
           {/* Customer KPI Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
 
-            <div className="bg-white p-6 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
+            <button
+              type="button"
+              onClick={() => setCardFilter(null)}
+              title="Mostrar todas as entregas"
+              className={`text-left bg-white p-6 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+                cardFilter === null ? 'border-primary ring-2 ring-primary/30' : 'border-outline-variant hover:border-primary/50'
+              }`}
+            >
               <div>
                 <span className="text-xs font-bold tracking-wider text-secondary block mb-1">TOTAL DE ENTREGAS</span>
                 <span className="text-3xl font-bold text-primary">{metrics.total}</span>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-white p-6 rounded-xl border border-outline-variant shadow-sm border-l-4 border-l-on-tertiary-container flex flex-col justify-between">
+            <button
+              type="button"
+              onClick={() => toggleCardFilter('entregue')}
+              title="Filtrar entregas com status Entregue"
+              className={`text-left bg-white p-6 rounded-xl border shadow-sm border-l-4 border-l-on-tertiary-container flex flex-col justify-between transition-all ${
+                cardFilter === 'entregue' ? 'border-on-tertiary-container ring-2 ring-on-tertiary-container/30' : 'border-outline-variant hover:border-on-tertiary-container/50'
+              }`}
+            >
               <div>
                 <span className="text-xs font-bold tracking-wider text-secondary block mb-1">% ENTREGUE</span>
                 <span className="text-3xl font-bold text-on-tertiary-container">{metrics.pctDelivered}</span>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-white p-6 rounded-xl border border-outline-variant shadow-sm border-l-4 border-l-secondary flex flex-col justify-between">
+            <button
+              type="button"
+              onClick={() => toggleCardFilter('em-rota')}
+              title="Filtrar entregas com status Em Rota"
+              className={`text-left bg-white p-6 rounded-xl border shadow-sm border-l-4 border-l-secondary flex flex-col justify-between transition-all ${
+                cardFilter === 'em-rota' ? 'border-secondary ring-2 ring-secondary/30' : 'border-outline-variant hover:border-secondary/50'
+              }`}
+            >
               <div>
                 <span className="text-xs font-bold tracking-wider text-secondary block mb-1">% EM ROTA</span>
                 <span className="text-3xl font-bold text-secondary">{metrics.pctEnRoute}</span>
               </div>
-            </div>
+            </button>
 
-            <div className="bg-white p-6 rounded-xl border border-outline-variant shadow-sm border-l-4 border-l-error flex flex-col justify-between">
+            <button
+              type="button"
+              onClick={() => toggleCardFilter('atrasos')}
+              title="Filtrar entregas em atraso ou com falha"
+              className={`text-left bg-white p-6 rounded-xl border shadow-sm border-l-4 border-l-error flex flex-col justify-between transition-all ${
+                cardFilter === 'atrasos' ? 'border-error ring-2 ring-error/30' : 'border-outline-variant hover:border-error/50'
+              }`}
+            >
               <div>
                 <span className="text-xs font-bold tracking-wider text-secondary block mb-1">ATRASOS / FALHAS</span>
                 <span className="text-3xl font-bold text-error">{metrics.pctDelayed}</span>
               </div>
-            </div>
+            </button>
 
           </div>
 
@@ -220,16 +269,30 @@ export default function DashboardClienteScreen({
           <div className="bg-white rounded-xl border border-outline-variant shadow-sm overflow-hidden">
             <div className="p-6 border-b border-outline-variant flex flex-wrap items-center justify-between gap-3">
               <h2 className="font-headline text-lg font-bold text-primary">Entregas Recentes</h2>
-              {(selectedUf || selectedCity) && (
-                <button
-                  type="button"
-                  onClick={clearChartSelection}
-                  className="flex items-center gap-1.5 text-xs font-bold text-secondary bg-secondary-container/50 hover:bg-secondary-container px-3 py-1.5 rounded-full transition-colors"
-                >
-                  <span>Filtrando: {selectedCity ? `${selectedCity}, ${selectedUf}` : selectedUf}</span>
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              )}
+              <div className="flex flex-wrap items-center gap-2">
+                {(selectedUf || selectedCity) && (
+                  <button
+                    type="button"
+                    onClick={clearChartSelection}
+                    className="flex items-center gap-1.5 text-xs font-bold text-secondary bg-secondary-container/50 hover:bg-secondary-container px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    <span>Filtrando: {selectedCity ? `${selectedCity}, ${selectedUf}` : selectedUf}</span>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+                {cardFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setCardFilter(null)}
+                    className="flex items-center gap-1.5 text-xs font-bold text-secondary bg-secondary-container/50 hover:bg-secondary-container px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    <span>
+                      Filtrando: {cardFilter === 'entregue' ? 'Entregue' : cardFilter === 'em-rota' ? 'Em Rota' : 'Atrasos/Falhas'}
+                    </span>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="overflow-x-auto">

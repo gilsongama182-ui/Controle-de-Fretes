@@ -40,6 +40,12 @@ export default function DashboardOperadorScreen({
   const [searchTerm, setSearchTerm] = useState('');
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
+  // Filtro disparado pelos cards de KPI — clicar num card filtra a lista de
+  // entregas recentes pelo critério correspondente; clicar de novo limpa.
+  const [cardFilter, setCardFilter] = useState<'entregue' | 'em-rota' | 'dentro-prazo' | 'fora-prazo' | null>(null);
+  const toggleCardFilter = (key: 'entregue' | 'em-rota' | 'dentro-prazo' | 'fora-prazo') => {
+    setCardFilter((prev) => (prev === key ? null : key));
+  };
 
   // Computed metrics based on the shared deliveries array
   const metrics = useMemo(() => {
@@ -80,21 +86,37 @@ export default function DashboardOperadorScreen({
     };
   }, [deliveries]);
 
-  // Filter deliveries based on search
+  // Filter deliveries based on search and on the active KPI card filter
   const filteredDeliveries = useMemo(() => {
+    let result = deliveries;
+
     const term = searchTerm.toLowerCase().trim();
-    if (!term) return deliveries.slice(0, 5); // display top 5 on dashboard
-    const termDigits = term.replace(/\D/g, '');
-    return deliveries.filter(d =>
-      d.codigo.toLowerCase().includes(term) ||
-      d.cliente.toLowerCase().includes(term) ||
-      d.nfe.toLowerCase().includes(term) ||
-      d.municipio.toLowerCase().includes(term) ||
-      // Chave de acesso da NF-e não aparece em tela — leitor de código de
-      // barras na nota impressa preenche o campo de busca sem precisar digitar.
-      (termDigits.length > 0 && d.chaveAcessoNfe.includes(termDigits))
-    );
-  }, [deliveries, searchTerm]);
+    if (term) {
+      const termDigits = term.replace(/\D/g, '');
+      result = result.filter(d =>
+        d.codigo.toLowerCase().includes(term) ||
+        d.cliente.toLowerCase().includes(term) ||
+        d.nfe.toLowerCase().includes(term) ||
+        d.municipio.toLowerCase().includes(term) ||
+        // Chave de acesso da NF-e não aparece em tela — leitor de código de
+        // barras na nota impressa preenche o campo de busca sem precisar digitar.
+        (termDigits.length > 0 && d.chaveAcessoNfe.includes(termDigits))
+      );
+    }
+
+    if (cardFilter === 'entregue') {
+      result = result.filter(d => d.status === 'ENTREGUE');
+    } else if (cardFilter === 'em-rota') {
+      result = result.filter(d => d.status === 'EM ROTA');
+    } else if (cardFilter === 'dentro-prazo') {
+      result = result.filter(d => !isAtrasadoEfetivo(d) && d.status !== 'FALHA' && !isEntregueForaDoPrazo(d));
+    } else if (cardFilter === 'fora-prazo') {
+      result = result.filter(d => isAtrasadoEfetivo(d) || d.status === 'FALHA' || isEntregueForaDoPrazo(d));
+    }
+
+    // Sem busca nem filtro de card, mostra só as 5 mais recentes (visão de painel)
+    return !term && !cardFilter ? result.slice(0, 5) : result;
+  }, [deliveries, searchTerm, cardFilter]);
 
   return (
     <div className="bg-surface text-on-surface font-sans min-h-screen flex flex-col md:flex-row">
@@ -146,8 +168,15 @@ export default function DashboardOperadorScreen({
           {/* KPI Bento Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
 
-            {/* 1. Total Entregas */}
-            <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm flex flex-col justify-between">
+            {/* 1. Total Entregas — clicar limpa o filtro por card */}
+            <button
+              type="button"
+              onClick={() => setCardFilter(null)}
+              title="Mostrar todas as entregas"
+              className={`text-left bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+                cardFilter === null ? 'border-primary ring-2 ring-primary/30' : 'border-outline-variant hover:border-primary/50'
+              }`}
+            >
               <div className="flex justify-between items-start">
                 <span className="text-xs font-semibold tracking-wider text-secondary uppercase">Total de Entregas</span>
                 <div className="w-8 h-8 rounded-lg bg-primary-container/10 flex items-center justify-center">
@@ -158,10 +187,17 @@ export default function DashboardOperadorScreen({
                 <h4 className="font-headline text-3xl font-bold text-primary">{metrics.total}</h4>
                 <p className="text-xs text-secondary mt-1">Total de registros na base</p>
               </div>
-            </div>
+            </button>
 
-            {/* 2. % Entregue */}
-            <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm border-l-4 border-l-on-tertiary-container flex flex-col justify-between">
+            {/* 2. % Entregue — filtra status ENTREGUE */}
+            <button
+              type="button"
+              onClick={() => toggleCardFilter('entregue')}
+              title="Filtrar entregas com status Entregue"
+              className={`text-left bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-on-tertiary-container flex flex-col justify-between transition-all ${
+                cardFilter === 'entregue' ? 'border-on-tertiary-container ring-2 ring-on-tertiary-container/30' : 'border-outline-variant hover:border-on-tertiary-container/50'
+              }`}
+            >
               <div className="flex justify-between items-start">
                 <span className="text-xs font-semibold tracking-wider text-secondary uppercase">% Entregue</span>
                 <div className="w-8 h-8 rounded-lg bg-tertiary-container/10 flex items-center justify-center">
@@ -175,10 +211,17 @@ export default function DashboardOperadorScreen({
                   {metrics.entregueNoPrazoCount} no prazo · {metrics.entregueForaDoPrazoCount} fora do prazo
                 </p>
               </div>
-            </div>
+            </button>
 
-            {/* 3. % Em Rota */}
-            <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm border-l-4 border-l-secondary flex flex-col justify-between">
+            {/* 3. % Em Rota — filtra status EM ROTA */}
+            <button
+              type="button"
+              onClick={() => toggleCardFilter('em-rota')}
+              title="Filtrar entregas com status Em Rota"
+              className={`text-left bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-secondary flex flex-col justify-between transition-all ${
+                cardFilter === 'em-rota' ? 'border-secondary ring-2 ring-secondary/30' : 'border-outline-variant hover:border-secondary/50'
+              }`}
+            >
               <div className="flex justify-between items-start">
                 <span className="text-xs font-semibold tracking-wider text-secondary uppercase">% Em Rota</span>
                 <div className="w-8 h-8 rounded-lg bg-secondary-container flex items-center justify-center">
@@ -189,10 +232,17 @@ export default function DashboardOperadorScreen({
                 <h4 className="font-headline text-3xl font-bold text-primary">{metrics.pctEnRoute}</h4>
                 <p className="text-xs text-secondary mt-1">{metrics.enRouteCount} entrega(s) em rota</p>
               </div>
-            </div>
+            </button>
 
             {/* 4. % No Prazo (proxy: fora de EM ATRASO / FALHA) */}
-            <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm border-l-4 border-l-primary flex flex-col justify-between">
+            <button
+              type="button"
+              onClick={() => toggleCardFilter('dentro-prazo')}
+              title="Filtrar entregas dentro do prazo"
+              className={`text-left bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-primary flex flex-col justify-between transition-all ${
+                cardFilter === 'dentro-prazo' ? 'border-primary ring-2 ring-primary/30' : 'border-outline-variant hover:border-primary/50'
+              }`}
+            >
               <div className="flex justify-between items-start">
                 <span className="text-xs font-semibold tracking-wider text-secondary uppercase">Dentro do Prazo</span>
                 <div className="w-8 h-8 rounded-lg bg-primary-container/10 flex items-center justify-center">
@@ -205,10 +255,17 @@ export default function DashboardOperadorScreen({
                   <div className="bg-primary h-full rounded-full" style={{ width: metrics.pctOnTrack }}></div>
                 </div>
               </div>
-            </div>
+            </button>
 
             {/* 5. % Fora do Prazo (EM ATRASO + FALHA) */}
-            <div className="bg-white p-5 rounded-xl border border-outline-variant shadow-sm border-l-4 border-l-error flex flex-col justify-between">
+            <button
+              type="button"
+              onClick={() => toggleCardFilter('fora-prazo')}
+              title="Filtrar entregas fora do prazo"
+              className={`text-left bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-error flex flex-col justify-between transition-all ${
+                cardFilter === 'fora-prazo' ? 'border-error ring-2 ring-error/30' : 'border-outline-variant hover:border-error/50'
+              }`}
+            >
               <div className="flex justify-between items-start">
                 <span className="text-xs font-semibold tracking-wider text-secondary uppercase">Fora do Prazo</span>
                 <div className="w-8 h-8 rounded-lg bg-error-container/20 flex items-center justify-center">
@@ -219,7 +276,7 @@ export default function DashboardOperadorScreen({
                 <h4 className="font-headline text-3xl font-bold text-error">{metrics.pctOffTrack}</h4>
                 <p className="text-xs text-secondary mt-1">Em atraso ou com falha</p>
               </div>
-            </div>
+            </button>
 
           </div>
 
