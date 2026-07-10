@@ -2,6 +2,7 @@ import { Delivery } from '../types';
 import { formatNfe } from './formatNfe';
 import { DELIVERY_FIELDS } from './deliveryFields';
 import { Volume } from './deliveryVolumes';
+import { DeliveryComprovante } from './comprovantes';
 import { isForaDoPrazoBruto } from './deliveryStatus';
 
 function escapeCsvValue(value: unknown): string {
@@ -64,24 +65,36 @@ export function exportDeliveriesToCsv(
   deliveries: Delivery[],
   filename: string,
   excludeKeys: (keyof Delivery)[] = [],
-  volumesByDeliveryId?: Map<string, Volume[]>
+  volumesByDeliveryId?: Map<string, Volume[]>,
+  // Só passado pelos relatórios internos (gestão/operador) — o relatório do
+  // cliente nunca informa esse mapa, então a coluna nunca aparece pra esse perfil.
+  comprovantesByDeliveryId?: Map<string, DeliveryComprovante[]>
 ) {
   const headers = [...DELIVERY_FIELDS, ...EXPORT_ONLY_FIELDS].filter((h) => !excludeKeys.includes(h.key));
-  const headerRow = [...headers.map((h) => h.label), ...(volumesByDeliveryId ? VOLUME_HEADERS : [])].join(';');
+  const extraHeaders = [
+    ...(volumesByDeliveryId ? VOLUME_HEADERS : []),
+    ...(comprovantesByDeliveryId ? ['Possui Anexo'] : []),
+  ];
+  const headerRow = [...headers.map((h) => h.label), ...extraHeaders].join(';');
   const rows = [
     headerRow,
     ...deliveries.map((d) => {
-      const base = headers.map((h) => escapeCsvValue(cellValue(d, h.key)));
-      if (!volumesByDeliveryId) return base.join(';');
-      const volumes = volumesByDeliveryId.get(d.id) ?? [];
-      const extra = [
-        String(volumes.length),
-        escapeCsvValue(formatVolumeColumn(volumes, (v) => v.peso)),
-        escapeCsvValue(formatVolumeColumn(volumes, (v) => v.altura)),
-        escapeCsvValue(formatVolumeColumn(volumes, (v) => v.largura)),
-        escapeCsvValue(formatVolumeColumn(volumes, (v) => v.comprimento)),
-      ];
-      return [...base, ...extra].join(';');
+      const cells = headers.map((h) => escapeCsvValue(cellValue(d, h.key)));
+      if (volumesByDeliveryId) {
+        const volumes = volumesByDeliveryId.get(d.id) ?? [];
+        cells.push(
+          String(volumes.length),
+          escapeCsvValue(formatVolumeColumn(volumes, (v) => v.peso)),
+          escapeCsvValue(formatVolumeColumn(volumes, (v) => v.altura)),
+          escapeCsvValue(formatVolumeColumn(volumes, (v) => v.largura)),
+          escapeCsvValue(formatVolumeColumn(volumes, (v) => v.comprimento))
+        );
+      }
+      if (comprovantesByDeliveryId) {
+        const temAnexo = (comprovantesByDeliveryId.get(d.id)?.length ?? 0) > 0;
+        cells.push(temAnexo ? 'Sim' : 'Não');
+      }
+      return cells.join(';');
     }),
   ];
   // BOM no início para o Excel reconhecer acentuação em UTF-8 corretamente.

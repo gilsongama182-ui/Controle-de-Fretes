@@ -373,7 +373,7 @@ export default function GestaoEntregasScreen({
                 <span>{isSyncingTracking ? 'Sincronizando...' : `Atualizar Rastreio${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}</span>
               </button>
               <button
-                onClick={() => exportDeliveriesToCsv(sortedDeliveries, `gestao-entregas-${new Date().toISOString().split('T')[0]}.csv`, [], volumesByDeliveryId)}
+                onClick={() => exportDeliveriesToCsv(sortedDeliveries, `gestao-entregas-${new Date().toISOString().split('T')[0]}.csv`, [], volumesByDeliveryId, comprovantesByDeliveryId)}
                 className="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface-variant rounded-lg font-bold text-sm hover:bg-surface-container transition-all shadow-sm bg-white"
               >
                 <Download className="w-4 h-4" />

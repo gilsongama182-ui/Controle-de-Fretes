@@ -272,6 +272,7 @@ function AppShell() {
           user={profile}
           deliveries={deliveries}
           volumesByDeliveryId={volumesByDeliveryId}
+          comprovantesByDeliveryId={comprovantesByDeliveryId}
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
           onSelectDeliveryForEdit={handleSelectDeliveryForEdit}
