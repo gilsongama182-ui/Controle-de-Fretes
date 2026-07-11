@@ -5,12 +5,14 @@ import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
 import { formatNfe } from '../lib/formatNfe';
 import { isAtrasadoEfetivo, isEntregueForaDoPrazo } from '../lib/deliveryStatus';
+import { DeliveryOcorrencia } from '../lib/deliveryOcorrencias';
 import ClienteHeader from './layout/ClienteHeader';
 
 interface DashboardClienteProps {
   onLogout: () => void;
   user: User;
   deliveries: Delivery[];
+  ocorrenciasByDeliveryId: Map<string, DeliveryOcorrencia[]>;
   onMarkFalhaLida: (id: string) => Promise<void>;
 }
 
@@ -18,6 +20,7 @@ export default function DashboardClienteScreen({
   onLogout,
   user,
   deliveries,
+  ocorrenciasByDeliveryId,
   onMarkFalhaLida
 }: DashboardClienteProps) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -194,7 +197,10 @@ export default function DashboardClienteScreen({
                 onClick={() => exportDeliveriesToCsv(
                   searchTerm.trim() || statusFilter || selectedUf || selectedCity || cardFilter ? filteredDeliveriesFull : deliveries,
                   `minhas-entregas-${new Date().toISOString().split('T')[0]}.csv`,
-                  ['codigo', 'valorCobranca', 'valorPagamento', 'codigoRastreio']
+                  ['codigo', 'valorCobranca', 'valorPagamento', 'codigoRastreio'],
+                  undefined,
+                  undefined,
+                  ocorrenciasByDeliveryId
                 )}
                 className="flex items-center justify-center gap-2 h-11 px-4 border border-outline text-primary font-sans text-xs font-semibold uppercase tracking-wider rounded-lg hover:bg-primary/5 transition-colors whitespace-nowrap shadow-sm w-full sm:w-auto"
               >

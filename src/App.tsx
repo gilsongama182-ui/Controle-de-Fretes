@@ -315,6 +315,7 @@ function AppShell() {
           onLogout={handleLogout}
           user={profile}
           deliveries={deliveries}
+          ocorrenciasByDeliveryId={ocorrenciasByDeliveryId}
           onMarkFalhaLida={handleMarkFalhaLida}
         />
       );
