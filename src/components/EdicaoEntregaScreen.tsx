@@ -686,33 +686,31 @@ export default function EdicaoEntregaScreen({
                 {/* Registro de ocorrências tipificadas (com data), acumulativo */}
                 <div className="space-y-2">
                   <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Registrar Ocorrência</label>
-                  <div className="flex flex-col sm:flex-row gap-2">
-                    <select
-                      value={novoTipoOcorrencia}
-                      onChange={(e) => setNovoTipoOcorrencia(e.target.value as TipoOcorrencia | '')}
-                      className="flex-1 p-2.5 bg-surface border border-outline-variant rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
-                    >
-                      <option value="">Selecione a ocorrência...</option>
-                      {TIPOS_OCORRENCIA.map((tipo) => (
-                        <option key={tipo} value={tipo}>{tipo}</option>
-                      ))}
-                    </select>
-                    <input
-                      type="date"
-                      value={novaDataOcorrencia}
-                      onChange={(e) => setNovaDataOcorrencia(e.target.value)}
-                      className="p-2.5 bg-surface border border-outline-variant rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary font-medium"
-                    />
-                    <button
-                      type="button"
-                      onClick={handleRegistrarOcorrencia}
-                      disabled={isRegistrandoOcorrencia}
-                      className="flex items-center justify-center gap-1 px-3 py-2 bg-secondary-container text-secondary rounded-lg text-xs font-bold hover:opacity-90 transition-all disabled:opacity-50 shrink-0"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>Registrar</span>
-                    </button>
-                  </div>
+                  <select
+                    value={novoTipoOcorrencia}
+                    onChange={(e) => setNovoTipoOcorrencia(e.target.value as TipoOcorrencia | '')}
+                    className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
+                  >
+                    <option value="">Selecione a ocorrência...</option>
+                    {TIPOS_OCORRENCIA.map((tipo) => (
+                      <option key={tipo} value={tipo}>{tipo}</option>
+                    ))}
+                  </select>
+                  <input
+                    type="date"
+                    value={novaDataOcorrencia}
+                    onChange={(e) => setNovaDataOcorrencia(e.target.value)}
+                    className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleRegistrarOcorrencia}
+                    disabled={isRegistrandoOcorrencia}
+                    className="w-full flex items-center justify-center gap-1 py-2.5 px-4 bg-secondary-container text-secondary rounded-lg text-xs font-bold hover:opacity-90 transition-all disabled:opacity-50"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Registrar</span>
+                  </button>
 
                   {deliveryOcorrencias.length > 0 && (
                     <ul className="space-y-1.5 pt-1">
