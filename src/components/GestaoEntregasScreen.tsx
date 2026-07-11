@@ -2,7 +2,7 @@ import { useState, useMemo, useEffect } from 'react';
 import {
   Truck, Download, FileUp, CheckCircle, AlertTriangle, Clock,
   Trash2, Edit, ChevronLeft, ChevronRight, ListCollapse, Table, Paperclip, Tag, RefreshCw,
-  ArrowUp, ArrowDown, ArrowUpDown
+  ArrowUp, ArrowDown, ArrowUpDown, X
 } from 'lucide-react';
 import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
@@ -418,7 +418,7 @@ export default function GestaoEntregasScreen({
               type="button"
               onClick={() => setCardFilter(null)}
               title="Mostrar todas as entregas"
-              className={`text-left bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
                 cardFilter === null ? 'border-primary ring-2 ring-primary/30' : 'border-outline-variant hover:border-primary/50'
               }`}
             >
@@ -437,7 +437,7 @@ export default function GestaoEntregasScreen({
               type="button"
               onClick={() => toggleCardFilter('sucesso')}
               title="Filtrar entregas no prazo"
-              className={`text-left bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
                 cardFilter === 'sucesso' ? 'border-on-tertiary-container ring-2 ring-on-tertiary-container/30' : 'border-outline-variant hover:border-on-tertiary-container/50'
               }`}
             >
@@ -459,7 +459,7 @@ export default function GestaoEntregasScreen({
               type="button"
               onClick={() => toggleCardFilter('atraso')}
               title="Filtrar entregas em atraso"
-              className={`text-left bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
                 cardFilter === 'atraso' ? 'border-error ring-2 ring-error/30' : 'border-outline-variant hover:border-error/50'
               }`}
             >
@@ -478,7 +478,7 @@ export default function GestaoEntregasScreen({
               type="button"
               onClick={() => toggleCardFilter('hoje')}
               title="Filtrar entregas com previsão para hoje"
-              className={`text-left bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
                 cardFilter === 'hoje' ? 'border-secondary ring-2 ring-secondary/30' : 'border-outline-variant hover:border-secondary/50'
               }`}
             >
@@ -595,6 +595,18 @@ export default function GestaoEntregasScreen({
 
               {/* View layout mode toggle */}
               <div className="flex items-center gap-4 text-xs font-semibold text-on-surface-variant">
+                {cardFilter && (
+                  <button
+                    type="button"
+                    onClick={() => setCardFilter(null)}
+                    className="flex items-center gap-1.5 text-xs font-bold text-secondary bg-secondary-container/50 hover:bg-secondary-container px-3 py-1.5 rounded-full transition-colors"
+                  >
+                    <span>
+                      Filtrando por card: {cardFilter === 'sucesso' ? 'Taxa de Sucesso' : cardFilter === 'atraso' ? 'Em Atraso' : 'Previsão Hoje'}
+                    </span>
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                )}
                 <span className="hidden sm:block">Exibindo {filteredDeliveries.length} registros</span>
                 <div className="flex border border-outline-variant rounded-lg overflow-hidden bg-white p-0.5">
                   <button

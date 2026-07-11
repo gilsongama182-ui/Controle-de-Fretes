@@ -1,5 +1,5 @@
 import { useState, useMemo } from 'react';
-import { Truck, FileUp, Download, CheckCircle, Clock, AlertTriangle } from 'lucide-react';
+import { Truck, FileUp, Download, CheckCircle, Clock, AlertTriangle, X } from 'lucide-react';
 import { ActivePage, Delivery, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
@@ -86,8 +86,12 @@ export default function DashboardOperadorScreen({
     };
   }, [deliveries]);
 
-  // Filter deliveries based on search and on the active KPI card filter
-  const filteredDeliveries = useMemo(() => {
+  // Filter deliveries based on search and on the active KPI card filter.
+  // Separado do corte de "top 5" abaixo pra servir de fonte completa pro
+  // relatório exportado (mesmo padrão de filteredDeliveriesFull em
+  // DashboardClienteScreen) — sem isso, exportar com um filtro ativo saía
+  // com a base inteira em vez do que a tela estava mostrando.
+  const filteredDeliveriesFull = useMemo(() => {
     let result = deliveries;
 
     const term = searchTerm.toLowerCase().trim();
@@ -114,9 +118,14 @@ export default function DashboardOperadorScreen({
       result = result.filter(d => isAtrasadoEfetivo(d) || d.status === 'FALHA' || isEntregueForaDoPrazo(d));
     }
 
-    // Sem busca nem filtro de card, mostra só as 5 mais recentes (visão de painel)
-    return !term && !cardFilter ? result.slice(0, 5) : result;
+    return result;
   }, [deliveries, searchTerm, cardFilter]);
+
+  // Lista exibida no painel: só as 5 mais recentes até algum filtro estar ativo.
+  const filteredDeliveries = useMemo(() => {
+    const term = searchTerm.toLowerCase().trim();
+    return !term && !cardFilter ? filteredDeliveriesFull.slice(0, 5) : filteredDeliveriesFull;
+  }, [filteredDeliveriesFull, searchTerm, cardFilter]);
 
   return (
     <div className="bg-surface text-on-surface font-sans min-h-screen flex flex-col md:flex-row">
@@ -149,7 +158,7 @@ export default function DashboardOperadorScreen({
 
             <div className="flex gap-2">
               <button
-                onClick={() => exportDeliveriesToCsv(deliveries, `relatorio-entregas-${new Date().toISOString().split('T')[0]}.csv`, [], volumesByDeliveryId, comprovantesByDeliveryId)}
+                onClick={() => exportDeliveriesToCsv(filteredDeliveriesFull, `relatorio-entregas-${new Date().toISOString().split('T')[0]}.csv`, [], volumesByDeliveryId, comprovantesByDeliveryId)}
                 className="flex items-center gap-2 px-4 py-2 bg-surface border border-outline-variant rounded-lg text-on-surface hover:bg-surface-container-high transition-colors font-bold text-sm shadow-sm"
               >
                 <Download className="w-4 h-4" />
@@ -173,7 +182,7 @@ export default function DashboardOperadorScreen({
               type="button"
               onClick={() => setCardFilter(null)}
               title="Mostrar todas as entregas"
-              className={`text-left bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-5 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
                 cardFilter === null ? 'border-primary ring-2 ring-primary/30' : 'border-outline-variant hover:border-primary/50'
               }`}
             >
@@ -184,7 +193,7 @@ export default function DashboardOperadorScreen({
                 </div>
               </div>
               <div className="mt-4">
-                <h4 className="font-headline text-3xl font-bold text-primary">{metrics.total}</h4>
+                <p className="font-headline text-3xl font-bold text-primary">{metrics.total}</p>
                 <p className="text-xs text-secondary mt-1">Total de registros na base</p>
               </div>
             </button>
@@ -194,7 +203,7 @@ export default function DashboardOperadorScreen({
               type="button"
               onClick={() => toggleCardFilter('entregue')}
               title="Filtrar entregas com status Entregue"
-              className={`text-left bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-on-tertiary-container flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-on-tertiary-container flex flex-col justify-between transition-all ${
                 cardFilter === 'entregue' ? 'border-on-tertiary-container ring-2 ring-on-tertiary-container/30' : 'border-outline-variant hover:border-on-tertiary-container/50'
               }`}
             >
@@ -205,7 +214,7 @@ export default function DashboardOperadorScreen({
                 </div>
               </div>
               <div className="mt-4">
-                <h4 className="font-headline text-3xl font-bold text-primary">{metrics.pctDelivered}</h4>
+                <p className="font-headline text-3xl font-bold text-primary">{metrics.pctDelivered}</p>
                 <p className="text-xs text-secondary mt-1">Meta: 98,5%</p>
                 <p className="text-xs text-secondary">
                   {metrics.entregueNoPrazoCount} no prazo · {metrics.entregueForaDoPrazoCount} fora do prazo
@@ -218,7 +227,7 @@ export default function DashboardOperadorScreen({
               type="button"
               onClick={() => toggleCardFilter('em-rota')}
               title="Filtrar entregas com status Em Rota"
-              className={`text-left bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-secondary flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-secondary flex flex-col justify-between transition-all ${
                 cardFilter === 'em-rota' ? 'border-secondary ring-2 ring-secondary/30' : 'border-outline-variant hover:border-secondary/50'
               }`}
             >
@@ -229,7 +238,7 @@ export default function DashboardOperadorScreen({
                 </div>
               </div>
               <div className="mt-4">
-                <h4 className="font-headline text-3xl font-bold text-primary">{metrics.pctEnRoute}</h4>
+                <p className="font-headline text-3xl font-bold text-primary">{metrics.pctEnRoute}</p>
                 <p className="text-xs text-secondary mt-1">{metrics.enRouteCount} entrega(s) em rota</p>
               </div>
             </button>
@@ -239,7 +248,7 @@ export default function DashboardOperadorScreen({
               type="button"
               onClick={() => toggleCardFilter('dentro-prazo')}
               title="Filtrar entregas dentro do prazo"
-              className={`text-left bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-primary flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-primary flex flex-col justify-between transition-all ${
                 cardFilter === 'dentro-prazo' ? 'border-primary ring-2 ring-primary/30' : 'border-outline-variant hover:border-primary/50'
               }`}
             >
@@ -250,7 +259,7 @@ export default function DashboardOperadorScreen({
                 </div>
               </div>
               <div className="mt-4">
-                <h4 className="font-headline text-3xl font-bold text-primary">{metrics.pctOnTrack}</h4>
+                <p className="font-headline text-3xl font-bold text-primary">{metrics.pctOnTrack}</p>
                 <div className="w-full bg-surface-container rounded-full h-1.5 mt-2 overflow-hidden">
                   <div className="bg-primary h-full rounded-full" style={{ width: metrics.pctOnTrack }}></div>
                 </div>
@@ -262,7 +271,7 @@ export default function DashboardOperadorScreen({
               type="button"
               onClick={() => toggleCardFilter('fora-prazo')}
               title="Filtrar entregas fora do prazo"
-              className={`text-left bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-error flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-5 rounded-xl border shadow-sm border-l-4 border-l-error flex flex-col justify-between transition-all ${
                 cardFilter === 'fora-prazo' ? 'border-error ring-2 ring-error/30' : 'border-outline-variant hover:border-error/50'
               }`}
             >
@@ -273,7 +282,7 @@ export default function DashboardOperadorScreen({
                 </div>
               </div>
               <div className="mt-4">
-                <h4 className="font-headline text-3xl font-bold text-error">{metrics.pctOffTrack}</h4>
+                <p className="font-headline text-3xl font-bold text-error">{metrics.pctOffTrack}</p>
                 <p className="text-xs text-secondary mt-1">Em atraso ou com falha</p>
               </div>
             </button>
@@ -283,8 +292,29 @@ export default function DashboardOperadorScreen({
           {/* Recent Deliveries table */}
           <div>
             <div className="bg-white border border-outline-variant rounded-xl overflow-hidden shadow-sm flex flex-col">
-              <div className="p-5 flex justify-between items-center border-b border-outline-variant">
-                <h4 className="font-headline text-lg font-bold text-primary">Entregas Recentes</h4>
+              <div className="p-5 flex flex-wrap justify-between items-center gap-3 border-b border-outline-variant">
+                <div className="flex items-center gap-3">
+                  <h4 className="font-headline text-lg font-bold text-primary">
+                    {cardFilter ? 'Entregas Filtradas' : 'Entregas Recentes'}
+                  </h4>
+                  {cardFilter && (
+                    <button
+                      type="button"
+                      onClick={() => setCardFilter(null)}
+                      className="flex items-center gap-1.5 text-xs font-bold text-secondary bg-secondary-container/50 hover:bg-secondary-container px-3 py-1.5 rounded-full transition-colors"
+                    >
+                      <span>
+                        Filtrando: {
+                          cardFilter === 'entregue' ? 'Entregue'
+                          : cardFilter === 'em-rota' ? 'Em Rota'
+                          : cardFilter === 'dentro-prazo' ? 'Dentro do Prazo'
+                          : 'Fora do Prazo'
+                        }
+                      </span>
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
                 <button
                   onClick={() => onNavigate('gestao-entregas')}
                   className="text-primary font-bold text-sm hover:underline"

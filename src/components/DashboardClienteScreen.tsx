@@ -192,7 +192,7 @@ export default function DashboardClienteScreen({
               {/* Export report: exporta a busca/filtro ativo (lista completa, sem o corte de 5), ou todas as entregas do cliente se nenhum estiver aplicado */}
               <button
                 onClick={() => exportDeliveriesToCsv(
-                  searchTerm.trim() || statusFilter || selectedUf || selectedCity ? filteredDeliveriesFull : deliveries,
+                  searchTerm.trim() || statusFilter || selectedUf || selectedCity || cardFilter ? filteredDeliveriesFull : deliveries,
                   `minhas-entregas-${new Date().toISOString().split('T')[0]}.csv`,
                   ['codigo', 'valorCobranca', 'valorPagamento', 'codigoRastreio']
                 )}
@@ -211,7 +211,7 @@ export default function DashboardClienteScreen({
               type="button"
               onClick={() => setCardFilter(null)}
               title="Mostrar todas as entregas"
-              className={`text-left bg-white p-6 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-6 rounded-xl border shadow-sm flex flex-col justify-between transition-all ${
                 cardFilter === null ? 'border-primary ring-2 ring-primary/30' : 'border-outline-variant hover:border-primary/50'
               }`}
             >
@@ -225,7 +225,7 @@ export default function DashboardClienteScreen({
               type="button"
               onClick={() => toggleCardFilter('entregue')}
               title="Filtrar entregas com status Entregue"
-              className={`text-left bg-white p-6 rounded-xl border shadow-sm border-l-4 border-l-on-tertiary-container flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-6 rounded-xl border shadow-sm border-l-4 border-l-on-tertiary-container flex flex-col justify-between transition-all ${
                 cardFilter === 'entregue' ? 'border-on-tertiary-container ring-2 ring-on-tertiary-container/30' : 'border-outline-variant hover:border-on-tertiary-container/50'
               }`}
             >
@@ -239,7 +239,7 @@ export default function DashboardClienteScreen({
               type="button"
               onClick={() => toggleCardFilter('em-rota')}
               title="Filtrar entregas com status Em Rota"
-              className={`text-left bg-white p-6 rounded-xl border shadow-sm border-l-4 border-l-secondary flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-6 rounded-xl border shadow-sm border-l-4 border-l-secondary flex flex-col justify-between transition-all ${
                 cardFilter === 'em-rota' ? 'border-secondary ring-2 ring-secondary/30' : 'border-outline-variant hover:border-secondary/50'
               }`}
             >
@@ -253,7 +253,7 @@ export default function DashboardClienteScreen({
               type="button"
               onClick={() => toggleCardFilter('atrasos')}
               title="Filtrar entregas em atraso ou com falha"
-              className={`text-left bg-white p-6 rounded-xl border shadow-sm border-l-4 border-l-error flex flex-col justify-between transition-all ${
+              className={`text-left cursor-pointer bg-white p-6 rounded-xl border shadow-sm border-l-4 border-l-error flex flex-col justify-between transition-all ${
                 cardFilter === 'atrasos' ? 'border-error ring-2 ring-error/30' : 'border-outline-variant hover:border-error/50'
               }`}
             >
