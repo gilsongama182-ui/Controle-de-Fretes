@@ -31,7 +31,7 @@ export const DELIVERY_FIELDS: { key: keyof Delivery; label: string; required: bo
   { key: 'uf', label: 'UF', required: true },
   { key: 'foneFax', label: 'Fone / Fax', required: false },
   { key: 'status', label: 'Status', required: false },
-  { key: 'ocorrencia', label: 'Ocorrência', required: false },
+  { key: 'ocorrencia', label: 'Observações', required: false },
   { key: 'valorCobranca', label: 'Valor Cobrança', required: false },
   { key: 'valorPagamento', label: 'Valor Pagamento', required: false },
   { key: 'codigoRastreio', label: 'Código de Rastreio', required: false },

@@ -301,6 +301,7 @@ function AppShell() {
           deliveries={deliveries}
           volumesByDeliveryId={volumesByDeliveryId}
           comprovantesByDeliveryId={comprovantesByDeliveryId}
+          ocorrenciasByDeliveryId={ocorrenciasByDeliveryId}
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
           onSelectDeliveryForEdit={handleSelectDeliveryForEdit}
@@ -328,6 +329,7 @@ function AppShell() {
           deliveries={deliveries}
           volumesByDeliveryId={volumesByDeliveryId}
           comprovantesByDeliveryId={comprovantesByDeliveryId}
+          ocorrenciasByDeliveryId={ocorrenciasByDeliveryId}
           onDeleteDelivery={handleDeleteDelivery}
           onSelectDeliveryForEdit={handleSelectDeliveryForEdit}
           onAddDelivery={handleAddDelivery}

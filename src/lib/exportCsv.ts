@@ -1,8 +1,10 @@
 import { Delivery } from '../types';
 import { formatNfe } from './formatNfe';
+import { formatDateBR } from './formatDate';
 import { DELIVERY_FIELDS } from './deliveryFields';
 import { Volume } from './deliveryVolumes';
 import { DeliveryComprovante } from './comprovantes';
+import { DeliveryOcorrencia } from './deliveryOcorrencias';
 import { isForaDoPrazoBruto } from './deliveryStatus';
 
 function escapeCsvValue(value: unknown): string {
@@ -57,6 +59,15 @@ function formatVolumeColumn(volumes: Volume[], pick: (v: Volume) => number): str
   return volumes.map((v) => pick(v).toFixed(2).replace('.', ',')).join(' | ');
 }
 
+// A coluna de ocorrência registrada no relatório sempre reflete a mais
+// recente (por data da ocorrência) — o histórico completo fica só na tela de
+// edição, não no CSV.
+function formatUltimaOcorrenciaRegistrada(ocorrencias: DeliveryOcorrencia[]): string {
+  if (ocorrencias.length === 0) return '';
+  const ultima = [...ocorrencias].sort((a, b) => b.dataOcorrencia.localeCompare(a.dataOcorrencia))[0];
+  return `${ultima.tipo} (${formatDateBR(ultima.dataOcorrencia)})`;
+}
+
 // Separador ";" (não ",") porque o Excel em pt-BR usa vírgula como separador
 // decimal e só quebra colunas automaticamente com ponto e vírgula. Os mesmos
 // rótulos de coluna são usados na importação (lib/importCsv.ts), então um
@@ -68,12 +79,14 @@ export function exportDeliveriesToCsv(
   volumesByDeliveryId?: Map<string, Volume[]>,
   // Só passado pelos relatórios internos (gestão/operador) — o relatório do
   // cliente nunca informa esse mapa, então a coluna nunca aparece pra esse perfil.
-  comprovantesByDeliveryId?: Map<string, DeliveryComprovante[]>
+  comprovantesByDeliveryId?: Map<string, DeliveryComprovante[]>,
+  ocorrenciasByDeliveryId?: Map<string, DeliveryOcorrencia[]>
 ) {
   const headers = [...DELIVERY_FIELDS, ...EXPORT_ONLY_FIELDS].filter((h) => !excludeKeys.includes(h.key));
   const extraHeaders = [
     ...(volumesByDeliveryId ? VOLUME_HEADERS : []),
     ...(comprovantesByDeliveryId ? ['Possui Anexo'] : []),
+    ...(ocorrenciasByDeliveryId ? ['Última Ocorrência Registrada'] : []),
   ];
   const headerRow = [...headers.map((h) => h.label), ...extraHeaders].join(';');
   const rows = [
@@ -93,6 +106,9 @@ export function exportDeliveriesToCsv(
       if (comprovantesByDeliveryId) {
         const temAnexo = (comprovantesByDeliveryId.get(d.id)?.length ?? 0) > 0;
         cells.push(temAnexo ? 'Sim' : 'Não');
+      }
+      if (ocorrenciasByDeliveryId) {
+        cells.push(escapeCsvValue(formatUltimaOcorrenciaRegistrada(ocorrenciasByDeliveryId.get(d.id) ?? [])));
       }
       return cells.join(';');
     }),

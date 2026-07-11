@@ -21,6 +21,7 @@ import EtiquetaPrintView from './layout/EtiquetaPrintView';
 import { SyncItemResult } from '../lib/melhorEnvio';
 import { Volume } from '../lib/deliveryVolumes';
 import { DeliveryComprovante } from '../lib/comprovantes';
+import { DeliveryOcorrencia } from '../lib/deliveryOcorrencias';
 
 interface GestaoEntregasProps {
   onNavigate: (page: ActivePage) => void;
@@ -29,6 +30,7 @@ interface GestaoEntregasProps {
   deliveries: Delivery[];
   volumesByDeliveryId: Map<string, Volume[]>;
   comprovantesByDeliveryId: Map<string, DeliveryComprovante[]>;
+  ocorrenciasByDeliveryId: Map<string, DeliveryOcorrencia[]>;
   onDeleteDelivery: (id: string) => Promise<void>;
   onSelectDeliveryForEdit: (delivery: Delivery) => void;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
@@ -46,6 +48,7 @@ export default function GestaoEntregasScreen({
   deliveries,
   volumesByDeliveryId,
   comprovantesByDeliveryId,
+  ocorrenciasByDeliveryId,
   onDeleteDelivery,
   onSelectDeliveryForEdit,
   onAddDelivery,
@@ -394,7 +397,7 @@ export default function GestaoEntregasScreen({
                 <span>{isSyncingTracking ? 'Sincronizando...' : `Atualizar Rastreio${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}</span>
               </button>
               <button
-                onClick={() => exportDeliveriesToCsv(sortedDeliveries, `gestao-entregas-${new Date().toISOString().split('T')[0]}.csv`, [], volumesByDeliveryId, comprovantesByDeliveryId)}
+                onClick={() => exportDeliveriesToCsv(sortedDeliveries, `gestao-entregas-${new Date().toISOString().split('T')[0]}.csv`, [], volumesByDeliveryId, comprovantesByDeliveryId, ocorrenciasByDeliveryId)}
                 className="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface-variant rounded-lg font-bold text-sm hover:bg-surface-container transition-all shadow-sm bg-white"
               >
                 <Download className="w-4 h-4" />
@@ -664,7 +667,7 @@ export default function GestaoEntregasScreen({
                       <SortableTh sortField="uf" label="UF" />
                       <SortableTh sortField="foneFax" label="Fone / Fax" />
                       <SortableTh sortField="motoristaNome" label="Motorista" />
-                      <SortableTh sortField="status" label="Status / Ocorrência" />
+                      <SortableTh sortField="status" label="Status / Observações" />
                       <SortableTh sortField="valorCobranca" label="Valor Cobrança" className="px-4 text-right" />
                       <SortableTh sortField="valorPagamento" label="Valor Pagto" className="px-4 text-right" />
                       <th className="px-4 py-3 text-right sticky top-0 right-0 z-20 bg-surface-container-low border-b border-outline-variant shadow-[-4px_0_12px_rgba(0,0,0,0.05)]">Ações</th>
@@ -781,7 +784,7 @@ export default function GestaoEntregasScreen({
                       <SortableTh sortField="previsao" label="Previsão" className="px-5" />
                       <SortableTh sortField="status" label="Status" className="px-5" />
                       <SortableTh sortField="motoristaNome" label="Motorista" className="px-5" />
-                      <th className="px-5 py-3 sticky top-0 z-10 bg-surface-container-low border-b border-outline-variant">Ocorrência</th>
+                      <th className="px-5 py-3 sticky top-0 z-10 bg-surface-container-low border-b border-outline-variant">Observações</th>
                       <th className="px-5 py-3 text-right sticky top-0 z-10 bg-surface-container-low border-b border-outline-variant">Ações</th>
                     </tr>
                   </thead>

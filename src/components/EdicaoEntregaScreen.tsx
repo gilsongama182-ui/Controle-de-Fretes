@@ -738,9 +738,9 @@ export default function EdicaoEntregaScreen({
                   )}
                 </div>
 
-                {/* Log occurrence input */}
+                {/* Free-text notes field */}
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Última Ocorrência</label>
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Observações</label>
                   <textarea
                     rows={3}
                     value={ocorrencia}

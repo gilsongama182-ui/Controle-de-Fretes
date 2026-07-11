@@ -8,6 +8,7 @@ import { formatNfe } from '../lib/formatNfe';
 import { isAtrasadoEfetivo, isEntregueNoPrazo, isEntregueForaDoPrazo } from '../lib/deliveryStatus';
 import { Volume } from '../lib/deliveryVolumes';
 import { DeliveryComprovante } from '../lib/comprovantes';
+import { DeliveryOcorrencia } from '../lib/deliveryOcorrencias';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -21,6 +22,7 @@ interface DashboardOperadorProps {
   deliveries: Delivery[];
   volumesByDeliveryId: Map<string, Volume[]>;
   comprovantesByDeliveryId: Map<string, DeliveryComprovante[]>;
+  ocorrenciasByDeliveryId: Map<string, DeliveryOcorrencia[]>;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
   onSelectDeliveryForEdit: (delivery: Delivery) => void;
@@ -33,6 +35,7 @@ export default function DashboardOperadorScreen({
   deliveries,
   volumesByDeliveryId,
   comprovantesByDeliveryId,
+  ocorrenciasByDeliveryId,
   onAddDelivery,
   onImportDeliveries,
   onSelectDeliveryForEdit
@@ -158,7 +161,7 @@ export default function DashboardOperadorScreen({
 
             <div className="flex gap-2">
               <button
-                onClick={() => exportDeliveriesToCsv(filteredDeliveriesFull, `relatorio-entregas-${new Date().toISOString().split('T')[0]}.csv`, [], volumesByDeliveryId, comprovantesByDeliveryId)}
+                onClick={() => exportDeliveriesToCsv(filteredDeliveriesFull, `relatorio-entregas-${new Date().toISOString().split('T')[0]}.csv`, [], volumesByDeliveryId, comprovantesByDeliveryId, ocorrenciasByDeliveryId)}
                 className="flex items-center gap-2 px-4 py-2 bg-surface border border-outline-variant rounded-lg text-on-surface hover:bg-surface-container-high transition-colors font-bold text-sm shadow-sm"
               >
                 <Download className="w-4 h-4" />
