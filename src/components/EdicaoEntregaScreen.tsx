@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
-  ChevronRight, Calendar, Landmark, MapPin, Save, ArrowLeft, ClipboardCopy, RefreshCw, Paperclip
+  ChevronRight, Calendar, Landmark, MapPin, Save, ArrowLeft, ClipboardCopy, RefreshCw, Paperclip, Plus, Trash2, AlertTriangle
 } from 'lucide-react';
 import { ActivePage, AtrasoResponsabilidade, Delivery, DeliveryStatus, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
@@ -15,6 +15,9 @@ import NovaEntregaModal from './layout/NovaEntregaModal';
 import ImportModal from './layout/ImportModal';
 import ComprovanteModal from './layout/ComprovanteModal';
 import { DeliveryComprovante } from '../lib/comprovantes';
+import { DeliveryOcorrencia, TipoOcorrencia } from '../lib/deliveryOcorrencias';
+
+const TIPOS_OCORRENCIA: TipoOcorrencia[] = ['DESTINATÁRIO AUSENTE', 'ENDEREÇO INCORRETO', 'RECUSADO PELO DESTINATÁRIO'];
 
 interface EdicaoEntregaProps {
   onNavigate: (page: ActivePage) => void;
@@ -23,12 +26,15 @@ interface EdicaoEntregaProps {
   delivery: Delivery | null;
   deliveries: Delivery[];
   comprovantesByDeliveryId: Map<string, DeliveryComprovante[]>;
+  ocorrenciasByDeliveryId: Map<string, DeliveryOcorrencia[]>;
   onUpdateDelivery: (id: string, patch: Partial<Delivery>) => Promise<void>;
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
   onSyncTracking: (ids: string[]) => Promise<SyncItemResult[]>;
   onUploadComprovante: (deliveryId: string, file: File) => Promise<void>;
   onRemoveComprovante: (id: string, path: string) => Promise<void>;
+  onAddOcorrencia: (deliveryId: string, tipo: TipoOcorrencia, dataOcorrencia: string) => Promise<void>;
+  onRemoveOcorrencia: (id: string) => Promise<void>;
 }
 
 export default function EdicaoEntregaScreen({
@@ -38,18 +44,24 @@ export default function EdicaoEntregaScreen({
   delivery,
   deliveries,
   comprovantesByDeliveryId,
+  ocorrenciasByDeliveryId,
   onUpdateDelivery,
   onAddDelivery,
   onImportDeliveries,
   onSyncTracking,
   onUploadComprovante,
-  onRemoveComprovante
+  onRemoveComprovante,
+  onAddOcorrencia,
+  onRemoveOcorrencia
 }: EdicaoEntregaProps) {
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   const [isComprovanteOpen, setIsComprovanteOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [novoTipoOcorrencia, setNovoTipoOcorrencia] = useState<TipoOcorrencia | ''>('');
+  const [novaDataOcorrencia, setNovaDataOcorrencia] = useState(() => new Date().toISOString().slice(0, 10));
+  const [isRegistrandoOcorrencia, setIsRegistrandoOcorrencia] = useState(false);
 
   // Editable Form states (inicializados com fallback vazio; sincronizados abaixo quando `delivery` existe)
   // ENTREGUE sem nenhuma Data de Entrega é um estado inconsistente (pode ter
@@ -131,10 +143,47 @@ export default function EdicaoEntregaScreen({
   }
 
   const deliveryComprovantes = comprovantesByDeliveryId.get(delivery.id) ?? [];
+  const deliveryOcorrencias = [...(ocorrenciasByDeliveryId.get(delivery.id) ?? [])].sort((a, b) =>
+    b.dataOcorrencia !== a.dataOcorrencia
+      ? b.dataOcorrencia.localeCompare(a.dataOcorrencia)
+      : b.createdAt.localeCompare(a.createdAt)
+  );
 
   const handleCopyTrackingCode = () => {
     navigator.clipboard.writeText(delivery.codigoRastreio);
     alert(`Código de rastreamento ${delivery.codigoRastreio} copiado!`);
+  };
+
+  // Cada ocorrência registrada fica guardada com sua própria data — uma nova
+  // não substitui as anteriores, ficam todas listadas (ver
+  // supabase/migrations/024_ocorrencias_registradas.sql).
+  const handleRegistrarOcorrencia = async () => {
+    if (!novoTipoOcorrencia) {
+      alert('Selecione o tipo de ocorrência.');
+      return;
+    }
+    if (!novaDataOcorrencia) {
+      alert('Informe a data da ocorrência.');
+      return;
+    }
+    setIsRegistrandoOcorrencia(true);
+    try {
+      await onAddOcorrencia(delivery.id, novoTipoOcorrencia, novaDataOcorrencia);
+      setNovoTipoOcorrencia('');
+    } catch (err) {
+      alert(err instanceof Error ? `Não foi possível registrar a ocorrência: ${err.message}` : 'Não foi possível registrar a ocorrência.');
+    } finally {
+      setIsRegistrandoOcorrencia(false);
+    }
+  };
+
+  const handleRemoverOcorrencia = async (id: string) => {
+    if (!window.confirm('Remover esta ocorrência registrada?')) return;
+    try {
+      await onRemoveOcorrencia(id);
+    } catch (err) {
+      alert(err instanceof Error ? `Não foi possível remover a ocorrência: ${err.message}` : 'Não foi possível remover a ocorrência.');
+    }
   };
 
   const foraDoPrazo = (entrega: string, prev: string) => !!entrega && !!prev && entrega > prev;
@@ -632,6 +681,63 @@ export default function EdicaoEntregaScreen({
                     <option value="FALHA">🛑 FALHA</option>
                     <option value="DEVOLVIDO">↩️ DEVOLVIDO</option>
                   </select>
+                </div>
+
+                {/* Registro de ocorrências tipificadas (com data), acumulativo */}
+                <div className="space-y-2">
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Registrar Ocorrência</label>
+                  <div className="flex flex-col sm:flex-row gap-2">
+                    <select
+                      value={novoTipoOcorrencia}
+                      onChange={(e) => setNovoTipoOcorrencia(e.target.value as TipoOcorrencia | '')}
+                      className="flex-1 p-2.5 bg-surface border border-outline-variant rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary font-medium cursor-pointer"
+                    >
+                      <option value="">Selecione a ocorrência...</option>
+                      {TIPOS_OCORRENCIA.map((tipo) => (
+                        <option key={tipo} value={tipo}>{tipo}</option>
+                      ))}
+                    </select>
+                    <input
+                      type="date"
+                      value={novaDataOcorrencia}
+                      onChange={(e) => setNovaDataOcorrencia(e.target.value)}
+                      className="p-2.5 bg-surface border border-outline-variant rounded-lg text-xs outline-none focus:ring-2 focus:ring-primary font-medium"
+                    />
+                    <button
+                      type="button"
+                      onClick={handleRegistrarOcorrencia}
+                      disabled={isRegistrandoOcorrencia}
+                      className="flex items-center justify-center gap-1 px-3 py-2 bg-secondary-container text-secondary rounded-lg text-xs font-bold hover:opacity-90 transition-all disabled:opacity-50 shrink-0"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Registrar</span>
+                    </button>
+                  </div>
+
+                  {deliveryOcorrencias.length > 0 && (
+                    <ul className="space-y-1.5 pt-1">
+                      {deliveryOcorrencias.map((oc) => (
+                        <li
+                          key={oc.id}
+                          className="flex items-center justify-between gap-2 px-3 py-2 bg-amber-50 border border-amber-200 rounded-lg text-xs"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <AlertTriangle className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                            <span className="font-bold text-amber-800 truncate">{oc.tipo}</span>
+                            <span className="text-amber-700 shrink-0">{formatDateBR(oc.dataOcorrencia)}</span>
+                          </div>
+                          <button
+                            type="button"
+                            onClick={() => handleRemoverOcorrencia(oc.id)}
+                            title="Remover ocorrência"
+                            className="text-amber-600 hover:text-error shrink-0"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
                 </div>
 
                 {/* Log occurrence input */}

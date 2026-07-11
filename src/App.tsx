@@ -18,6 +18,7 @@ import {
 import { syncTracking, SyncItemResult } from './lib/melhorEnvio';
 import { fetchAllVolumes, saveVolumesForDelivery, Volume, VolumeInput } from './lib/deliveryVolumes';
 import { fetchAllComprovantes, uploadComprovante, removeComprovante, DeliveryComprovante } from './lib/comprovantes';
+import { fetchAllOcorrencias, addOcorrencia, removeOcorrencia, DeliveryOcorrencia, TipoOcorrencia } from './lib/deliveryOcorrencias';
 
 // Import Screen Components
 import LoginScreen from './components/LoginScreen';
@@ -74,6 +75,7 @@ function AppShell() {
   const [deliveries, setDeliveries] = useState<Delivery[]>([]);
   const [volumes, setVolumes] = useState<Volume[]>([]);
   const [comprovantes, setComprovantes] = useState<DeliveryComprovante[]>([]);
+  const [ocorrencias, setOcorrencias] = useState<DeliveryOcorrencia[]>([]);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const lastHandledSessionId = useRef<string | null>(null);
@@ -90,6 +92,7 @@ function AppShell() {
         setDeliveries([]);
         setVolumes([]);
         setComprovantes([]);
+        setOcorrencias([]);
         setSelectedDelivery(null);
       }
       lastHandledSessionId.current = null;
@@ -143,6 +146,11 @@ function AppShell() {
         if (active) setComprovantes(rows);
       })
       .catch((err) => console.error('Falha ao buscar comprovantes:', err));
+    fetchAllOcorrencias()
+      .then((rows) => {
+        if (active) setOcorrencias(rows);
+      })
+      .catch((err) => console.error('Falha ao buscar ocorrências:', err));
     return () => {
       active = false;
     };
@@ -167,6 +175,16 @@ function AppShell() {
     }
     return map;
   }, [comprovantes]);
+
+  const ocorrenciasByDeliveryId = useMemo(() => {
+    const map = new Map<string, DeliveryOcorrencia[]>();
+    for (const ocorrencia of ocorrencias) {
+      const list = map.get(ocorrencia.deliveryId);
+      if (list) list.push(ocorrencia);
+      else map.set(ocorrencia.deliveryId, [ocorrencia]);
+    }
+    return map;
+  }, [ocorrencias]);
 
   const handleLogout = async () => {
     await signOut();
@@ -236,6 +254,16 @@ function AppShell() {
   const handleRemoveComprovante = async (id: string, path: string) => {
     await removeComprovante(id, path);
     setComprovantes((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  const handleAddOcorrencia = async (deliveryId: string, tipo: TipoOcorrencia, dataOcorrencia: string) => {
+    const created = await addOcorrencia(deliveryId, tipo, dataOcorrencia);
+    setOcorrencias((prev) => [created, ...prev]);
+  };
+
+  const handleRemoveOcorrencia = async (id: string) => {
+    await removeOcorrencia(id);
+    setOcorrencias((prev) => prev.filter((o) => o.id !== id));
   };
 
   const handleSyncTracking = async (ids: string[]): Promise<SyncItemResult[]> => {
@@ -321,12 +349,15 @@ function AppShell() {
           delivery={selectedDelivery}
           deliveries={deliveries}
           comprovantesByDeliveryId={comprovantesByDeliveryId}
+          ocorrenciasByDeliveryId={ocorrenciasByDeliveryId}
           onUpdateDelivery={handleUpdateDelivery}
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
           onSyncTracking={handleSyncTracking}
           onUploadComprovante={handleUploadComprovante}
           onRemoveComprovante={handleRemoveComprovante}
+          onAddOcorrencia={handleAddOcorrencia}
+          onRemoveOcorrencia={handleRemoveOcorrencia}
         />
       );
 
