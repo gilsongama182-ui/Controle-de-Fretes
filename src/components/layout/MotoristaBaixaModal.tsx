@@ -141,18 +141,20 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar, onUpl
           </div>
         </div>
 
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-secondary uppercase tracking-wider block">
-            Nome Recebedor {status === 'ENTREGUE' && <span className="text-error">*</span>}
-          </label>
-          <input
-            type="text"
-            value={nomeRecebedor}
-            onChange={(e) => setNomeRecebedor(e.target.value)}
-            placeholder="Quem recebeu a entrega"
-            className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
-          />
-        </div>
+        {status !== 'FALHA' && (
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-secondary uppercase tracking-wider block">
+              Nome Recebedor {status === 'ENTREGUE' && <span className="text-error">*</span>}
+            </label>
+            <input
+              type="text"
+              value={nomeRecebedor}
+              onChange={(e) => setNomeRecebedor(e.target.value)}
+              placeholder="Quem recebeu a entrega"
+              className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+        )}
 
         {status !== 'FALHA' && (
           <div className="space-y-1">
