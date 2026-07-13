@@ -2,6 +2,7 @@ import { supabase } from './supabaseClient';
 import { AtrasoResponsabilidade, Delivery, DeliveryStatus } from '../types';
 import { formatNfe } from './formatNfe';
 import { formatPhoneBR } from './formatPhone';
+import { TipoOcorrencia } from './deliveryOcorrencias';
 
 export type NewDeliveryInput = Omit<Delivery, 'id' | 'updatedAt'>;
 
@@ -242,6 +243,8 @@ export interface BaixarEntregaInput {
   ocorrencia: string;
   nomeRecebedor: string;
   dataEntrega: string;
+  tipoOcorrencia?: TipoOcorrencia;
+  dataOcorrencia?: string;
 }
 
 export async function baixarEntregaMotorista(id: string, input: BaixarEntregaInput): Promise<Delivery> {
@@ -251,6 +254,8 @@ export async function baixarEntregaMotorista(id: string, input: BaixarEntregaInp
     p_ocorrencia: input.ocorrencia || null,
     p_nome_recebedor: input.nomeRecebedor || null,
     p_data_entrega: input.dataEntrega || null,
+    p_tipo_ocorrencia: input.tipoOcorrencia || null,
+    p_data_ocorrencia: input.dataOcorrencia || null,
   });
 
   if (error) throw error;

@@ -3,9 +3,12 @@ import { X, Camera, Loader2, CheckCircle2, XCircle, Undo2, Trash2 } from 'lucide
 import { Delivery, DeliveryStatus } from '../../types';
 import { formatNfe } from '../../lib/formatNfe';
 import { BaixarEntregaInput } from '../../lib/deliveries';
+import { TipoOcorrencia } from '../../lib/deliveryOcorrencias';
 import { getErrorMessage } from '../../lib/errorMessage';
 
 type Desfecho = Extract<DeliveryStatus, 'ENTREGUE' | 'FALHA' | 'DEVOLVIDO'>;
+
+const TIPOS_OCORRENCIA: TipoOcorrencia[] = ['DESTINATÁRIO AUSENTE', 'ENDEREÇO INCORRETO', 'RECUSADO PELO DESTINATÁRIO'];
 
 interface MotoristaBaixaModalProps {
   delivery: Delivery | null;
@@ -27,6 +30,8 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar, onUpl
   const [nomeRecebedor, setNomeRecebedor] = useState('');
   const [dataEntrega, setDataEntrega] = useState(todayStr());
   const [ocorrencia, setOcorrencia] = useState('');
+  const [tipoOcorrencia, setTipoOcorrencia] = useState<TipoOcorrencia | ''>('');
+  const [dataOcorrencia, setDataOcorrencia] = useState(todayStr());
   const [fotos, setFotos] = useState<File[]>([]);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -39,6 +44,8 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar, onUpl
     setNomeRecebedor('');
     setDataEntrega(todayStr());
     setOcorrencia('');
+    setTipoOcorrencia('');
+    setDataOcorrencia(todayStr());
     setFotos([]);
     setError('');
   }, [delivery?.id]);
@@ -64,8 +71,12 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar, onUpl
       setError('Informe o nome de quem recebeu a entrega.');
       return;
     }
-    if (status !== 'ENTREGUE' && !ocorrencia.trim()) {
-      setError('Descreva a ocorrência para registrar falha ou devolução.');
+    if (status !== 'ENTREGUE' && !tipoOcorrencia) {
+      setError('Selecione o tipo de ocorrência para registrar falha ou devolução.');
+      return;
+    }
+    if (status !== 'ENTREGUE' && !dataOcorrencia) {
+      setError('Informe a data da ocorrência.');
       return;
     }
 
@@ -80,6 +91,8 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar, onUpl
         ocorrencia,
         nomeRecebedor,
         dataEntrega,
+        tipoOcorrencia: status !== 'ENTREGUE' && tipoOcorrencia ? tipoOcorrencia : undefined,
+        dataOcorrencia: status !== 'ENTREGUE' && tipoOcorrencia ? dataOcorrencia : undefined,
       });
       onClose();
     } catch (err) {
@@ -152,15 +165,41 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar, onUpl
           />
         </div>
 
+        {status !== 'ENTREGUE' && (
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-secondary uppercase tracking-wider block">
+              Tipo de Ocorrência <span className="text-error">*</span>
+            </label>
+            <select
+              value={tipoOcorrencia}
+              onChange={(e) => setTipoOcorrencia(e.target.value as TipoOcorrencia | '')}
+              className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+            >
+              <option value="">Selecione a ocorrência...</option>
+              {TIPOS_OCORRENCIA.map((tipo) => (
+                <option key={tipo} value={tipo}>{tipo}</option>
+              ))}
+            </select>
+
+            <label className="text-xs font-bold text-secondary uppercase tracking-wider block pt-1">
+              Data da Ocorrência <span className="text-error">*</span>
+            </label>
+            <input
+              type="date"
+              value={dataOcorrencia}
+              onChange={(e) => setDataOcorrencia(e.target.value)}
+              className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+            />
+          </div>
+        )}
+
         <div className="space-y-1">
-          <label className="text-xs font-bold text-secondary uppercase tracking-wider block">
-            Ocorrência {status !== 'ENTREGUE' && <span className="text-error">*</span>}
-          </label>
+          <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Observações</label>
           <textarea
             rows={3}
             value={ocorrencia}
             onChange={(e) => setOcorrencia(e.target.value)}
-            placeholder={status === 'ENTREGUE' ? 'Observação (opcional)' : 'Explique o motivo'}
+            placeholder="Observação (opcional)"
             className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
           />
         </div>
