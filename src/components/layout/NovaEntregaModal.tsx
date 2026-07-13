@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { X } from 'lucide-react';
 import { NewDeliveryInput } from '../../lib/deliveries';
+import { UFS_BR } from '../../lib/ufs';
 
 interface NovaEntregaModalProps {
   open: boolean;
@@ -230,12 +231,9 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
                         onChange={(e) => setUf(e.target.value)}
                         className="w-full p-2.5 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
                       >
-                        <option value="SP">SP</option>
-                        <option value="RJ">RJ</option>
-                        <option value="MG">MG</option>
-                        <option value="PR">PR</option>
-                        <option value="SC">SC</option>
-                        <option value="AM">AM</option>
+                        {UFS_BR.map(({ sigla }) => (
+                          <option key={sigla} value={sigla}>{sigla}</option>
+                        ))}
                       </select>
                     </div>
                   </div>

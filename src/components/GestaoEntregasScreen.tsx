@@ -22,6 +22,7 @@ import { SyncItemResult } from '../lib/melhorEnvio';
 import { Volume } from '../lib/deliveryVolumes';
 import { DeliveryComprovante } from '../lib/comprovantes';
 import { DeliveryOcorrencia } from '../lib/deliveryOcorrencias';
+import { UFS_BR } from '../lib/ufs';
 
 interface GestaoEntregasProps {
   onNavigate: (page: ActivePage) => void;
@@ -535,10 +536,9 @@ export default function GestaoEntregasScreen({
                   className="px-3 py-2 border border-outline-variant rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none cursor-pointer"
                 >
                   <option value="">UF: Todos</option>
-                  <option value="SP">São Paulo</option>
-                  <option value="RJ">Rio de Janeiro</option>
-                  <option value="MG">Minas Gerais</option>
-                  <option value="PR">Paraná</option>
+                  {UFS_BR.map(({ sigla, nome }) => (
+                    <option key={sigla} value={sigla}>{nome}</option>
+                  ))}
                 </select>
 
                 {/* Comprovante anexado ou não */}

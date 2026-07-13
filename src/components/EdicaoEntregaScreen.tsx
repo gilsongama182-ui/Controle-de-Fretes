@@ -16,6 +16,7 @@ import ImportModal from './layout/ImportModal';
 import ComprovanteModal from './layout/ComprovanteModal';
 import { DeliveryComprovante } from '../lib/comprovantes';
 import { DeliveryOcorrencia, TipoOcorrencia } from '../lib/deliveryOcorrencias';
+import { UFS_BR } from '../lib/ufs';
 
 const TIPOS_OCORRENCIA: TipoOcorrencia[] = ['DESTINATÁRIO AUSENTE', 'ENDEREÇO INCORRETO', 'RECUSADO PELO DESTINATÁRIO'];
 
@@ -623,13 +624,9 @@ export default function EdicaoEntregaScreen({
                         onChange={(e) => setUf(e.target.value)}
                         className="w-full p-2.5 bg-surface-container-low border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary cursor-pointer font-bold"
                       >
-                        <option value="SP">SP</option>
-                        <option value="RJ">RJ</option>
-                        <option value="MG">MG</option>
-                        <option value="PR">PR</option>
-                        <option value="SC">SC</option>
-                        <option value="RS">RS</option>
-                        <option value="AM">AM</option>
+                        {UFS_BR.map(({ sigla }) => (
+                          <option key={sigla} value={sigla}>{sigla}</option>
+                        ))}
                       </select>
                     </div>
 
