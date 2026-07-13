@@ -90,7 +90,7 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar, onUpl
         status,
         ocorrencia,
         nomeRecebedor,
-        dataEntrega,
+        dataEntrega: status !== 'FALHA' ? dataEntrega : '',
         tipoOcorrencia: status !== 'ENTREGUE' && tipoOcorrencia ? tipoOcorrencia : undefined,
         dataOcorrencia: status !== 'ENTREGUE' && tipoOcorrencia ? dataOcorrencia : undefined,
       });
@@ -154,16 +154,18 @@ export default function MotoristaBaixaModal({ delivery, onClose, onBaixar, onUpl
           />
         </div>
 
-        <div className="space-y-1">
-          <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Data</label>
-          <input
-            type="date"
-            required
-            value={dataEntrega}
-            onChange={(e) => setDataEntrega(e.target.value)}
-            className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
-          />
-        </div>
+        {status !== 'FALHA' && (
+          <div className="space-y-1">
+            <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Data</label>
+            <input
+              type="date"
+              required
+              value={dataEntrega}
+              onChange={(e) => setDataEntrega(e.target.value)}
+              className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary"
+            />
+          </div>
+        )}
 
         {status !== 'ENTREGUE' && (
           <div className="space-y-1">
