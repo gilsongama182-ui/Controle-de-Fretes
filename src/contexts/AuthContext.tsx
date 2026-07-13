@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import type { Session, AuthError } from '@supabase/supabase-js';
 import { supabase } from '../lib/supabaseClient';
 import { User, ProfileType, Genero, AccountStatus } from '../types';
@@ -24,6 +24,10 @@ function fromProfileRow(row: ProfileRow): User {
     status: row.status,
   };
 }
+
+// Tempo de inatividade (sem clique/tecla/scroll) até deslogar automaticamente.
+const IDLE_TIMEOUT_MS = 10 * 60 * 1000;
+const IDLE_EVENTS = ['mousedown', 'mousemove', 'keydown', 'touchstart', 'scroll', 'wheel'] as const;
 
 interface SignUpMeta {
   name: string;
@@ -130,6 +134,33 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     await supabase.auth.signOut();
   };
+
+  // Desloga automaticamente após IDLE_TIMEOUT_MS sem interação, enquanto
+  // houver sessão ativa. O timer só é armado quando há login (evita rodar
+  // na tela de login) e é reiniciado a cada evento de atividade do usuário.
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (!session) {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      return;
+    }
+
+    const resetTimer = () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      idleTimerRef.current = setTimeout(() => {
+        supabase.auth.signOut();
+      }, IDLE_TIMEOUT_MS);
+    };
+
+    resetTimer();
+    IDLE_EVENTS.forEach((event) => window.addEventListener(event, resetTimer));
+
+    return () => {
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+      IDLE_EVENTS.forEach((event) => window.removeEventListener(event, resetTimer));
+    };
+  }, [session]);
 
   const refreshProfile = async () => {
     if (session?.user) await loadProfile(session.user.id);
