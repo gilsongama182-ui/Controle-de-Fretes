@@ -3,6 +3,7 @@ import { Truck, AlertTriangle } from 'lucide-react';
 import { ActivePage, Delivery } from './types';
 import { Partner } from './lib/partners';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { supabase } from './lib/supabaseClient';
 import {
   fetchDeliveries,
   createDelivery,
@@ -153,6 +154,65 @@ function AppShell() {
       .catch((err) => console.error('Falha ao buscar ocorrências:', err));
     return () => {
       active = false;
+    };
+  }, [session?.user.id, profile?.id]);
+
+  // Mantém as telas em sincronia quando outro usuário/aba insere, edita ou
+  // remove entregas, cubagem, comprovantes ou ocorrências — sem precisar de
+  // F5. Reaproveita os mesmos fetchers em massa (RLS já filtra o que cada
+  // papel pode ver); debounce evita refetch repetido em rajadas de eventos
+  // (ex: importação de várias entregas de uma vez).
+  useEffect(() => {
+    if (!session || !profile || profile.status !== 'aprovado') return;
+    let active = true;
+    let deliveriesTimer: ReturnType<typeof setTimeout> | undefined;
+    let volumesTimer: ReturnType<typeof setTimeout> | undefined;
+    let comprovantesTimer: ReturnType<typeof setTimeout> | undefined;
+    let ocorrenciasTimer: ReturnType<typeof setTimeout> | undefined;
+
+    const channel = supabase
+      .channel('realtime-deliveries')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'deliveries' }, () => {
+        clearTimeout(deliveriesTimer);
+        deliveriesTimer = setTimeout(() => {
+          fetchDeliveries()
+            .then((rows) => { if (active) setDeliveries(rows); })
+            .catch((err) => console.error('Falha ao sincronizar entregas:', err));
+        }, 400);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_volumes' }, () => {
+        clearTimeout(volumesTimer);
+        volumesTimer = setTimeout(() => {
+          fetchAllVolumes()
+            .then((rows) => { if (active) setVolumes(rows); })
+            .catch((err) => console.error('Falha ao sincronizar cubagem:', err));
+        }, 400);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_comprovantes' }, () => {
+        clearTimeout(comprovantesTimer);
+        comprovantesTimer = setTimeout(() => {
+          fetchAllComprovantes()
+            .then((rows) => { if (active) setComprovantes(rows); })
+            .catch((err) => console.error('Falha ao sincronizar comprovantes:', err));
+        }, 400);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'delivery_ocorrencias' }, () => {
+        clearTimeout(ocorrenciasTimer);
+        ocorrenciasTimer = setTimeout(() => {
+          fetchAllOcorrencias()
+            .then((rows) => { if (active) setOcorrencias(rows); })
+            .catch((err) => console.error('Falha ao sincronizar ocorrências:', err));
+        }, 400);
+      })
+      .subscribe();
+
+    return () => {
+      active = false;
+      clearTimeout(deliveriesTimer);
+      clearTimeout(volumesTimer);
+      clearTimeout(comprovantesTimer);
+      clearTimeout(ocorrenciasTimer);
+      supabase.removeChannel(channel);
     };
   }, [session?.user.id, profile?.id]);
 
