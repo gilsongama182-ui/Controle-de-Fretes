@@ -151,7 +151,13 @@ export default function DashboardClienteScreen({
   return (
     <div className="bg-surface text-on-surface font-sans min-h-screen flex flex-col">
 
-      <ClienteHeader profile={user} onLogout={onLogout} deliveries={deliveries} onMarkFalhaLida={onMarkFalhaLida} />
+      <ClienteHeader
+        profile={user}
+        onLogout={onLogout}
+        deliveries={deliveries}
+        onMarkFalhaLida={onMarkFalhaLida}
+        ocorrenciasByDeliveryId={ocorrenciasByDeliveryId}
+      />
 
       {/* Main Container */}
       <main className="flex-1 py-8 px-6 max-w-7xl mx-auto w-full">

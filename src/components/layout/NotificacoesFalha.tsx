@@ -3,13 +3,22 @@ import { Bell, AlertTriangle } from 'lucide-react';
 import { Delivery } from '../../types';
 import { isFalhaNaoLida, ultimasFalhas } from '../../lib/deliveryStatus';
 import { formatNfe } from '../../lib/formatNfe';
+import { formatDateBR } from '../../lib/formatDate';
+import { DeliveryOcorrencia } from '../../lib/deliveryOcorrencias';
 
 interface NotificacoesFalhaProps {
   deliveries: Delivery[];
   onMarkRead: (id: string) => Promise<void>;
+  ocorrenciasByDeliveryId: Map<string, DeliveryOcorrencia[]>;
 }
 
-export default function NotificacoesFalha({ deliveries, onMarkRead }: NotificacoesFalhaProps) {
+function ultimaOcorrenciaLabel(ocorrencias: DeliveryOcorrencia[] | undefined): string {
+  if (!ocorrencias || ocorrencias.length === 0) return 'Nenhuma ocorrência registrada.';
+  const ultima = [...ocorrencias].sort((a, b) => b.dataOcorrencia.localeCompare(a.dataOcorrencia))[0];
+  return `${ultima.tipo} (${formatDateBR(ultima.dataOcorrencia)})`;
+}
+
+export default function NotificacoesFalha({ deliveries, onMarkRead, ocorrenciasByDeliveryId }: NotificacoesFalhaProps) {
   const [open, setOpen] = useState(false);
   const [tab, setTab] = useState<'alertas' | 'historico'>('alertas');
   const containerRef = useRef<HTMLDivElement>(null);
@@ -100,7 +109,7 @@ export default function NotificacoesFalha({ deliveries, onMarkRead }: Notificaco
                     )}
                   </div>
                   <p className="text-xs font-semibold text-on-surface">{d.nomeRazaoSocial}</p>
-                  <p className="text-xs text-on-surface-variant">{d.ocorrencia || 'Nenhuma ocorrência informada.'}</p>
+                  <p className="text-xs text-on-surface-variant">{ultimaOcorrenciaLabel(ocorrenciasByDeliveryId.get(d.id))}</p>
                 </div>
               ))
             )}

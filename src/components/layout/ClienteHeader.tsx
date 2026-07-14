@@ -1,5 +1,6 @@
 import { HelpCircle, LogOut } from 'lucide-react';
 import { Delivery, User } from '../../types';
+import { DeliveryOcorrencia } from '../../lib/deliveryOcorrencias';
 import Avatar from './Avatar';
 import NotificacoesFalha from './NotificacoesFalha';
 
@@ -8,9 +9,10 @@ interface ClienteHeaderProps {
   onLogout: () => void;
   deliveries: Delivery[];
   onMarkFalhaLida: (id: string) => Promise<void>;
+  ocorrenciasByDeliveryId: Map<string, DeliveryOcorrencia[]>;
 }
 
-export default function ClienteHeader({ profile, onLogout, deliveries, onMarkFalhaLida }: ClienteHeaderProps) {
+export default function ClienteHeader({ profile, onLogout, deliveries, onMarkFalhaLida, ocorrenciasByDeliveryId }: ClienteHeaderProps) {
   return (
     <header className="sticky top-0 z-50 flex justify-between items-center w-full px-6 h-16 bg-surface border-b border-outline-variant">
       <div className="flex items-center gap-2">
@@ -26,7 +28,7 @@ export default function ClienteHeader({ profile, onLogout, deliveries, onMarkFal
           <HelpCircle className="w-5 h-5" />
         </button>
 
-        <NotificacoesFalha deliveries={deliveries} onMarkRead={onMarkFalhaLida} />
+        <NotificacoesFalha deliveries={deliveries} onMarkRead={onMarkFalhaLida} ocorrenciasByDeliveryId={ocorrenciasByDeliveryId} />
 
         <div className="h-8 w-px bg-outline-variant hidden sm:block"></div>
 
