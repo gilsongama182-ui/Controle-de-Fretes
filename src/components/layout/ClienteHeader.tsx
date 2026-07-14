@@ -1,4 +1,4 @@
-import { HelpCircle, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Delivery, User } from '../../types';
 import { DeliveryOcorrencia } from '../../lib/deliveryOcorrencias';
 import Avatar from './Avatar';
@@ -20,14 +20,6 @@ export default function ClienteHeader({ profile, onLogout, deliveries, onMarkFal
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4">
-        <button
-          onClick={() => alert('Manual de instruções e suporte para rastreamento de cargas.')}
-          className="p-2 hover:bg-secondary-container/50 transition-colors duration-200 rounded-full text-secondary"
-          title="Suporte"
-        >
-          <HelpCircle className="w-5 h-5" />
-        </button>
-
         <NotificacoesFalha deliveries={deliveries} onMarkRead={onMarkFalhaLida} ocorrenciasByDeliveryId={ocorrenciasByDeliveryId} />
 
         <div className="h-8 w-px bg-outline-variant hidden sm:block"></div>
