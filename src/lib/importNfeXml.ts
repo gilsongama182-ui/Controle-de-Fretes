@@ -138,7 +138,7 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
     uf,
     foneFax: text(enderDest, 'fone'),
     status: 'AGUARDANDO EXPEDIÇÃO',
-    ocorrencia: 'Nenhuma',
+    ocorrencia: '',
     atrasoResponsabilidade: 'proprio',
     falhaLidaEm: '',
     valorCobranca: 0,

@@ -197,7 +197,7 @@ export function downloadCsvTemplate(filename: string) {
       case 'uf': return 'SP';
       case 'foneFax': return '(11) 90000-0000';
       case 'status': return 'EM ROTA';
-      case 'ocorrencia': return 'Nenhuma';
+      case 'ocorrencia': return '';
       case 'valorCobranca': return '1000.00';
       case 'valorPagamento': return '650.00';
       case 'codigoRastreio': return '';
