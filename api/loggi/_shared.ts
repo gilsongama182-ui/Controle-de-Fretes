@@ -195,6 +195,12 @@ export async function captureDebug(page: Page): Promise<DebugCapture> {
 // função só lê a primeira página — ajustar aqui se for preciso "carregar
 // mais"/paginar quando os seletores reais forem confirmados.
 export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
+  // Modal de boas-vindas ("Bem-vindo à nova Loggi") aparece por cima do menu
+  // lateral e bloqueia o clique em "Envios nacionais" — fecha ele primeiro
+  // (best-effort: se não aparecer, não é erro, só não acha o botão e segue).
+  await clickButtonByText(page, 'Avançar', 'fechando modal de boas-vindas').catch(() => undefined);
+  await settle(500);
+
   await Promise.all([
     page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS }).catch(() => null),
     clickButtonByText(page, LOGGI_SHIPMENTS_MENU_TEXT, 'navegando pro menu de envios'),
