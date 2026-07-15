@@ -331,21 +331,26 @@ export function matchAndBuildPatch(
 // um valor adivinhado errado.
 //
 // Status reais confirmados na tabela "Envios Nacionais" da conta (coluna
-// Status): "Conferido", "Medido e pesado", "Coletado", "Cancelado". Só
-// "Coletado" foi mapeado com confiança (claramente "saiu pro trajeto" =
-// EM ROTA) — "Conferido"/"Medido e pesado" parecem ser etapas anteriores à
-// coleta (ainda não está de fato em rota) e "Cancelado" não tem
-// correspondente óbvio nos status do WLogis (cancelamento do envio é
-// diferente de falha/devolução de uma entrega que chegou a sair). Ficam
-// deliberadamente sem mapear até confirmar com o usuário o que cada um
-// deveria virar aqui.
+// Status): "Conferido", "Medido e pesado", "Coletado", "Cancelado".
+// Confirmado com o usuário: "Conferido" e "Medido e pesado" contam como
+// EM ROTA. "Cancelado" ainda não tem correspondente definido — fica
+// deliberadamente sem mapear (só atualiza loggi_last_sync_at) até decidir
+// o que deveria virar aqui.
 export function mapLoggiStatus(loggiStatus: string): DeliveryStatus | null {
   const s = loggiStatus.toLowerCase();
   if (s.includes('entregue')) return 'ENTREGUE';
   if (s.includes('devolv')) return 'DEVOLVIDO';
   if (s.includes('não entregue') || s.includes('nao entregue') || s.includes('falha') || s.includes('insucesso')) return 'FALHA';
   if (s.includes('atraso') || s.includes('atrasad')) return 'EM ATRASO';
-  if (s.includes('trânsito') || s.includes('transito') || s.includes('rota') || s.includes('coletad') || s.includes('saiu para entrega')) return 'EM ROTA';
+  if (
+    s.includes('trânsito') ||
+    s.includes('transito') ||
+    s.includes('rota') ||
+    s.includes('coletad') ||
+    s.includes('saiu para entrega') ||
+    s.includes('conferido') ||
+    s.includes('medido e pesado')
+  ) return 'EM ROTA';
   return null;
 }
 
