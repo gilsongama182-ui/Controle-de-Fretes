@@ -8,7 +8,7 @@ import { getErrorMessage } from '../../lib/errorMessage';
 
 type Desfecho = Extract<DeliveryStatus, 'ENTREGUE' | 'FALHA' | 'DEVOLVIDO'>;
 
-const TIPOS_OCORRENCIA: TipoOcorrencia[] = ['DESTINATÁRIO AUSENTE', 'ENDEREÇO INCORRETO', 'RECUSADO PELO DESTINATÁRIO'];
+const TIPOS_OCORRENCIA: TipoOcorrencia[] = ['DESTINATÁRIO AUSENTE', 'ENDEREÇO INCORRETO', 'RECUSADO PELO DESTINATÁRIO', 'DESTINATÁRIO DESCONHECIDO', 'ENDEREÇO INCOMPLETO'];
 
 interface MotoristaBaixaModalProps {
   delivery: Delivery | null;

@@ -19,7 +19,7 @@ import { DeliveryComprovante } from '../lib/comprovantes';
 import { DeliveryOcorrencia, TipoOcorrencia } from '../lib/deliveryOcorrencias';
 import { UFS_BR } from '../lib/ufs';
 
-const TIPOS_OCORRENCIA: TipoOcorrencia[] = ['DESTINATÁRIO AUSENTE', 'ENDEREÇO INCORRETO', 'RECUSADO PELO DESTINATÁRIO'];
+const TIPOS_OCORRENCIA: TipoOcorrencia[] = ['DESTINATÁRIO AUSENTE', 'ENDEREÇO INCORRETO', 'RECUSADO PELO DESTINATÁRIO', 'DESTINATÁRIO DESCONHECIDO', 'ENDEREÇO INCOMPLETO'];
 
 interface EdicaoEntregaProps {
   onNavigate: (page: ActivePage) => void;

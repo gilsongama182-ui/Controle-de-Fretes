@@ -5,7 +5,12 @@ import { supabase } from './supabaseClient';
 // Tabela filha (mesmo padrão de delivery_comprovantes, ver lib/comprovantes.ts)
 // porque uma entrega pode acumular várias ocorrências ao longo do tempo — uma
 // nova não substitui as anteriores.
-export type TipoOcorrencia = 'DESTINATÁRIO AUSENTE' | 'ENDEREÇO INCORRETO' | 'RECUSADO PELO DESTINATÁRIO';
+export type TipoOcorrencia =
+  | 'DESTINATÁRIO AUSENTE'
+  | 'ENDEREÇO INCORRETO'
+  | 'RECUSADO PELO DESTINATÁRIO'
+  | 'DESTINATÁRIO DESCONHECIDO'
+  | 'ENDEREÇO INCOMPLETO';
 
 export interface DeliveryOcorrencia {
   id: string;

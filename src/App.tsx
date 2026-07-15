@@ -387,6 +387,7 @@ function AppShell() {
           user={profile}
           deliveries={deliveries}
           ocorrenciasByDeliveryId={ocorrenciasByDeliveryId}
+          comprovantesByDeliveryId={comprovantesByDeliveryId}
           onMarkFalhaLida={handleMarkFalhaLida}
         />
       );

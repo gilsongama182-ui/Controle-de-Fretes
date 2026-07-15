@@ -1,11 +1,13 @@
 import { useState, useMemo } from 'react';
-import { Search, Download, ArrowLeft, X } from 'lucide-react';
+import { Search, Download, ArrowLeft, X, Paperclip, ExternalLink } from 'lucide-react';
 import { Delivery, User } from '../types';
 import { exportDeliveriesToCsv } from '../lib/exportCsv';
 import { formatDateBR } from '../lib/formatDate';
 import { formatNfe } from '../lib/formatNfe';
 import { isAtrasadoEfetivo, isEntregueForaDoPrazo } from '../lib/deliveryStatus';
 import { DeliveryOcorrencia } from '../lib/deliveryOcorrencias';
+import { DeliveryComprovante, getComprovanteUrl } from '../lib/comprovantes';
+import { getErrorMessage } from '../lib/errorMessage';
 import ClienteHeader from './layout/ClienteHeader';
 
 interface DashboardClienteProps {
@@ -13,6 +15,7 @@ interface DashboardClienteProps {
   user: User;
   deliveries: Delivery[];
   ocorrenciasByDeliveryId: Map<string, DeliveryOcorrencia[]>;
+  comprovantesByDeliveryId: Map<string, DeliveryComprovante[]>;
   onMarkFalhaLida: (id: string) => Promise<void>;
 }
 
@@ -21,9 +24,23 @@ export default function DashboardClienteScreen({
   user,
   deliveries,
   ocorrenciasByDeliveryId,
+  comprovantesByDeliveryId,
   onMarkFalhaLida
 }: DashboardClienteProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [comprovanteLoadingId, setComprovanteLoadingId] = useState<string | null>(null);
+
+  const handleVerComprovante = async (comprovante: DeliveryComprovante) => {
+    setComprovanteLoadingId(comprovante.id);
+    try {
+      const url = await getComprovanteUrl(comprovante.arquivoPath);
+      window.open(url, '_blank', 'noopener,noreferrer');
+    } catch (err) {
+      alert(getErrorMessage(err, 'Não foi possível abrir o comprovante.'));
+    } finally {
+      setComprovanteLoadingId(null);
+    }
+  };
   const [statusFilter, setStatusFilter] = useState('');
   const [showAll, setShowAll] = useState(false);
   const [selectedUf, setSelectedUf] = useState<string | null>(null);
@@ -317,11 +334,14 @@ export default function DashboardClienteScreen({
                     <th className="px-6 py-4">STATUS</th>
                     <th className="px-6 py-4">PREVISÃO</th>
                     <th className="px-6 py-4">DATA DE ENTREGA</th>
+                    <th className="px-6 py-4">COMPROVANTE</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-outline-variant">
                   {filteredDeliveries.length > 0 ? (
-                    filteredDeliveries.map((del) => (
+                    filteredDeliveries.map((del) => {
+                      const comprovantes = comprovantesByDeliveryId.get(del.id) ?? [];
+                      return (
                       <tr key={del.id} className="hover:bg-surface-container-low/50 transition-colors">
                         <td className="px-6 py-4 font-mono text-xs font-bold text-primary">{formatNfe(del.nfe)}</td>
                         <td className="px-6 py-4 font-bold text-sm text-on-surface">{del.nomeRazaoSocial}</td>
@@ -340,11 +360,35 @@ export default function DashboardClienteScreen({
                         </td>
                         <td className="px-6 py-4 text-sm text-on-surface-variant font-medium">{formatDateBR(del.previsao)}</td>
                         <td className="px-6 py-4 text-sm text-on-surface-variant font-medium">{del.dataEntrega ? formatDateBR(del.dataEntrega) : '—'}</td>
+                        <td className="px-6 py-4">
+                          {comprovantes.length === 0 ? (
+                            <span className="text-xs text-on-surface-variant">—</span>
+                          ) : (
+                            <div className="flex flex-col gap-1">
+                              {comprovantes.map((c, i) => (
+                                <button
+                                  key={c.id}
+                                  onClick={() => handleVerComprovante(c)}
+                                  disabled={comprovanteLoadingId === c.id}
+                                  className="text-xs font-bold text-primary hover:underline flex items-center gap-1 disabled:opacity-60"
+                                >
+                                  {comprovanteLoadingId === c.id ? (
+                                    <ExternalLink className="w-3.5 h-3.5" />
+                                  ) : (
+                                    <Paperclip className="w-3.5 h-3.5" />
+                                  )}
+                                  {comprovanteLoadingId === c.id ? 'Abrindo...' : comprovantes.length > 1 ? `Ver comprovante ${i + 1}` : 'Ver comprovante'}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </td>
                       </tr>
-                    ))
+                      );
+                    })
                   ) : (
                     <tr>
-                      <td colSpan={6} className="text-center py-8 text-sm text-secondary">
+                      <td colSpan={7} className="text-center py-8 text-sm text-secondary">
                         Nenhuma entrega encontrada para a sua busca.
                       </td>
                     </tr>
