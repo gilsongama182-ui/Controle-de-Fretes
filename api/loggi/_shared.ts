@@ -196,11 +196,22 @@ export async function captureDebug(page: Page): Promise<DebugCapture> {
 // mais"/paginar quando os seletores reais forem confirmados.
 export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
   // Modal de boas-vindas ("Bem-vindo à nova Loggi") aparece por cima do menu
-  // lateral e bloqueia o clique em "Envios nacionais" — é um carrossel de
-  // várias telas (clicar "Avançar" só passa pra próxima, não fecha), então
-  // usa Esc em vez de tentar navegar pelas etapas. Best-effort: se não
-  // aparecer nenhum modal, Esc não faz nada e segue normalmente.
+  // lateral (sempre, em toda sessão nova) e bloqueia o clique em "Envios
+  // nacionais". É um carrossel de várias telas — "Avançar" só passa pra
+  // próxima, não fecha — e Esc também não fecha. O botão de fechar (X) não
+  // tem texto nem aria-label, então acha por heurística: botão sem texto
+  // perto do topo da tela (onde o X fica posicionado nesse modal).
   await page.keyboard.press('Escape').catch(() => undefined);
+  await page
+    .evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button'));
+      const closeBtn = buttons.find((b) => {
+        const rect = b.getBoundingClientRect();
+        return !b.textContent?.trim() && rect.width > 0 && rect.height > 0 && rect.top < 200;
+      });
+      (closeBtn as HTMLButtonElement | undefined)?.click();
+    })
+    .catch(() => undefined);
   await settle(500);
 
   await Promise.all([
