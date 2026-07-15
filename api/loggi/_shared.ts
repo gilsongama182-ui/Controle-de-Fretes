@@ -119,6 +119,26 @@ async function clickButtonByText(page: Page, text: string, contexto: string): Pr
   await handle.click();
 }
 
+export interface DebugCapture {
+  url: string;
+  screenshotBase64: string;
+  htmlSnippet: string;
+}
+
+// Só chamada quando o run é disparado com ?debug=1 (ver cron-sync.ts) — tira
+// uma "foto" de onde o scraper travou (screenshot + HTML) pra dar pra
+// inspecionar e ajustar os seletores sem precisar de acesso direto à conta
+// da Loggi. HTML truncado pra não estourar o tamanho da resposta.
+export async function captureDebug(page: Page): Promise<DebugCapture> {
+  const screenshotBase64 = (await page.screenshot({ encoding: 'base64', type: 'png' })) as string;
+  const html = await page.content();
+  return {
+    url: page.url(),
+    screenshotBase64,
+    htmlSnippet: html.slice(0, 20000),
+  };
+}
+
 // Lê a lista/painel de envios já logado. Se a Loggi paginar a lista, essa
 // função só lê a primeira página — ajustar aqui se for preciso "carregar
 // mais"/paginar quando os seletores reais forem confirmados.

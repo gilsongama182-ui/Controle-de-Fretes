@@ -6,6 +6,7 @@ import {
   scrapeShipments,
   buildShipmentIndex,
   matchAndBuildPatch,
+  captureDebug,
   readAuthorized,
   DeliveryTrackingRow,
   sendJson,
@@ -54,20 +55,30 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     return;
   }
 
+  // ?debug=1 tira screenshot + HTML de onde travou e devolve na resposta,
+  // pra dar pra ajustar os seletores sem precisar de acesso à conta da
+  // Loggi. Não fica ligado por padrão pra não pesar a resposta do cron
+  // automático depois que estiver tudo ajustado.
+  const debugMode = !!req.url && req.url.includes('debug=1');
+
   const browser = await launchBrowser();
   let shipmentIndex;
   try {
     const page = await browser.newPage();
-    await loginToLoggi(page);
-    const shipments = await scrapeShipments(page);
-    shipmentIndex = buildShipmentIndex(shipments);
-  } catch (err) {
-    sendJson(res, 200, {
-      checked: deliveries.length,
-      updated: 0,
-      error: err instanceof Error ? err.message : 'Falha ao logar/ler o painel da Loggi.',
-    });
-    return;
+    try {
+      await loginToLoggi(page);
+      const shipments = await scrapeShipments(page);
+      shipmentIndex = buildShipmentIndex(shipments);
+    } catch (err) {
+      const debug = debugMode ? await captureDebug(page).catch(() => null) : null;
+      sendJson(res, 200, {
+        checked: deliveries.length,
+        updated: 0,
+        error: err instanceof Error ? err.message : 'Falha ao logar/ler o painel da Loggi.',
+        debug,
+      });
+      return;
+    }
   } finally {
     await browser.close();
   }
