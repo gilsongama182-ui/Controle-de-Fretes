@@ -111,6 +111,7 @@ export default function EdicaoEntregaScreen({
   const [valorCobranca, setValorCobranca] = useState(delivery?.valorCobranca ?? 0);
   const [valorPagamento, setValorPagamento] = useState(delivery?.valorPagamento ?? 0);
   const [melhorEnvioId, setMelhorEnvioId] = useState(delivery?.melhorEnvioId ?? '');
+  const [codigoRastreio, setCodigoRastreio] = useState(delivery?.codigoRastreio ?? '');
   const [motoristaId, setMotoristaId] = useState(delivery?.motoristaId ?? '');
   const [motoristas, setMotoristas] = useState<ProfileRecord[]>([]);
 
@@ -125,6 +126,12 @@ export default function EdicaoEntregaScreen({
   useEffect(() => {
     if (delivery?.melhorEnvioId) setMelhorEnvioId(delivery.melhorEnvioId);
   }, [delivery?.melhorEnvioId]);
+
+  // Mesma ideia pro código de rastreio: a sincronização automática (Melhor
+  // Envio ou Loggi) pode preencher/descobrir esse valor sozinha.
+  useEffect(() => {
+    if (delivery?.codigoRastreio) setCodigoRastreio(delivery.codigoRastreio);
+  }, [delivery?.codigoRastreio]);
 
   // Mesma ideia pro valor pago ao operador: quando a sincronização traz o
   // "Preço do envio" real da Melhor Envio, reflete no campo.
@@ -151,8 +158,8 @@ export default function EdicaoEntregaScreen({
   );
 
   const handleCopyTrackingCode = () => {
-    navigator.clipboard.writeText(delivery.codigoRastreio);
-    alert(`Código de rastreamento ${delivery.codigoRastreio} copiado!`);
+    navigator.clipboard.writeText(codigoRastreio);
+    alert(`Código de rastreamento ${codigoRastreio} copiado!`);
   };
 
   // Cada ocorrência registrada fica guardada com sua própria data — uma nova
@@ -271,6 +278,7 @@ export default function EdicaoEntregaScreen({
         valorCobranca,
         valorPagamento,
         melhorEnvioId,
+        codigoRastreio,
         motoristaId: motoristaId || '',
         motoristaNome
       });
@@ -833,13 +841,18 @@ export default function EdicaoEntregaScreen({
                   </div>
                 )}
 
-                {/* Tracking Code (Read-Only Copyable field) */}
+                {/* Tracking Code (editável — preenchido manualmente ou pela
+                    sincronização automática da Melhor Envio/Loggi) */}
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Código de Rastreamento</label>
                   <div className="flex rounded-lg overflow-hidden border border-outline-variant bg-surface">
-                    <span className="p-3 font-mono text-xs text-primary font-bold flex-1 truncate select-all">
-                      {delivery.codigoRastreio}
-                    </span>
+                    <input
+                      type="text"
+                      value={codigoRastreio}
+                      onChange={(e) => setCodigoRastreio(e.target.value)}
+                      placeholder="Código de rastreio (ex: da Loggi)"
+                      className="p-3 bg-transparent font-mono text-xs text-primary font-bold flex-1 outline-none"
+                    />
                     <button
                       type="button"
                       onClick={handleCopyTrackingCode}

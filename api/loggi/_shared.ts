@@ -40,11 +40,12 @@ const LOGGI_CONTINUE_BUTTON_TEXT = process.env.LOGGI_CONTINUE_BUTTON_TEXT || 'Co
 const LOGGI_SHIPMENTS_MENU_TEXT = process.env.LOGGI_SHIPMENTS_MENU_TEXT || 'Envios nacionais';
 
 // Confirmados inspecionando o HTML real da tabela (MUI Table — sem
-// data-testid por linha): cada linha é um <tr> dentro do <tbody>, e a 5ª
-// coluna é o código de rastreio, a 6ª é o status. Continuam configuráveis
-// por env var pro caso da Loggi mudar o layout de novo sem precisar de
-// deploy pra corrigir.
+// data-testid por linha): cada linha é um <tr> dentro do <tbody>; a 3ª
+// coluna é o prazo, a 5ª é o código de rastreio, a 6ª é o status. Continuam
+// configuráveis por env var pro caso da Loggi mudar o layout de novo sem
+// precisar de deploy pra corrigir.
 const LOGGI_ROW_SELECTOR = process.env.LOGGI_ROW_SELECTOR || 'tbody tr.MuiTableRow-root';
+const LOGGI_PRAZO_SELECTOR = process.env.LOGGI_PRAZO_SELECTOR || 'td:nth-child(3)';
 const LOGGI_TRACKING_SELECTOR = process.env.LOGGI_TRACKING_SELECTOR || 'td:nth-child(5)';
 const LOGGI_STATUS_SELECTOR = process.env.LOGGI_STATUS_SELECTOR || 'td:nth-child(6)';
 
@@ -72,11 +73,13 @@ export interface DeliveryTrackingRow {
   id: string;
   codigo_rastreio: string | null;
   melhor_envio_id: string | null;
+  previsao: string | null;
 }
 
 export interface LoggiShipment {
   trackingCode: string;
   rawStatus: string;
+  rawPrazo: string;
 }
 
 // Pacote pré-compilado do Chromium hospedado nos releases do próprio
@@ -266,18 +269,21 @@ export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
 
   return page.$$eval(
     LOGGI_ROW_SELECTOR,
-    (rows, trackingSelector, statusSelector) =>
+    (rows, trackingSelector, statusSelector, prazoSelector) =>
       rows
         .map((row) => {
           const trackingEl = row.querySelector(trackingSelector);
           const statusEl = row.querySelector(statusSelector);
+          const prazoEl = row.querySelector(prazoSelector);
           const trackingCode = trackingEl?.textContent?.trim() ?? '';
           const rawStatus = statusEl?.textContent?.trim() ?? '';
-          return { trackingCode, rawStatus };
+          const rawPrazo = prazoEl?.textContent?.trim() ?? '';
+          return { trackingCode, rawStatus, rawPrazo };
         })
         .filter((s) => s.trackingCode && s.rawStatus),
     LOGGI_TRACKING_SELECTOR,
-    LOGGI_STATUS_SELECTOR
+    LOGGI_STATUS_SELECTOR,
+    LOGGI_PRAZO_SELECTOR
   );
 }
 
@@ -323,7 +329,34 @@ export function matchAndBuildPatch(
     if (mappedStatus === 'ENTREGUE') patch.data_entrega = nowIso.split('T')[0];
   }
 
+  // Só preenche a previsão se ainda não tiver nenhuma — a pedido do
+  // usuário, a primeira previsão definida não pode ser trocada por
+  // atualizações posteriores da Loggi (mesmo padrão já usado pra
+  // codigo_rastreio na integração com a Melhor Envio: nunca sobrescreve
+  // algo que já foi preenchido).
+  if (!delivery.previsao) {
+    const previsao = parsePrazoLoggi(shipment.rawPrazo);
+    if (previsao) patch.previsao = previsao;
+  }
+
   return { ok: true, rawStatus: shipment.rawStatus, mappedStatus, patch };
+}
+
+const MESES_PT: Record<string, string> = {
+  jan: '01', fev: '02', mar: '03', abr: '04', mai: '05', jun: '06',
+  jul: '07', ago: '08', set: '09', out: '10', nov: '11', dez: '12',
+};
+
+// A coluna "Prazo" da Loggi mostra datas como "21 jul, 2026", ou texto como
+// "A definir" quando não há prazo (ex: envio cancelado) — nesse caso retorna
+// null e a previsão simplesmente não é tocada.
+export function parsePrazoLoggi(rawPrazo: string): string | null {
+  const match = /^(\d{1,2})\s+([a-zçã]{3})\.?,?\s+(\d{4})$/i.exec(rawPrazo.trim());
+  if (!match) return null;
+  const [, day, monthAbbr, year] = match;
+  const month = MESES_PT[monthAbbr.toLowerCase()];
+  if (!month) return null;
+  return `${year}-${month}-${day.padStart(2, '0')}`;
 }
 
 // Qualquer status não reconhecido retorna null de propósito (só atualiza

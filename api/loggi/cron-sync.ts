@@ -39,7 +39,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   // os dois crons brigem pelo mesmo campo status se isso mudar no futuro).
   const { data: deliveries, error: fetchError } = await supabase
     .from('deliveries')
-    .select('id, codigo_rastreio, melhor_envio_id')
+    .select('id, codigo_rastreio, melhor_envio_id, previsao')
     .in('status', ['EM ROTA', 'EM ATRASO'])
     .not('codigo_rastreio', 'is', null)
     .neq('codigo_rastreio', '')
