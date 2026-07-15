@@ -219,9 +219,16 @@ export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
   // coordenada de tela funciona em qualquer um desses casos, já que age no
   // nível do "mouse físico", não da árvore DOM — o X sempre aparece perto
   // do canto superior direito do cartão branco do modal.
+  await settle(1500);
   await page.keyboard.press('Escape').catch(() => undefined);
-  await page.mouse.click(688, 112).catch(() => undefined);
-  await settle(500);
+  for (let i = 0; i < 2; i++) {
+    await page.mouse.move(688, 112).catch(() => undefined);
+    await settle(150);
+    await page.mouse.down().catch(() => undefined);
+    await settle(100);
+    await page.mouse.up().catch(() => undefined);
+    await settle(600);
+  }
 
   await Promise.all([
     page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS }).catch(() => null),
