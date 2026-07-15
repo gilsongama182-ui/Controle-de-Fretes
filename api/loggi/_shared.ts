@@ -97,6 +97,16 @@ export async function launchBrowser(): Promise<Browser> {
 // Login em duas etapas: e-mail -> Continuar -> senha aparece -> Continuar.
 // Lança erro descritivo em cada etapa que falhar, pra facilitar diagnóstico
 // pelos logs da function na Vercel durante o ajuste inicial.
+// domcontentloaded dispara antes do React "hidratar" (anexar os handlers
+// de onChange/validação), então digitar imediatamente depois pode cair num
+// campo que ainda não está de fato interativo — daí essas pausas curtas
+// depois de cada carregamento/navegação, sem voltar a depender de rede
+// ociosa (networkidle2), que trava com o tanto de script de marketing que
+// a página carrega.
+function settle(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 export async function loginToLoggi(page: Page): Promise<void> {
   if (!LOGGI_LOGIN_EMAIL || !LOGGI_LOGIN_PASSWORD) {
     throw new Error('LOGGI_LOGIN_EMAIL ou LOGGI_LOGIN_PASSWORD não configurada no ambiente.');
@@ -106,18 +116,25 @@ export async function loginToLoggi(page: Page): Promise<void> {
 
   const emailInput = await page.waitForSelector('input[type="email"]', { timeout: NAV_TIMEOUT_MS });
   if (!emailInput) throw new Error('Campo de e-mail não encontrado na tela de login da Loggi.');
-  await emailInput.type(LOGGI_LOGIN_EMAIL, { delay: 20 });
+  await settle(800);
+  await emailInput.click();
+  await emailInput.type(LOGGI_LOGIN_EMAIL, { delay: 30 });
+  await settle(300);
 
   await clickButtonByText(page, LOGGI_CONTINUE_BUTTON_TEXT, 'depois de preencher o e-mail');
+  await settle(800);
 
   const passwordInput = await page.waitForSelector('input[type="password"]', { timeout: NAV_TIMEOUT_MS });
   if (!passwordInput) throw new Error('Campo de senha não apareceu depois de informar o e-mail.');
-  await passwordInput.type(LOGGI_LOGIN_PASSWORD, { delay: 20 });
+  await passwordInput.click();
+  await passwordInput.type(LOGGI_LOGIN_PASSWORD, { delay: 30 });
+  await settle(300);
 
   await Promise.all([
     page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS }).catch(() => null),
     clickButtonByText(page, LOGGI_CONTINUE_BUTTON_TEXT, 'depois de preencher a senha'),
   ]);
+  await settle(800);
 }
 
 async function clickButtonByText(page: Page, text: string, contexto: string): Promise<void> {
@@ -182,6 +199,7 @@ export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
     page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS }).catch(() => null),
     clickButtonByText(page, LOGGI_SHIPMENTS_MENU_TEXT, 'navegando pro menu de envios'),
   ]);
+  await settle(800);
   await page.waitForSelector(LOGGI_ROW_SELECTOR, { timeout: NAV_TIMEOUT_MS });
 
   return page.$$eval(
