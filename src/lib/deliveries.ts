@@ -47,6 +47,7 @@ interface DeliveryRow {
   valor_total_nota: number | null;
   melhor_envio_id: string | null;
   melhor_envio_last_sync_at: string | null;
+  loggi_last_sync_at: string | null;
   motorista_id: string | null;
   motorista_nome: string | null;
   updated_at: string;
@@ -94,6 +95,7 @@ function fromRow(row: DeliveryRow): Delivery {
     valorTotalNota: row.valor_total_nota ?? 0,
     melhorEnvioId: row.melhor_envio_id ?? '',
     melhorEnvioLastSyncAt: row.melhor_envio_last_sync_at ?? '',
+    loggiLastSyncAt: row.loggi_last_sync_at ?? '',
     motoristaId: row.motorista_id ?? '',
     motoristaNome: row.motorista_nome ?? '',
     updatedAt: row.updated_at,
@@ -146,6 +148,7 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.valorTotalNota !== undefined) row.valor_total_nota = input.valorTotalNota;
   if (input.melhorEnvioId !== undefined) row.melhor_envio_id = input.melhorEnvioId || null;
   if (input.melhorEnvioLastSyncAt !== undefined) row.melhor_envio_last_sync_at = input.melhorEnvioLastSyncAt || null;
+  if (input.loggiLastSyncAt !== undefined) row.loggi_last_sync_at = input.loggiLastSyncAt || null;
   if (input.motoristaId !== undefined) row.motorista_id = input.motoristaId || null;
   if (input.motoristaNome !== undefined) row.motorista_nome = upper(input.motoristaNome) || null;
   return row;

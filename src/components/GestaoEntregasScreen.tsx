@@ -19,6 +19,7 @@ import ImportModal from './layout/ImportModal';
 import ComprovanteModal from './layout/ComprovanteModal';
 import EtiquetaPrintView from './layout/EtiquetaPrintView';
 import { SyncItemResult } from '../lib/melhorEnvio';
+import { LoggiSyncItemResult } from '../lib/loggi';
 import { Volume } from '../lib/deliveryVolumes';
 import { DeliveryComprovante } from '../lib/comprovantes';
 import { DeliveryOcorrencia } from '../lib/deliveryOcorrencias';
@@ -37,6 +38,7 @@ interface GestaoEntregasProps {
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
   onSyncTracking: (ids: string[]) => Promise<SyncItemResult[]>;
+  onSyncLoggiTracking: (ids: string[]) => Promise<LoggiSyncItemResult[]>;
   onAssignMotorista: (ids: string[], motoristaId: string | null, motoristaNome: string) => Promise<void>;
   onUploadComprovante: (deliveryId: string, file: File) => Promise<void>;
   onRemoveComprovante: (id: string, path: string) => Promise<void>;
@@ -55,6 +57,7 @@ export default function GestaoEntregasScreen({
   onAddDelivery,
   onImportDeliveries,
   onSyncTracking,
+  onSyncLoggiTracking,
   onAssignMotorista,
   onUploadComprovante,
   onRemoveComprovante
@@ -83,6 +86,7 @@ export default function GestaoEntregasScreen({
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [isEtiquetaOpen, setIsEtiquetaOpen] = useState(false);
   const [isSyncingTracking, setIsSyncingTracking] = useState(false);
+  const [isSyncingLoggiTracking, setIsSyncingLoggiTracking] = useState(false);
   // Deriva sempre da lista atual (não guarda uma cópia) para que o modal reflita
   // o comprovante recém-anexado assim que onUploadComprovante atualiza o estado do pai.
   const comprovanteDelivery = comprovanteDeliveryId
@@ -315,6 +319,29 @@ export default function GestaoEntregasScreen({
     }
   };
 
+  // Sync manual com a Loggi — mais lento que o da Melhor Envio (login real
+  // via navegador headless pra cada disparo, não é chamada REST), então
+  // pode levar bem mais tempo pra responder com várias entregas marcadas.
+  const handleSyncLoggiTracking = async () => {
+    setIsSyncingLoggiTracking(true);
+    try {
+      const results = await onSyncLoggiTracking(Array.from(selectedIds));
+      const okCount = results.filter((r) => r.ok && r.mappedStatus).length;
+      const unmappedCount = results.filter((r) => r.ok && !r.mappedStatus).length;
+      const failCount = results.filter((r) => !r.ok).length;
+      alert(
+        `Sincronização Loggi concluída: ${okCount} atualizada(s)`
+        + (unmappedCount > 0 ? `, ${unmappedCount} com status ainda não reconhecido` : '')
+        + (failCount > 0 ? `, ${failCount} falharam` : '')
+        + '.'
+      );
+    } catch (err) {
+      alert(err instanceof Error ? `Não foi possível sincronizar com a Loggi: ${err.message}` : 'Não foi possível sincronizar com a Loggi.');
+    } finally {
+      setIsSyncingLoggiTracking(false);
+    }
+  };
+
   const SortableTh = ({ sortField, label, className = 'px-4' }: { sortField: keyof Delivery; label: string; className?: string }) => (
     <th
       onClick={() => handleSort(sortField)}
@@ -396,6 +423,15 @@ export default function GestaoEntregasScreen({
               >
                 <RefreshCw className={`w-4 h-4 ${isSyncingTracking ? 'animate-spin' : ''}`} />
                 <span>{isSyncingTracking ? 'Sincronizando...' : `Atualizar Rastreio${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}</span>
+              </button>
+              <button
+                onClick={handleSyncLoggiTracking}
+                disabled={selectedIds.size === 0 || isSyncingLoggiTracking}
+                title={selectedIds.size === 0 ? 'Selecione ao menos uma entrega na tabela' : 'Consultar status na Loggi (pode demorar mais que o da Melhor Envio)'}
+                className="flex items-center gap-2 px-4 py-2 border border-outline text-on-surface-variant rounded-lg font-bold text-sm hover:bg-surface-container transition-all shadow-sm bg-white disabled:opacity-40 disabled:cursor-not-allowed"
+              >
+                <RefreshCw className={`w-4 h-4 ${isSyncingLoggiTracking ? 'animate-spin' : ''}`} />
+                <span>{isSyncingLoggiTracking ? 'Sincronizando Loggi...' : `Sincronizar Loggi${selectedIds.size > 0 ? ` (${selectedIds.size})` : ''}`}</span>
               </button>
               <button
                 onClick={() => exportDeliveriesToCsv(sortedDeliveries, `gestao-entregas-${new Date().toISOString().split('T')[0]}.csv`, [], volumesByDeliveryId, comprovantesByDeliveryId, ocorrenciasByDeliveryId)}

@@ -87,6 +87,7 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       valorTotalNota: 0,
       melhorEnvioId: '',
       melhorEnvioLastSyncAt: '',
+      loggiLastSyncAt: '',
       motoristaId: '',
       motoristaNome: '',
     };

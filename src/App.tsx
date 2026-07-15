@@ -17,6 +17,7 @@ import {
   BaixarEntregaInput,
 } from './lib/deliveries';
 import { syncTracking, SyncItemResult } from './lib/melhorEnvio';
+import { syncLoggiTracking, LoggiSyncItemResult } from './lib/loggi';
 import { fetchAllVolumes, saveVolumesForDelivery, Volume, VolumeInput } from './lib/deliveryVolumes';
 import { fetchAllComprovantes, uploadComprovante, removeComprovante, DeliveryComprovante } from './lib/comprovantes';
 import { fetchAllOcorrencias, addOcorrencia, removeOcorrencia, DeliveryOcorrencia, TipoOcorrencia } from './lib/deliveryOcorrencias';
@@ -336,6 +337,16 @@ function AppShell() {
     return results;
   };
 
+  const handleSyncLoggiTracking = async (ids: string[]): Promise<LoggiSyncItemResult[]> => {
+    const { results, deliveries: updated } = await syncLoggiTracking(ids);
+    setDeliveries((prev) => prev.map((d) => updated.find((u) => u.id === d.id) ?? d));
+    if (selectedDelivery) {
+      const refreshed = updated.find((u) => u.id === selectedDelivery.id);
+      if (refreshed) setSelectedDelivery(refreshed);
+    }
+    return results;
+  };
+
   if (loading) return <LoadingScreen />;
   if (session && isPasswordRecovery) {
     return <ResetPasswordScreen />;
@@ -396,6 +407,7 @@ function AppShell() {
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
           onSyncTracking={handleSyncTracking}
+          onSyncLoggiTracking={handleSyncLoggiTracking}
           onAssignMotorista={handleAssignMotorista}
           onUploadComprovante={handleUploadComprovante}
           onRemoveComprovante={handleRemoveComprovante}
@@ -417,6 +429,7 @@ function AppShell() {
           onAddDelivery={handleAddDelivery}
           onImportDeliveries={handleImportDeliveries}
           onSyncTracking={handleSyncTracking}
+          onSyncLoggiTracking={handleSyncLoggiTracking}
           onUploadComprovante={handleUploadComprovante}
           onRemoveComprovante={handleRemoveComprovante}
           onAddOcorrencia={handleAddOcorrencia}

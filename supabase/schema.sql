@@ -61,6 +61,7 @@ create table if not exists public.deliveries (
   valor_total_nota numeric(12, 2), -- uso interno, não aparece em tela
   melhor_envio_id text,           -- ID da etiqueta na Melhor Envio (nao e o codigo_rastreio publico)
   melhor_envio_last_sync_at timestamptz,
+  loggi_last_sync_at timestamptz,
   motorista_id uuid references public.profiles(id), -- quem vai fazer a entrega (perfil motorista)
   motorista_nome text,            -- denormalizado, mesmo padrão de remetente/cliente
   created_at timestamptz not null default now(),

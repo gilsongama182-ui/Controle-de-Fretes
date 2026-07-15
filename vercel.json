@@ -8,6 +8,9 @@
     },
     "api/loggi/cron-sync.ts": {
       "maxDuration": 60
+    },
+    "api/loggi/sync.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [

@@ -157,6 +157,7 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       valorTotalNota: 0,
       melhorEnvioId: '',
       melhorEnvioLastSyncAt: '',
+      loggiLastSyncAt: '',
       motoristaId: '',
       motoristaNome: '',
     };

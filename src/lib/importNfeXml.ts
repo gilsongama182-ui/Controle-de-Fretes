@@ -148,6 +148,7 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
     valorTotalNota: vNF ? Number(vNF) : 0,
     melhorEnvioId: '',
     melhorEnvioLastSyncAt: '',
+    loggiLastSyncAt: '',
     motoristaId: '',
     motoristaNome: '',
   };

@@ -18,6 +18,7 @@ import type { DeliveryStatus } from '../../src/types';
 // teste contra o site de verdade.
 
 const SUPABASE_URL = process.env.VITE_SUPABASE_URL as string;
+const SUPABASE_ANON_KEY = process.env.VITE_SUPABASE_ANON_KEY as string;
 const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY as string;
 
 const LOGGI_LOGIN_EMAIL = process.env.LOGGI_LOGIN_EMAIL as string;
@@ -62,6 +63,41 @@ export function getServiceRoleClient(): SupabaseClient {
   }
   return createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { autoRefreshToken: false, persistSession: false },
+  });
+}
+
+// Cliente autenticado com o token de sessão de quem chamou a função —
+// respeita a RLS normal de "deliveries", usado pelo sync manual (sync.ts,
+// disparado pelo botão na tela). Diferente do cron automático, que usa
+// service_role porque roda sem sessão de usuário nenhuma.
+export function getUserClient(accessToken: string): SupabaseClient {
+  if (!SUPABASE_URL || !SUPABASE_ANON_KEY) {
+    throw new Error('SUPABASE_URL ou SUPABASE_ANON_KEY não configurada no ambiente.');
+  }
+  return createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    auth: { autoRefreshToken: false, persistSession: false },
+    global: { headers: { Authorization: `Bearer ${accessToken}` } },
+  });
+}
+
+export function getBearerToken(req: IncomingMessage): string | null {
+  const auth = req.headers.authorization;
+  if (!auth || !auth.startsWith('Bearer ')) return null;
+  return auth.slice('Bearer '.length);
+}
+
+export function readJsonBody<T>(req: IncomingMessage): Promise<T> {
+  return new Promise((resolve, reject) => {
+    let raw = '';
+    req.on('data', (chunk) => { raw += chunk; });
+    req.on('end', () => {
+      try {
+        resolve(raw ? (JSON.parse(raw) as T) : ({} as T));
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on('error', reject);
   });
 }
 

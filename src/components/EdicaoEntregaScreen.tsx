@@ -8,6 +8,7 @@ import { fetchMotoristas, ProfileRecord } from '../lib/profiles';
 import { formatNfe } from '../lib/formatNfe';
 import { formatDateBR } from '../lib/formatDate';
 import { SyncItemResult } from '../lib/melhorEnvio';
+import { LoggiSyncItemResult } from '../lib/loggi';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import MobileBottomNav from './layout/MobileBottomNav';
@@ -32,6 +33,7 @@ interface EdicaoEntregaProps {
   onAddDelivery: (input: NewDeliveryInput) => Promise<void>;
   onImportDeliveries: (inputs: NewDeliveryInput[]) => Promise<void>;
   onSyncTracking: (ids: string[]) => Promise<SyncItemResult[]>;
+  onSyncLoggiTracking: (ids: string[]) => Promise<LoggiSyncItemResult[]>;
   onUploadComprovante: (deliveryId: string, file: File) => Promise<void>;
   onRemoveComprovante: (id: string, path: string) => Promise<void>;
   onAddOcorrencia: (deliveryId: string, tipo: TipoOcorrencia, dataOcorrencia: string) => Promise<void>;
@@ -50,6 +52,7 @@ export default function EdicaoEntregaScreen({
   onAddDelivery,
   onImportDeliveries,
   onSyncTracking,
+  onSyncLoggiTracking,
   onUploadComprovante,
   onRemoveComprovante,
   onAddOcorrencia,
@@ -60,6 +63,7 @@ export default function EdicaoEntregaScreen({
   const [isComprovanteOpen, setIsComprovanteOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isSyncingLoggi, setIsSyncingLoggi] = useState(false);
   const [novoTipoOcorrencia, setNovoTipoOcorrencia] = useState<TipoOcorrencia | ''>('');
   const [novaDataOcorrencia, setNovaDataOcorrencia] = useState(() => new Date().toISOString().slice(0, 10));
   const [isRegistrandoOcorrencia, setIsRegistrandoOcorrencia] = useState(false);
@@ -311,6 +315,29 @@ export default function EdicaoEntregaScreen({
       alert(err instanceof Error ? `Não foi possível sincronizar: ${err.message}` : 'Não foi possível sincronizar o rastreio.');
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  // Sync manual com a Loggi — mais lento que o da Melhor Envio (login real
+  // via navegador headless, não é chamada REST), então pode levar alguns
+  // segundos a mais pra responder.
+  const handleSyncLoggiTracking = async () => {
+    setIsSyncingLoggi(true);
+    try {
+      const [result] = await onSyncLoggiTracking([delivery.id]);
+      if (!result) {
+        alert('Não foi possível sincronizar: nenhum resultado retornado.');
+      } else if (!result.ok) {
+        alert(`Não foi possível sincronizar com a Loggi: ${result.error ?? 'erro desconhecido'}`);
+      } else if (result.mappedStatus) {
+        alert(`Rastreio consultado na Loggi — status atualizado para "${result.mappedStatus}".`);
+      } else {
+        alert(`Rastreio consultado na Loggi — status "${result.rawStatus ?? '(vazio)'}" ainda não é reconhecido pelo sistema.`);
+      }
+    } catch (err) {
+      alert(err instanceof Error ? `Não foi possível sincronizar com a Loggi: ${err.message}` : 'Não foi possível sincronizar com a Loggi.');
+    } finally {
+      setIsSyncingLoggi(false);
     }
   };
 
@@ -861,7 +888,21 @@ export default function EdicaoEntregaScreen({
                     >
                       <ClipboardCopy className="w-4 h-4" />
                     </button>
+                    <button
+                      type="button"
+                      onClick={handleSyncLoggiTracking}
+                      disabled={isSyncingLoggi || !codigoRastreio}
+                      title={!codigoRastreio ? 'Informe o código de rastreio primeiro' : 'Consultar status na Loggi'}
+                      className="px-3 bg-surface-container border-l border-outline-variant hover:bg-secondary-container transition-colors text-secondary disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      <RefreshCw className={`w-4 h-4 ${isSyncingLoggi ? 'animate-spin' : ''}`} />
+                    </button>
                   </div>
+                  {delivery.loggiLastSyncAt && (
+                    <p className="text-[10px] text-on-surface-variant">
+                      Última sincronização Loggi: {new Date(delivery.loggiLastSyncAt).toLocaleString('pt-BR')}
+                    </p>
+                  )}
                 </div>
 
                 {/* Melhor Envio tracking sync */}
