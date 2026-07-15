@@ -219,16 +219,20 @@ export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
   // coordenada de tela funciona em qualquer um desses casos, já que age no
   // nível do "mouse físico", não da árvore DOM — o X sempre aparece perto
   // do canto superior direito do cartão branco do modal.
-  await settle(1500);
+  // Espera bem mais (alguns modais de onboarding só liberam o fechar depois
+  // de alguns segundos, de propósito, pra forçar a leitura).
+  await settle(4000);
   await page.keyboard.press('Escape').catch(() => undefined);
-  for (let i = 0; i < 2; i++) {
-    await page.mouse.move(688, 112).catch(() => undefined);
-    await settle(150);
-    await page.mouse.down().catch(() => undefined);
-    await settle(100);
-    await page.mouse.up().catch(() => undefined);
-    await settle(600);
-  }
+  await page.mouse.move(688, 112).catch(() => undefined);
+  await settle(150);
+  await page.mouse.down().catch(() => undefined);
+  await settle(100);
+  await page.mouse.up().catch(() => undefined);
+  await settle(700);
+  // Fallback: clica no fundo escurecido (fora do card branco) — padrão
+  // "clique fora fecha" comum em modais.
+  await page.mouse.click(50, 400).catch(() => undefined);
+  await settle(700);
 
   await Promise.all([
     page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS }).catch(() => null),
