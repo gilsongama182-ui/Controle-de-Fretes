@@ -165,6 +165,7 @@ export interface DebugCapture {
   links: { href: string; text: string }[];
   bodyText: string;
   testIds: { testId: string; text: string }[];
+  rowHtmlSample: string;
 }
 
 // Só chamada quando o run é disparado com ?debug=1 (ver cron-sync.ts) — tira
@@ -196,6 +197,25 @@ export async function captureDebug(page: Page): Promise<DebugCapture> {
       }))
     )
     .catch(() => []);
+  // Acha uma linha de dados da tabela pelo texto (procura por algo no
+  // formato de código de rastreio da Loggi, "LG" + números) e devolve o
+  // HTML do menor container "tipo linha" (role=row, tr, ou um <div> comum a
+  // vários textos da mesma linha) — muito mais direto que vasculhar HTML
+  // cru pra achar os seletores certos de tracking/status.
+  const rowHtmlSample = await page
+    .evaluate(() => {
+      const all = Array.from(document.querySelectorAll('body *'));
+      const trackingEl = all.find((el) => /^LG\d{10,}$/.test((el.textContent ?? '').trim()));
+      if (!trackingEl) return '';
+      let node: Element | null = trackingEl;
+      for (let i = 0; i < 8 && node; i++) {
+        const role = node.getAttribute?.('role');
+        if (node.tagName === 'TR' || role === 'row') return node.outerHTML.slice(0, 6000);
+        node = node.parentElement;
+      }
+      return trackingEl.parentElement?.outerHTML.slice(0, 6000) ?? '';
+    })
+    .catch(() => '');
   return {
     url: page.url(),
     screenshotBase64,
@@ -203,6 +223,7 @@ export async function captureDebug(page: Page): Promise<DebugCapture> {
     links,
     bodyText: bodyText.slice(0, 4000),
     testIds,
+    rowHtmlSample,
   };
 }
 
