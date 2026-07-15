@@ -181,7 +181,7 @@ export interface DebugCapture {
 // direto à conta da Loggi. HTML truncado pra não estourar o tamanho da
 // resposta; a lista de links (menu de navegação, em geral) é o mais útil
 // pra achar a URL real de uma tela sem precisar rolar HTML cru.
-export async function captureDebug(page: Page): Promise<DebugCapture> {
+export async function captureDebug(page: Page, trackingCodeHint?: string): Promise<DebugCapture> {
   const screenshotBase64 = (await page.screenshot({ encoding: 'base64', type: 'png' })) as string;
   const html = await page.content();
   const links = await page
@@ -209,10 +209,15 @@ export async function captureDebug(page: Page): Promise<DebugCapture> {
   // HTML do menor container "tipo linha" (role=row, tr, ou um <div> comum a
   // vários textos da mesma linha) — muito mais direto que vasculhar HTML
   // cru pra achar os seletores certos de tracking/status.
+  // Se um código de rastreio específico for passado, acha a linha exata
+  // dele (mais confiável pra depurar um caso reportado); senão cai pro
+  // padrão genérico "LG" + números, pegando a primeira linha que achar.
   const rowHtmlSample = await page
-    .evaluate(() => {
+    .evaluate((hint) => {
       const all = Array.from(document.querySelectorAll('body *'));
-      const trackingEl = all.find((el) => /^LG\d{10,}$/.test((el.textContent ?? '').trim()));
+      const trackingEl = hint
+        ? all.find((el) => (el.textContent ?? '').trim() === hint)
+        : all.find((el) => /^LG\d{10,}$/.test((el.textContent ?? '').trim()));
       if (!trackingEl) return '';
       let node: Element | null = trackingEl;
       for (let i = 0; i < 8 && node; i++) {
@@ -221,7 +226,7 @@ export async function captureDebug(page: Page): Promise<DebugCapture> {
         node = node.parentElement;
       }
       return trackingEl.parentElement?.outerHTML.slice(0, 6000) ?? '';
-    })
+    }, trackingCodeHint ?? '')
     .catch(() => '');
   return {
     url: page.url(),

@@ -64,6 +64,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
 
   const browser = await launchBrowser();
   let shipmentIndex;
+  let afterScrapeDebug = null;
   try {
     const page = await browser.newPage();
     let afterLoginDebug = null;
@@ -72,6 +73,14 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       if (debugMode) afterLoginDebug = await captureDebug(page).catch(() => null);
       const shipments = await scrapeShipments(page);
       shipmentIndex = buildShipmentIndex(shipments);
+      // Captura a linha exata da 1ª entrega candidata (mesma que está sendo
+      // testada) já com a tabela carregada, mesmo quando o scrape deu certo
+      // — ajuda a depurar quando o valor extraído de uma coluna sai errado
+      // (ex: casou o código mas leu a data errada) sem precisar provocar
+      // uma falha de propósito.
+      if (debugMode) {
+        afterScrapeDebug = await captureDebug(page, deliveries[0]?.codigo_rastreio ?? undefined).catch(() => null);
+      }
     } catch (err) {
       const debug = debugMode ? await captureDebug(page).catch(() => null) : null;
       sendJson(res, 200, {
@@ -118,5 +127,6 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     shipmentsScraped: shipmentIndex.size,
     scrapedTrackingCodes: debugMode ? Array.from(shipmentIndex.keys()) : undefined,
     details: debugMode ? details : undefined,
+    afterScrapeDebug,
   });
 }
