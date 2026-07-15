@@ -65,8 +65,10 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   let shipmentIndex;
   try {
     const page = await browser.newPage();
+    let afterLoginDebug = null;
     try {
       await loginToLoggi(page);
+      if (debugMode) afterLoginDebug = await captureDebug(page).catch(() => null);
       const shipments = await scrapeShipments(page);
       shipmentIndex = buildShipmentIndex(shipments);
     } catch (err) {
@@ -75,6 +77,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
         checked: deliveries.length,
         updated: 0,
         error: err instanceof Error ? err.message : 'Falha ao logar/ler o painel da Loggi.',
+        afterLoginDebug,
         debug,
       });
       return;
