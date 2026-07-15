@@ -124,6 +124,8 @@ export interface DebugCapture {
   screenshotBase64: string;
   htmlSnippet: string;
   links: { href: string; text: string }[];
+  bodyText: string;
+  testIds: { testId: string; text: string }[];
 }
 
 // Só chamada quando o run é disparado com ?debug=1 (ver cron-sync.ts) — tira
@@ -142,11 +144,26 @@ export async function captureDebug(page: Page): Promise<DebugCapture> {
         .filter((l) => l.text)
     )
     .catch(() => []);
+  // Sidebars de SPA costumam navegar via router.push() em vez de <a href>,
+  // então também captura o texto completo visível (sem truncar por CSS) e
+  // qualquer elemento com atributo data-testid — padrão comum de seletor de
+  // teste que pode revelar o nome real das rotas/seções do menu.
+  const bodyText = await page.evaluate(() => document.body.innerText).catch(() => '');
+  const testIds = await page
+    .$$eval('[data-testid]', (els) =>
+      els.map((el) => ({
+        testId: el.getAttribute('data-testid') ?? '',
+        text: (el.textContent ?? '').trim().slice(0, 80),
+      }))
+    )
+    .catch(() => []);
   return {
     url: page.url(),
     screenshotBase64,
     htmlSnippet: html.slice(0, 20000),
     links,
+    bodyText: bodyText.slice(0, 4000),
+    testIds,
   };
 }
 
