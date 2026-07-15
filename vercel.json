@@ -5,6 +5,9 @@
     },
     "api/melhor-envio/cron-sync.ts": {
       "maxDuration": 60
+    },
+    "api/loggi/cron-sync.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
