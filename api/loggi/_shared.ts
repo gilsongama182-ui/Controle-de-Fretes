@@ -196,9 +196,11 @@ export async function captureDebug(page: Page): Promise<DebugCapture> {
 // mais"/paginar quando os seletores reais forem confirmados.
 export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
   // Modal de boas-vindas ("Bem-vindo à nova Loggi") aparece por cima do menu
-  // lateral e bloqueia o clique em "Envios nacionais" — fecha ele primeiro
-  // (best-effort: se não aparecer, não é erro, só não acha o botão e segue).
-  await clickButtonByText(page, 'Avançar', 'fechando modal de boas-vindas').catch(() => undefined);
+  // lateral e bloqueia o clique em "Envios nacionais" — é um carrossel de
+  // várias telas (clicar "Avançar" só passa pra próxima, não fecha), então
+  // usa Esc em vez de tentar navegar pelas etapas. Best-effort: se não
+  // aparecer nenhum modal, Esc não faz nada e segue normalmente.
+  await page.keyboard.press('Escape').catch(() => undefined);
   await settle(500);
 
   await Promise.all([
