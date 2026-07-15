@@ -67,6 +67,11 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   let afterScrapeDebug = null;
   try {
     const page = await browser.newPage();
+    // O Chromium roda em UTC por padrão no ambiente da Vercel, mas a Loggi
+    // calcula/formata as datas da tabela (Criação, Prazo) com base no fuso
+    // do navegador — sem isso, tudo aparece um dia à frente do que o
+    // usuário vê logado normalmente (confirmado comparando com a tela real).
+    await page.emulateTimezone('America/Sao_Paulo');
     let afterLoginDebug = null;
     try {
       await loginToLoggi(page);
