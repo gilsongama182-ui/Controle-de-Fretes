@@ -90,17 +90,24 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
   let updated = 0;
   let notFound = 0;
   let failed = 0;
+  const details: Record<string, unknown>[] = [];
 
   for (const delivery of deliveries) {
     const outcome = matchAndBuildPatch(delivery, shipmentIndex, nowIso);
     if (!outcome.ok || !outcome.patch) {
       notFound++;
+      if (debugMode) details.push({ id: delivery.id, codigoRastreio: delivery.codigo_rastreio, result: 'notFound', error: outcome.error });
       continue;
     }
     const { error: updateError } = await supabase.from('deliveries').update(outcome.patch).eq('id', delivery.id);
-    if (updateError) failed++;
-    else updated++;
+    if (updateError) {
+      failed++;
+      if (debugMode) details.push({ id: delivery.id, codigoRastreio: delivery.codigo_rastreio, result: 'failed', patch: outcome.patch, error: updateError.message });
+    } else {
+      updated++;
+      if (debugMode) details.push({ id: delivery.id, codigoRastreio: delivery.codigo_rastreio, result: 'updated', patch: outcome.patch });
+    }
   }
 
-  sendJson(res, 200, { checked: deliveries.length, updated, notFound, failed });
+  sendJson(res, 200, { checked: deliveries.length, updated, notFound, failed, details: debugMode ? details : undefined });
 }
