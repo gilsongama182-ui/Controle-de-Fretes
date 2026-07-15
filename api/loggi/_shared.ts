@@ -46,7 +46,10 @@ const LOGGI_ROW_SELECTOR = process.env.LOGGI_ROW_SELECTOR || '[data-testid="ship
 const LOGGI_TRACKING_SELECTOR = process.env.LOGGI_TRACKING_SELECTOR || '[data-testid="tracking-code"]';
 const LOGGI_STATUS_SELECTOR = process.env.LOGGI_STATUS_SELECTOR || '[data-testid="shipment-status"]';
 
-const NAV_TIMEOUT_MS = 30000;
+// Curto de propósito: a function tem 60s no total (maxDuration, limite do
+// plano da Vercel) e passa por várias esperas em sequência (login,
+// navegação pro menu, seletor da lista) — precisa sobrar margem pra todas.
+const NAV_TIMEOUT_MS = 12000;
 
 export function getServiceRoleClient(): SupabaseClient {
   if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
@@ -99,7 +102,7 @@ export async function loginToLoggi(page: Page): Promise<void> {
     throw new Error('LOGGI_LOGIN_EMAIL ou LOGGI_LOGIN_PASSWORD não configurada no ambiente.');
   }
 
-  await page.goto(LOGGI_LOGIN_URL, { waitUntil: 'networkidle2', timeout: NAV_TIMEOUT_MS });
+  await page.goto(LOGGI_LOGIN_URL, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
 
   const emailInput = await page.waitForSelector('input[type="email"]', { timeout: NAV_TIMEOUT_MS });
   if (!emailInput) throw new Error('Campo de e-mail não encontrado na tela de login da Loggi.');
@@ -112,7 +115,7 @@ export async function loginToLoggi(page: Page): Promise<void> {
   await passwordInput.type(LOGGI_LOGIN_PASSWORD, { delay: 20 });
 
   await Promise.all([
-    page.waitForNavigation({ waitUntil: 'networkidle2', timeout: NAV_TIMEOUT_MS }).catch(() => null),
+    page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS }).catch(() => null),
     clickButtonByText(page, LOGGI_CONTINUE_BUTTON_TEXT, 'depois de preencher a senha'),
   ]);
 }
@@ -176,7 +179,7 @@ export async function captureDebug(page: Page): Promise<DebugCapture> {
 // mais"/paginar quando os seletores reais forem confirmados.
 export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
   await Promise.all([
-    page.waitForNavigation({ waitUntil: 'networkidle2', timeout: NAV_TIMEOUT_MS }).catch(() => null),
+    page.waitForNavigation({ waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS }).catch(() => null),
     clickButtonByText(page, LOGGI_SHIPMENTS_MENU_TEXT, 'navegando pro menu de envios'),
   ]);
   await page.waitForSelector(LOGGI_ROW_SELECTOR, { timeout: NAV_TIMEOUT_MS });
