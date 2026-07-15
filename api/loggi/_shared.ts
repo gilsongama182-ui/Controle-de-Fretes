@@ -114,18 +114,33 @@ export async function loginToLoggi(page: Page): Promise<void> {
 
   await page.goto(LOGGI_LOGIN_URL, { waitUntil: 'domcontentloaded', timeout: NAV_TIMEOUT_MS });
 
-  const emailInput = await page.waitForSelector('input[type="email"]', { timeout: NAV_TIMEOUT_MS });
-  if (!emailInput) throw new Error('Campo de e-mail não encontrado na tela de login da Loggi.');
-  await settle(800);
-  await emailInput.click();
-  await emailInput.type(LOGGI_LOGIN_EMAIL, { delay: 30 });
-  await settle(300);
+  // A transição e-mail -> senha é intermitente (timing de hidratação varia
+  // de execução pra execução), então tenta de novo uma vez antes de desistir
+  // — confere se o valor digitado realmente "colou" no campo antes de
+  // clicar Continuar, e se a senha não aparecer, refaz o passo do e-mail.
+  let passwordInput = null;
+  for (let attempt = 1; attempt <= 2 && !passwordInput; attempt++) {
+    const emailInput = await page.waitForSelector('input[type="email"]', { timeout: NAV_TIMEOUT_MS });
+    if (!emailInput) throw new Error('Campo de e-mail não encontrado na tela de login da Loggi.');
+    await settle(attempt === 1 ? 800 : 1500);
+    await emailInput.click();
+    await emailInput.evaluate((el) => {
+      (el as HTMLInputElement).value = '';
+    });
+    await emailInput.type(LOGGI_LOGIN_EMAIL, { delay: 40 });
 
-  await clickButtonByText(page, LOGGI_CONTINUE_BUTTON_TEXT, 'depois de preencher o e-mail');
-  await settle(800);
+    const typedValue = await emailInput.evaluate((el) => (el as HTMLInputElement).value);
+    if (typedValue !== LOGGI_LOGIN_EMAIL) {
+      continue; // valor não colou (campo ainda não hidratado) — tenta de novo
+    }
+    await settle(300);
 
-  const passwordInput = await page.waitForSelector('input[type="password"]', { timeout: NAV_TIMEOUT_MS });
-  if (!passwordInput) throw new Error('Campo de senha não apareceu depois de informar o e-mail.');
+    await clickButtonByText(page, LOGGI_CONTINUE_BUTTON_TEXT, 'depois de preencher o e-mail');
+    await settle(800);
+
+    passwordInput = await page.waitForSelector('input[type="password"]', { timeout: NAV_TIMEOUT_MS }).catch(() => null);
+  }
+  if (!passwordInput) throw new Error('Campo de senha não apareceu depois de informar o e-mail (mesmo após tentar de novo).');
   await passwordInput.click();
   await passwordInput.type(LOGGI_LOGIN_PASSWORD, { delay: 30 });
   await settle(300);
