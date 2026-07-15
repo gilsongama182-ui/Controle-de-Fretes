@@ -123,19 +123,30 @@ export interface DebugCapture {
   url: string;
   screenshotBase64: string;
   htmlSnippet: string;
+  links: { href: string; text: string }[];
 }
 
 // Só chamada quando o run é disparado com ?debug=1 (ver cron-sync.ts) — tira
-// uma "foto" de onde o scraper travou (screenshot + HTML) pra dar pra
-// inspecionar e ajustar os seletores sem precisar de acesso direto à conta
-// da Loggi. HTML truncado pra não estourar o tamanho da resposta.
+// uma "foto" de onde o scraper travou (screenshot + HTML + lista de links)
+// pra dar pra inspecionar e ajustar os seletores sem precisar de acesso
+// direto à conta da Loggi. HTML truncado pra não estourar o tamanho da
+// resposta; a lista de links (menu de navegação, em geral) é o mais útil
+// pra achar a URL real de uma tela sem precisar rolar HTML cru.
 export async function captureDebug(page: Page): Promise<DebugCapture> {
   const screenshotBase64 = (await page.screenshot({ encoding: 'base64', type: 'png' })) as string;
   const html = await page.content();
+  const links = await page
+    .$$eval('a[href]', (anchors) =>
+      anchors
+        .map((a) => ({ href: (a as HTMLAnchorElement).href, text: (a.textContent ?? '').trim() }))
+        .filter((l) => l.text)
+    )
+    .catch(() => []);
   return {
     url: page.url(),
     screenshotBase64,
     htmlSnippet: html.slice(0, 20000),
+    links,
   };
 }
 
