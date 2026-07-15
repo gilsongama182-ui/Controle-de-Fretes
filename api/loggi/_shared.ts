@@ -40,12 +40,14 @@ const LOGGI_CONTINUE_BUTTON_TEXT = process.env.LOGGI_CONTINUE_BUTTON_TEXT || 'Co
 const LOGGI_SHIPMENTS_MENU_TEXT = process.env.LOGGI_SHIPMENTS_MENU_TEXT || 'Envios nacionais';
 
 // Confirmados inspecionando o HTML real da tabela (MUI Table — sem
-// data-testid por linha): cada linha é um <tr> dentro do <tbody>; a 3ª
-// coluna é o prazo, a 5ª é o código de rastreio, a 6ª é o status. Continuam
-// configuráveis por env var pro caso da Loggi mudar o layout de novo sem
-// precisar de deploy pra corrigir.
+// data-testid por linha): cada linha é um <tr> dentro do <tbody>, com as
+// colunas na ordem "Destinatário, Criação, Prazo, Cód. Rastreio, Status" —
+// ou seja, a 3ª coluna é a data de CRIAÇÃO do envio (não usada), a 4ª é o
+// PRAZO real de entrega, a 5ª é o código de rastreio, a 6ª é o status.
+// Continuam configuráveis por env var pro caso da Loggi mudar o layout de
+// novo sem precisar de deploy pra corrigir.
 const LOGGI_ROW_SELECTOR = process.env.LOGGI_ROW_SELECTOR || 'tbody tr.MuiTableRow-root';
-const LOGGI_PRAZO_SELECTOR = process.env.LOGGI_PRAZO_SELECTOR || 'td:nth-child(3)';
+const LOGGI_PRAZO_SELECTOR = process.env.LOGGI_PRAZO_SELECTOR || 'td:nth-child(4)';
 const LOGGI_TRACKING_SELECTOR = process.env.LOGGI_TRACKING_SELECTOR || 'td:nth-child(5)';
 const LOGGI_STATUS_SELECTOR = process.env.LOGGI_STATUS_SELECTOR || 'td:nth-child(6)';
 
