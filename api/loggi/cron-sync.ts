@@ -110,5 +110,13 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     }
   }
 
-  sendJson(res, 200, { checked: deliveries.length, updated, notFound, failed, details: debugMode ? details : undefined });
+  sendJson(res, 200, {
+    checked: deliveries.length,
+    updated,
+    notFound,
+    failed,
+    shipmentsScraped: shipmentIndex.size,
+    scrapedTrackingCodes: debugMode ? Array.from(shipmentIndex.keys()) : undefined,
+    details: debugMode ? details : undefined,
+  });
 }
