@@ -42,6 +42,7 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
     .select('id, codigo_rastreio, melhor_envio_id')
     .in('status', ['EM ROTA', 'EM ATRASO'])
     .not('codigo_rastreio', 'is', null)
+    .neq('codigo_rastreio', '')
     .is('melhor_envio_id', null)
     .limit(MAX_DELIVERIES_PER_RUN)
     .returns<DeliveryTrackingRow[]>();
