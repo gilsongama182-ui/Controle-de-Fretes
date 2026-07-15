@@ -39,12 +39,14 @@ const LOGGI_CONTINUE_BUTTON_TEXT = process.env.LOGGI_CONTINUE_BUTTON_TEXT || 'Co
 // já é feito nos botões de login.
 const LOGGI_SHIPMENTS_MENU_TEXT = process.env.LOGGI_SHIPMENTS_MENU_TEXT || 'Envios nacionais';
 
-// Seletores da lista de envios — 100% um palpite, não há como inspecionar
-// a tela sem estar logado. Pensados pra serem ajustados via env var durante
-// o primeiro teste manual (ver PASSO 3 do plano), sem precisar redeployar.
-const LOGGI_ROW_SELECTOR = process.env.LOGGI_ROW_SELECTOR || '[data-testid="shipment-row"], tr[data-shipment], li[data-shipment]';
-const LOGGI_TRACKING_SELECTOR = process.env.LOGGI_TRACKING_SELECTOR || '[data-testid="tracking-code"]';
-const LOGGI_STATUS_SELECTOR = process.env.LOGGI_STATUS_SELECTOR || '[data-testid="shipment-status"]';
+// Confirmados inspecionando o HTML real da tabela (MUI Table — sem
+// data-testid por linha): cada linha é um <tr> dentro do <tbody>, e a 5ª
+// coluna é o código de rastreio, a 6ª é o status. Continuam configuráveis
+// por env var pro caso da Loggi mudar o layout de novo sem precisar de
+// deploy pra corrigir.
+const LOGGI_ROW_SELECTOR = process.env.LOGGI_ROW_SELECTOR || 'tbody tr.MuiTableRow-root';
+const LOGGI_TRACKING_SELECTOR = process.env.LOGGI_TRACKING_SELECTOR || 'td:nth-child(5)';
+const LOGGI_STATUS_SELECTOR = process.env.LOGGI_STATUS_SELECTOR || 'td:nth-child(6)';
 
 // Curto de propósito: a function tem 60s no total (maxDuration, limite do
 // plano da Vercel) e passa por várias esperas em sequência (login,
@@ -324,11 +326,19 @@ export function matchAndBuildPatch(
   return { ok: true, rawStatus: shipment.rawStatus, mappedStatus, patch };
 }
 
-// Vocabulário inferido, nunca visto numa resposta real da Loggi ainda —
-// qualquer status não reconhecido retorna null de propósito (só atualiza
+// Qualquer status não reconhecido retorna null de propósito (só atualiza
 // loggi_last_sync_at), pra nunca sobrescrever o status de uma entrega com
-// um valor adivinhado errado. Ajustar aqui assim que os status reais
-// aparecerem nos logs do primeiro teste manual.
+// um valor adivinhado errado.
+//
+// Status reais confirmados na tabela "Envios Nacionais" da conta (coluna
+// Status): "Conferido", "Medido e pesado", "Coletado", "Cancelado". Só
+// "Coletado" foi mapeado com confiança (claramente "saiu pro trajeto" =
+// EM ROTA) — "Conferido"/"Medido e pesado" parecem ser etapas anteriores à
+// coleta (ainda não está de fato em rota) e "Cancelado" não tem
+// correspondente óbvio nos status do WLogis (cancelamento do envio é
+// diferente de falha/devolução de uma entrega que chegou a sair). Ficam
+// deliberadamente sem mapear até confirmar com o usuário o que cada um
+// deveria virar aqui.
 export function mapLoggiStatus(loggiStatus: string): DeliveryStatus | null {
   const s = loggiStatus.toLowerCase();
   if (s.includes('entregue')) return 'ENTREGUE';
