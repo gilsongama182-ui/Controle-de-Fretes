@@ -23,17 +23,21 @@ const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY as strin
 const LOGGI_LOGIN_EMAIL = process.env.LOGGI_LOGIN_EMAIL as string;
 const LOGGI_LOGIN_PASSWORD = process.env.LOGGI_LOGIN_PASSWORD as string;
 
-// URL confirmada via inspeção pública do site (app.loggi.com/entrar). A tela
-// de envios já exige login, então essa URL é um palpite — ajustar via env
-// var (sem precisar de deploy) assim que o caminho real for confirmado.
+// URL confirmada via inspeção pública do site (app.loggi.com/entrar).
 const LOGGI_LOGIN_URL = process.env.LOGGI_LOGIN_URL || 'https://app.loggi.com/entrar';
-const LOGGI_SHIPMENTS_URL = process.env.LOGGI_SHIPMENTS_URL || 'https://app.loggi.com/envios';
 
 // A tela de login da Loggi é em duas etapas (e-mail -> "Continuar" -> senha
 // aparece -> "Continuar" de novo), não um formulário único. Os textos dos
 // botões são configuráveis por env var pro caso de mudarem sem precisar de
 // deploy novo.
 const LOGGI_CONTINUE_BUTTON_TEXT = process.env.LOGGI_CONTINUE_BUTTON_TEXT || 'Continuar';
+
+// A lista de envios não tem URL fixa nem link <a href> — é uma SPA que
+// navega clicando no menu lateral (confirmado via debug: seção
+// "ACOMPANHAMENTO" com os itens "Envios nacionais"/"Envios locais", sem
+// href nem data-testid). Por isso navega clicando no texto do menu, igual
+// já é feito nos botões de login.
+const LOGGI_SHIPMENTS_MENU_TEXT = process.env.LOGGI_SHIPMENTS_MENU_TEXT || 'Envios nacionais';
 
 // Seletores da lista de envios — 100% um palpite, não há como inspecionar
 // a tela sem estar logado. Pensados pra serem ajustados via env var durante
@@ -171,7 +175,10 @@ export async function captureDebug(page: Page): Promise<DebugCapture> {
 // função só lê a primeira página — ajustar aqui se for preciso "carregar
 // mais"/paginar quando os seletores reais forem confirmados.
 export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
-  await page.goto(LOGGI_SHIPMENTS_URL, { waitUntil: 'networkidle2', timeout: NAV_TIMEOUT_MS });
+  await Promise.all([
+    page.waitForNavigation({ waitUntil: 'networkidle2', timeout: NAV_TIMEOUT_MS }).catch(() => null),
+    clickButtonByText(page, LOGGI_SHIPMENTS_MENU_TEXT, 'navegando pro menu de envios'),
+  ]);
   await page.waitForSelector(LOGGI_ROW_SELECTOR, { timeout: NAV_TIMEOUT_MS });
 
   return page.$$eval(
