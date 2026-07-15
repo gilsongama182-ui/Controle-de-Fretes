@@ -198,20 +198,14 @@ export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
   // Modal de boas-vindas ("Bem-vindo à nova Loggi") aparece por cima do menu
   // lateral (sempre, em toda sessão nova) e bloqueia o clique em "Envios
   // nacionais". É um carrossel de várias telas — "Avançar" só passa pra
-  // próxima, não fecha — e Esc também não fecha. O botão de fechar (X) não
-  // tem texto nem aria-label, então acha por heurística: botão sem texto
-  // perto do topo da tela (onde o X fica posicionado nesse modal).
+  // próxima, não fecha — Esc não fecha, e nem achar o botão via DOM
+  // funcionou (provavelmente é um widget de tour renderizado em iframe ou
+  // shadow DOM, que document.querySelectorAll não alcança). Clicar por
+  // coordenada de tela funciona em qualquer um desses casos, já que age no
+  // nível do "mouse físico", não da árvore DOM — o X sempre aparece perto
+  // do canto superior direito do cartão branco do modal.
   await page.keyboard.press('Escape').catch(() => undefined);
-  await page
-    .evaluate(() => {
-      const buttons = Array.from(document.querySelectorAll('button'));
-      const closeBtn = buttons.find((b) => {
-        const rect = b.getBoundingClientRect();
-        return !b.textContent?.trim() && rect.width > 0 && rect.height > 0 && rect.top < 200;
-      });
-      (closeBtn as HTMLButtonElement | undefined)?.click();
-    })
-    .catch(() => undefined);
+  await page.mouse.click(688, 112).catch(() => undefined);
   await settle(500);
 
   await Promise.all([
