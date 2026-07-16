@@ -309,6 +309,26 @@ export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
   ]);
   await settle(800);
   await page.waitForSelector(LOGGI_ROW_SELECTOR, { timeout: NAV_TIMEOUT_MS });
+  // waitForSelector só garante que o elemento existe, não que o conteúdo já
+  // carregou — a tabela passa por um estado de "carregando" (skeleton) que
+  // usa as mesmas classes CSS das linhas reais, então ler rápido demais pega
+  // células vazias. Espera até pelo menos uma linha ter um código de
+  // rastreio de verdade (padrão "LG" + números) antes de raspar tudo.
+  await page
+    .waitForFunction(
+      (rowSel, trackingSel) => {
+        const rows = document.querySelectorAll(rowSel);
+        for (const row of Array.from(rows)) {
+          const el = row.querySelector(trackingSel);
+          if (el && /^LG\d+/.test((el.textContent ?? '').trim())) return true;
+        }
+        return false;
+      },
+      { timeout: NAV_TIMEOUT_MS },
+      LOGGI_ROW_SELECTOR,
+      LOGGI_TRACKING_SELECTOR
+    )
+    .catch(() => undefined);
 
   return page.$$eval(
     LOGGI_ROW_SELECTOR,
