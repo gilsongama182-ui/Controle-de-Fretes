@@ -29,15 +29,21 @@ export async function fetchInvoices(): Promise<Invoice[]> {
   return (data as InvoiceRow[]).map(fromRow);
 }
 
-// Cria o cabeçalho da fatura e vincula as entregas selecionadas numa
-// transação só (RPC no banco) — evita fatura órfã se o segundo passo falhar.
-export async function createInvoice(numero: string, deliveryIds: string[]): Promise<Invoice> {
-  const { data, error } = await supabase.rpc('criar_fatura', {
-    p_numero: numero,
-    p_delivery_ids: deliveryIds,
-  });
+// Cria o cabeçalho da fatura (número sequencial gerado automaticamente no
+// banco, começando em 0200) e vincula as entregas selecionadas numa
+// transação só (RPC) — evita fatura órfã se o segundo passo falhar.
+export async function createInvoice(deliveryIds: string[]): Promise<Invoice> {
+  const { data, error } = await supabase.rpc('criar_fatura', { p_delivery_ids: deliveryIds });
   if (error) throw error;
   return fromRow(data as InvoiceRow);
+}
+
+// Só pra exibir em tela qual vai ser o próximo número (não consome a
+// sequência — nextval() só é chamado de verdade dentro de createInvoice).
+export async function fetchProximoNumeroFatura(): Promise<string> {
+  const { data, error } = await supabase.rpc('proximo_numero_fatura');
+  if (error) throw error;
+  return data as string;
 }
 
 // Desfaz a fatura: libera as entregas vinculadas (voltam a "pendente") e

@@ -633,22 +633,27 @@ create policy invoices_delete
     and public.current_profile_type() in ('operador', 'master')
   );
 
+-- Numeração sequencial automática da fatura (começa em 0200, zero-padded a
+-- 4 dígitos) — o usuário nunca digita o número.
+create sequence if not exists public.invoice_numero_seq start 200;
+grant usage, select on sequence public.invoice_numero_seq to authenticated;
+
 -- Cria o cabeçalho da fatura e vincula as entregas selecionadas numa única
 -- transação — sem security definer: operador/master já têm INSERT/UPDATE
 -- liberado por RLS nas duas tabelas, então a função roda com o privilégio
 -- de quem chama.
-create or replace function public.criar_fatura(
-  p_numero text,
-  p_delivery_ids uuid[]
-)
+create or replace function public.criar_fatura(p_delivery_ids uuid[])
 returns public.invoices
 language plpgsql
 as $$
 declare
   v_invoice public.invoices;
+  v_numero text;
 begin
+  v_numero := lpad(nextval('public.invoice_numero_seq')::text, 4, '0');
+
   insert into public.invoices (numero, criado_por)
-  values (p_numero, auth.uid())
+  values (v_numero, auth.uid())
   returning * into v_invoice;
 
   update public.deliveries
@@ -660,7 +665,20 @@ begin
 end;
 $$;
 
-grant execute on function public.criar_fatura(text, uuid[]) to authenticated;
+grant execute on function public.criar_fatura(uuid[]) to authenticated;
+
+-- Só pra mostrar em tela qual vai ser o próximo número, sem consumir a
+-- sequência (nextval() "queimaria" um número se o usuário só olhasse a tela).
+create or replace function public.proximo_numero_fatura()
+returns text
+language sql
+stable
+as $$
+  select lpad((last_value + case when is_called then 1 else 0 end)::text, 4, '0')
+  from public.invoice_numero_seq;
+$$;
+
+grant execute on function public.proximo_numero_fatura() to authenticated;
 
 -- Desfaz uma fatura: libera as entregas vinculadas e remove o cabeçalho.
 create or replace function public.remover_fatura(p_invoice_id uuid)

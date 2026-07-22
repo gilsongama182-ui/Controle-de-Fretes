@@ -1,14 +1,15 @@
-import { useMemo, useState } from 'react';
-import { ChevronRight, Receipt, ListChecks, History, Table2, Trash2, Plus, Pencil, X, ChevronDown } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { ChevronRight, Receipt, ListChecks, History, Table2, Trash2, Plus, Pencil, X, ChevronDown, Printer } from 'lucide-react';
 import { ActivePage, Delivery, DeliveryStatus, User } from '../types';
 import { Volume } from '../lib/deliveryVolumes';
 import { FreightRate, FreightRateInput, TipoTarifa } from '../lib/freightRates';
-import { Invoice } from '../lib/invoices';
+import { Invoice, fetchProximoNumeroFatura } from '../lib/invoices';
 import { calcularFrete } from '../lib/freightCalc';
 import { formatNfe } from '../lib/formatNfe';
 import { UFS_BR } from '../lib/ufs';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
+import FaturaPrintView from './layout/FaturaPrintView';
 
 interface FaturamentoScreenProps {
   onNavigate: (page: ActivePage) => void;
@@ -19,7 +20,7 @@ interface FaturamentoScreenProps {
   freightRates: FreightRate[];
   invoices: Invoice[];
   onUpdateDelivery: (id: string, patch: Partial<Delivery>) => Promise<void>;
-  onCreateInvoice: (numero: string, deliveryIds: string[]) => Promise<void>;
+  onCreateInvoice: (deliveryIds: string[]) => Promise<Invoice>;
   onRemoveInvoice: (id: string) => Promise<void>;
   onCreateFreightRate: (input: FreightRateInput) => Promise<void>;
   onUpdateFreightRate: (id: string, input: FreightRateInput) => Promise<void>;
@@ -62,15 +63,33 @@ export default function FaturamentoScreen({
 
   // --- Pendentes ---
   const [statusFiltro, setStatusFiltro] = useState<DeliveryStatus>('ENTREGUE');
+  const [remetenteFiltro, setRemetenteFiltro] = useState('');
   const [buscaPendentes, setBuscaPendentes] = useState('');
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
-  const [numeroFatura, setNumeroFatura] = useState('');
   const [gerandoFatura, setGerandoFatura] = useState(false);
+  const [proximoNumero, setProximoNumero] = useState('');
+  const [faturaAberta, setFaturaAberta] = useState<{ invoice: Invoice; deliveries: Delivery[] } | null>(null);
+
+  const carregarProximoNumero = () => {
+    fetchProximoNumeroFatura().then(setProximoNumero).catch((err) => console.error('Falha ao buscar próximo número:', err));
+  };
+
+  useEffect(carregarProximoNumero, []);
+
+  // Cada fatura deve ser de um remetente só (cada cliente recebe a sua) —
+  // esse select existe justamente pra guiar a seleção nessa direção.
+  const remetentesDisponiveis = useMemo(() => {
+    const set = new Set(
+      deliveries.filter((d) => !d.invoiceId && d.status === statusFiltro).map((d) => d.remetente).filter(Boolean),
+    );
+    return Array.from(set).sort();
+  }, [deliveries, statusFiltro]);
 
   const pendentes = useMemo(() => {
     const termo = buscaPendentes.toLowerCase().trim();
     return deliveries
       .filter((d) => !d.invoiceId && d.status === statusFiltro)
+      .filter((d) => !remetenteFiltro || d.remetente === remetenteFiltro)
       .filter(
         (d) =>
           !termo ||
@@ -78,7 +97,7 @@ export default function FaturamentoScreen({
           d.nomeRazaoSocial.toLowerCase().includes(termo) ||
           d.cnpjCpf.replace(/\D/g, '').includes(termo.replace(/\D/g, '')),
       );
-  }, [deliveries, statusFiltro, buscaPendentes]);
+  }, [deliveries, statusFiltro, remetenteFiltro, buscaPendentes]);
 
   const calculosPendentes = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calcularFrete>>();
@@ -88,13 +107,23 @@ export default function FaturamentoScreen({
     return map;
   }, [pendentes, volumesByDeliveryId, freightRates]);
 
+  // Resolve por id contra TODAS as entregas (não só as visíveis em "pendentes"
+  // no momento) — a seleção persiste enquanto o usuário digita na busca, então
+  // não pode depender da lista filtrada pra não quebrar quando um item
+  // selecionado sai de vista.
+  const calcularPorId = (id: string) => {
+    const delivery = deliveries.find((d) => d.id === id);
+    if (!delivery) return null;
+    return { delivery, calc: calcularFrete(delivery, volumesByDeliveryId.get(id) ?? EMPTY_VOLUMES, freightRates) };
+  };
+
   const totalSelecionado = useMemo(() => {
     let soma = 0;
     for (const id of selecionadas) {
-      soma += calculosPendentes.get(id)?.valorTotal ?? 0;
+      soma += calcularPorId(id)?.calc.valorTotal ?? 0;
     }
     return soma;
-  }, [selecionadas, calculosPendentes]);
+  }, [selecionadas, deliveries, volumesByDeliveryId, freightRates]);
 
   const toggleSelecionada = (id: string) => {
     setSelecionadas((prev) => {
@@ -111,28 +140,42 @@ export default function FaturamentoScreen({
 
   const handleGerarFatura = async () => {
     setErro('');
-    if (!numeroFatura.trim()) {
-      setErro('Informe o número da fatura.');
-      return;
-    }
     if (selecionadas.size === 0) {
       setErro('Selecione ao menos uma entrega.');
       return;
     }
+
+    const ids = Array.from(selecionadas);
+    const selecionadasComCalculo = ids
+      .map((id) => calcularPorId(id))
+      .filter((item): item is NonNullable<typeof item> => item !== null);
+
+    const remetentesNaSelecao = new Set(selecionadasComCalculo.map(({ delivery }) => delivery.remetente));
+    if (remetentesNaSelecao.size > 1) {
+      setErro('Selecione entregas de um único remetente por fatura (cada cliente recebe a sua).');
+      return;
+    }
+
     setGerandoFatura(true);
     try {
-      const ids = Array.from(selecionadas);
       // Grava o valor calculado em cada entrega antes de vincular à fatura,
       // pra "congelar" o valor faturado mesmo que a tabela de frete mude depois.
       await Promise.all(
-        ids.map((id) => {
-          const resultado = calculosPendentes.get(id);
-          return resultado ? onUpdateDelivery(id, { valorFreteCalculado: resultado.valorTotal }) : Promise.resolve();
-        }),
+        selecionadasComCalculo.map(({ delivery, calc }) => onUpdateDelivery(delivery.id, { valorFreteCalculado: calc.valorTotal })),
       );
-      await onCreateInvoice(numeroFatura.trim(), ids);
+      const created = await onCreateInvoice(ids);
+
+      // Monta a lista pro relatório na hora, sem esperar o refetch de "deliveries"
+      // (a prop só chega atualizada no próximo render deste componente).
+      const deliveriesFaturadas = selecionadasComCalculo.map(({ delivery, calc }) => ({
+        ...delivery,
+        valorFreteCalculado: calc.valorTotal,
+        invoiceId: created.id,
+      }));
+
       setSelecionadas(new Set());
-      setNumeroFatura('');
+      carregarProximoNumero();
+      setFaturaAberta({ invoice: created, deliveries: deliveriesFaturadas });
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Não foi possível gerar a fatura.');
     } finally {
@@ -286,6 +329,33 @@ export default function FaturamentoScreen({
                 </span>
               </div>
             </div>
+
+            <div className="flex items-center gap-3 bg-white border border-outline-variant rounded-xl px-4 py-2.5 shadow-sm">
+              <div className="text-right">
+                <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-wider">Próxima fatura</p>
+                <p className="text-lg font-extrabold text-primary leading-none">{proximoNumero || '...'}</p>
+              </div>
+              <div className="h-8 w-px bg-outline-variant" />
+              <div className="text-xs text-on-surface-variant">
+                {selecionadas.size > 0 ? (
+                  <>
+                    <span className="font-bold text-on-surface">{selecionadas.size}</span> selecionada(s)
+                    <br />
+                    <span className="font-bold text-primary">R$ {formatMoeda(totalSelecionado)}</span>
+                  </>
+                ) : (
+                  'Selecione entregas na aba Pendentes'
+                )}
+              </div>
+              <button
+                onClick={handleGerarFatura}
+                disabled={gerandoFatura || selecionadas.size === 0}
+                className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-bold hover:opacity-95 disabled:opacity-40 transition-all shadow-sm"
+              >
+                <Receipt className="w-4 h-4" />
+                {gerandoFatura ? 'Gerando...' : 'Gerar Fatura'}
+              </button>
+            </div>
           </div>
 
           {erro && (
@@ -317,11 +387,21 @@ export default function FaturamentoScreen({
                 <div className="flex flex-wrap items-center gap-3">
                   <select
                     value={statusFiltro}
-                    onChange={(e) => { setStatusFiltro(e.target.value as DeliveryStatus); setSelecionadas(new Set()); }}
+                    onChange={(e) => { setStatusFiltro(e.target.value as DeliveryStatus); setRemetenteFiltro(''); setSelecionadas(new Set()); }}
                     className="px-3 py-2 border border-outline-variant rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none cursor-pointer"
                   >
                     {STATUS_FATURAVEIS.map((s) => (
                       <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                  <select
+                    value={remetenteFiltro}
+                    onChange={(e) => { setRemetenteFiltro(e.target.value); setSelecionadas(new Set()); }}
+                    className="px-3 py-2 border border-outline-variant rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                  >
+                    <option value="">Remetente: Todos</option>
+                    {remetentesDisponiveis.map((r) => (
+                      <option key={r} value={r}>{r}</option>
                     ))}
                   </select>
                   <input
@@ -399,29 +479,9 @@ export default function FaturamentoScreen({
                 </table>
               </div>
 
-              <div className="p-4 border-t border-outline-variant bg-surface-container-low/40 flex flex-wrap items-center justify-between gap-3">
-                <div className="text-sm">
-                  <span className="font-semibold text-on-surface-variant">{selecionadas.size} selecionada(s)</span>
-                  <span className="mx-2 text-outline">·</span>
-                  <span className="font-bold text-primary">Total: R$ {formatMoeda(totalSelecionado)}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <input
-                    type="text"
-                    placeholder="Número da fatura"
-                    value={numeroFatura}
-                    onChange={(e) => setNumeroFatura(e.target.value)}
-                    className="w-48 px-3 py-2 border border-outline-variant rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary outline-none"
-                  />
-                  <button
-                    onClick={handleGerarFatura}
-                    disabled={gerandoFatura || selecionadas.size === 0}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-lg text-sm font-bold hover:opacity-95 disabled:opacity-50 transition-all shadow-sm"
-                  >
-                    <Receipt className="w-4 h-4" />
-                    {gerandoFatura ? 'Gerando...' : 'Gerar Fatura'}
-                  </button>
-                </div>
+              <div className="p-3 border-t border-outline-variant bg-surface-container-low/40 flex items-center justify-between">
+                <span className="text-xs font-semibold text-on-surface-variant">{selecionadas.size} selecionada(s)</span>
+                <span className="text-sm font-bold text-primary">Total: R$ {formatMoeda(totalSelecionado)}</span>
               </div>
             </div>
           )}
@@ -453,8 +513,15 @@ export default function FaturamentoScreen({
                           <p className="text-xs text-on-surface-variant">{formatDataHora(inv.criadoEm)} · {itens.length} entrega(s)</p>
                         </div>
                       </div>
-                      <div className="flex items-center gap-4">
-                        <span className="text-sm font-bold text-primary">R$ {formatMoeda(total)}</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-sm font-bold text-primary mr-2">R$ {formatMoeda(total)}</span>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); setFaturaAberta({ invoice: inv, deliveries: itens }); }}
+                          className="p-1.5 border border-outline text-on-surface-variant hover:bg-secondary-container rounded-lg transition-colors"
+                          title="Reimprimir / gerar PDF"
+                        >
+                          <Printer className="w-4 h-4" />
+                        </button>
                         <button
                           onClick={(e) => { e.stopPropagation(); handleRemoverFatura(inv.id); }}
                           className="p-1.5 text-error hover:bg-error-container/20 rounded-lg transition-colors"
@@ -633,6 +700,14 @@ export default function FaturamentoScreen({
           )}
         </main>
       </div>
+
+      {faturaAberta && (
+        <FaturaPrintView
+          invoice={faturaAberta.invoice}
+          deliveries={faturaAberta.deliveries}
+          onClose={() => setFaturaAberta(null)}
+        />
+      )}
     </div>
   );
 }

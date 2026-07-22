@@ -384,14 +384,17 @@ function AppShell() {
     setFreightRates((prev) => prev.filter((r) => r.id !== id));
   };
 
-  // Marca a fatura no cabeçalho + vincula as entregas (invoice_id) numa
-  // transação só no banco — refetch das duas listas depois, mais simples
-  // que tentar reconciliar o resultado da RPC nos dois estados locais.
-  const handleCreateInvoice = async (numero: string, deliveryIds: string[]) => {
-    await createInvoice(numero, deliveryIds);
+  // Marca a fatura no cabeçalho (número sequencial automático) + vincula as
+  // entregas (invoice_id) numa transação só no banco — refetch das duas
+  // listas depois, mais simples que tentar reconciliar o resultado da RPC
+  // nos dois estados locais. Devolve a fatura criada pra tela abrir o
+  // relatório/PDF na hora, sem esperar o próximo fetch.
+  const handleCreateInvoice = async (deliveryIds: string[]): Promise<Invoice> => {
+    const created = await createInvoice(deliveryIds);
     const [novasEntregas, novasFaturas] = await Promise.all([fetchDeliveries(), fetchInvoices()]);
     setDeliveries(novasEntregas);
     setInvoices(novasFaturas);
+    return created;
   };
 
   const handleRemoveInvoice = async (id: string) => {
