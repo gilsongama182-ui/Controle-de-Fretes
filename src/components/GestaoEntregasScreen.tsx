@@ -63,10 +63,16 @@ export default function GestaoEntregasScreen({
   onRemoveComprovante
 }: GestaoEntregasProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [remetenteFilter, setRemetenteFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [ufFilter, setUfFilter] = useState('');
   const [comprovanteFilter, setComprovanteFilter] = useState<'' | 'com' | 'sem'>('');
   const [motoristaFilter, setMotoristaFilter] = useState('');
+
+  const remetentesDisponiveis = useMemo(
+    () => Array.from(new Set(deliveries.map((d) => d.remetente).filter(Boolean))).sort(),
+    [deliveries],
+  );
   // Filtro disparado pelos cards de KPI — clicar num card ativa o filtro
   // correspondente na tabela; clicar de novo (ou no card "Entregas Ativas")
   // limpa. Combina em AND com os demais filtros (busca, UF, período etc.).
@@ -158,6 +164,11 @@ export default function GestaoEntregasScreen({
       );
     }
 
+    // Remetente Filter
+    if (remetenteFilter) {
+      result = result.filter(d => d.remetente === remetenteFilter);
+    }
+
     // Status Filter
     if (statusFilter) {
       result = result.filter(d => d.status === statusFilter);
@@ -202,7 +213,7 @@ export default function GestaoEntregasScreen({
     }
 
     return result;
-  }, [deliveries, searchTerm, statusFilter, ufFilter, comprovanteFilter, comprovantesByDeliveryId, motoristaFilter, dateFrom, dateTo, cardFilter]);
+  }, [deliveries, searchTerm, remetenteFilter, statusFilter, ufFilter, comprovanteFilter, comprovantesByDeliveryId, motoristaFilter, dateFrom, dateTo, cardFilter]);
 
   const toggleCardFilter = (key: 'sucesso' | 'atraso' | 'hoje') => {
     setCardFilter((prev) => (prev === key ? null : key));
@@ -237,7 +248,7 @@ export default function GestaoEntregasScreen({
   // atual pode ficar além do fim da lista filtrada e a tabela parece vazia.
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, statusFilter, ufFilter, comprovanteFilter, motoristaFilter, dateFrom, dateTo, cardFilter]);
+  }, [searchTerm, remetenteFilter, statusFilter, ufFilter, comprovanteFilter, motoristaFilter, dateFrom, dateTo, cardFilter]);
 
   // Pagination logic
   const paginatedDeliveries = useMemo(() => {
@@ -550,6 +561,18 @@ export default function GestaoEntregasScreen({
                     className="w-full pl-4 pr-4 py-2 border border-outline-variant rounded-lg text-sm bg-white focus:ring-2 focus:ring-primary outline-none"
                   />
                 </div>
+
+                {/* Remetente Select */}
+                <select
+                  value={remetenteFilter}
+                  onChange={(e) => setRemetenteFilter(e.target.value)}
+                  className="px-3 py-2 border border-outline-variant rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                >
+                  <option value="">Remetente: Todos</option>
+                  {remetentesDisponiveis.map((r) => (
+                    <option key={r} value={r}>{r}</option>
+                  ))}
+                </select>
 
                 {/* Status Select */}
                 <select

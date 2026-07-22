@@ -41,6 +41,7 @@ export default function DashboardOperadorScreen({
   onSelectDeliveryForEdit
 }: DashboardOperadorProps) {
   const [searchTerm, setSearchTerm] = useState('');
+  const [remetenteFilter, setRemetenteFilter] = useState('');
   const [isNewDeliveryOpen, setIsNewDeliveryOpen] = useState(false);
   const [isImportOpen, setIsImportOpen] = useState(false);
   // Filtro disparado pelos cards de KPI — clicar num card filtra a lista de
@@ -50,18 +51,31 @@ export default function DashboardOperadorScreen({
     setCardFilter((prev) => (prev === key ? null : key));
   };
 
+  const remetentesDisponiveis = useMemo(
+    () => Array.from(new Set(deliveries.map((d) => d.remetente).filter(Boolean))).sort(),
+    [deliveries],
+  );
+
+  // Base já filtrada por remetente — alimenta tanto os KPIs quanto a lista de
+  // entregas recentes, pra dar uma visão "por cliente" do painel inteiro,
+  // não só da lista.
+  const deliveriesDoRemetente = useMemo(
+    () => (remetenteFilter ? deliveries.filter((d) => d.remetente === remetenteFilter) : deliveries),
+    [deliveries, remetenteFilter],
+  );
+
   // Computed metrics based on the shared deliveries array
   const metrics = useMemo(() => {
-    const total = deliveries.length;
-    const deliveredCount = deliveries.filter(d => d.status === 'ENTREGUE').length;
-    const enRouteCount = deliveries.filter(d => d.status === 'EM ROTA').length;
-    const failedCount = deliveries.filter(d => d.status === 'FALHA').length;
+    const total = deliveriesDoRemetente.length;
+    const deliveredCount = deliveriesDoRemetente.filter(d => d.status === 'ENTREGUE').length;
+    const enRouteCount = deliveriesDoRemetente.filter(d => d.status === 'EM ROTA').length;
+    const failedCount = deliveriesDoRemetente.filter(d => d.status === 'FALHA').length;
     // "Fora do prazo" junta quem ainda está em rota com previsão vencida e
     // quem já foi entregue mas depois do prazo — não depende de ninguém
     // marcar EM ATRASO manualmente.
-    const atrasadoCount = deliveries.filter(isAtrasadoEfetivo).length;
-    const entregueForaDoPrazoCount = deliveries.filter(isEntregueForaDoPrazo).length;
-    const entregueNoPrazoCount = deliveries.filter(isEntregueNoPrazo).length;
+    const atrasadoCount = deliveriesDoRemetente.filter(isAtrasadoEfetivo).length;
+    const entregueForaDoPrazoCount = deliveriesDoRemetente.filter(isEntregueForaDoPrazo).length;
+    const entregueNoPrazoCount = deliveriesDoRemetente.filter(isEntregueNoPrazo).length;
     const offTrackCount = atrasadoCount + failedCount + entregueForaDoPrazoCount;
 
     // Proporções reais sobre o total de entregas (0 quando não há dados)
@@ -87,7 +101,7 @@ export default function DashboardOperadorScreen({
       pctOnTrack: `${pctOnTrack}%`,
       pctOffTrack: `${pctOffTrack}%`,
     };
-  }, [deliveries]);
+  }, [deliveriesDoRemetente]);
 
   // Filter deliveries based on search and on the active KPI card filter.
   // Separado do corte de "top 5" abaixo pra servir de fonte completa pro
@@ -95,7 +109,7 @@ export default function DashboardOperadorScreen({
   // DashboardClienteScreen) — sem isso, exportar com um filtro ativo saía
   // com a base inteira em vez do que a tela estava mostrando.
   const filteredDeliveriesFull = useMemo(() => {
-    let result = deliveries;
+    let result = deliveriesDoRemetente;
 
     const term = searchTerm.toLowerCase().trim();
     if (term) {
@@ -122,7 +136,7 @@ export default function DashboardOperadorScreen({
     }
 
     return result;
-  }, [deliveries, searchTerm, cardFilter]);
+  }, [deliveriesDoRemetente, searchTerm, cardFilter]);
 
   // Lista exibida no painel: só as 5 mais recentes até algum filtro estar ativo.
   const filteredDeliveries = useMemo(() => {
@@ -161,6 +175,16 @@ export default function DashboardOperadorScreen({
             </div>
 
             <div className="flex gap-2">
+              <select
+                value={remetenteFilter}
+                onChange={(e) => setRemetenteFilter(e.target.value)}
+                className="px-3 py-2 border border-outline-variant rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+              >
+                <option value="">Remetente: Todos</option>
+                {remetentesDisponiveis.map((r) => (
+                  <option key={r} value={r}>{r}</option>
+                ))}
+              </select>
               <button
                 onClick={() => exportDeliveriesToCsv(filteredDeliveriesFull, `relatorio-entregas-${new Date().toISOString().split('T')[0]}.csv`, [], volumesByDeliveryId, comprovantesByDeliveryId, ocorrenciasByDeliveryId)}
                 className="flex items-center gap-2 px-4 py-2 bg-surface border border-outline-variant rounded-lg text-on-surface hover:bg-surface-container-high transition-colors font-bold text-sm shadow-sm"
