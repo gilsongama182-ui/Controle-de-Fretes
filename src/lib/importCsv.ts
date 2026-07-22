@@ -8,7 +8,7 @@ export interface ParsedRow {
   errors: string[];
 }
 
-const VALID_STATUSES: DeliveryStatus[] = ['AGUARDANDO EXPEDIÇÃO', 'ENTREGUE', 'EM ROTA', 'EM ATRASO', 'FALHA', 'DEVOLVIDO'];
+const VALID_STATUSES: DeliveryStatus[] = ['AGUARDANDO EXPEDIÇÃO', 'ENTREGUE', 'EM ROTA', 'EM ATRASO', 'FALHA', 'EM DEVOLUÇÃO', 'DEVOLVIDO'];
 
 // Parser de CSV simples: separador é sempre ";" (mesmo que a exportação usa).
 // Não usamos "," como separador porque campos como endereço frequentemente

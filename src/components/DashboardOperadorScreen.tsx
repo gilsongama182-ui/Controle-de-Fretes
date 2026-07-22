@@ -142,6 +142,7 @@ export default function DashboardOperadorScreen({
         onUsuarios={user.profileType === 'master' ? () => onNavigate('usuarios') : undefined}
         onIntegracoes={user.profileType === 'master' ? () => onNavigate('integracoes') : undefined}
         onCubagem={user.profileType === 'master' ? () => onNavigate('cubagem') : undefined}
+        onFaturamento={user.profileType === 'operador' || user.profileType === 'master' ? () => onNavigate('faturamento') : undefined}
       />
 
       {/* Main Content Area */}
@@ -352,6 +353,7 @@ export default function DashboardOperadorScreen({
                             del.status === 'ENTREGUE' ? 'bg-green-100 text-green-800' :
                             del.status === 'EM ROTA' ? 'bg-blue-100 text-blue-800' :
                             del.status === 'EM ATRASO' ? 'bg-amber-100 text-amber-800' :
+                            del.status === 'EM DEVOLUÇÃO' ? 'bg-orange-100 text-orange-800' :
                             del.status === 'DEVOLVIDO' ? 'bg-gray-200 text-gray-800' :
                             del.status === 'AGUARDANDO EXPEDIÇÃO' ? 'bg-purple-100 text-purple-800' :
                             'bg-red-100 text-red-800'

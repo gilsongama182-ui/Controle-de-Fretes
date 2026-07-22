@@ -88,8 +88,13 @@ export default function EdicaoEntregaScreen({
   // '' = ainda não confirmado pelo operador nesta edição. Começa com o valor
   // já salvo (se o registro já estava fora do prazo e já foi confirmado
   // antes, mostra o que foi escolhido); só limpa de novo quando uma mudança
-  // de data, aqui na tela, torna a entrega atrasada agora.
-  const [atrasoResponsabilidade, setAtrasoResponsabilidade] = useState<AtrasoResponsabilidade | ''>(delivery?.atrasoResponsabilidade ?? '');
+  // de data, aqui na tela, torna a entrega atrasada agora. Quando já existe
+  // ocorrência registrada (destinatário ausente, endereço incorreto etc.), o
+  // atraso é presumidamente do cliente, não do operador — pré-seleciona
+  // "cliente" em vez de deixar em branco (que cairia em "proprio").
+  const [atrasoResponsabilidade, setAtrasoResponsabilidade] = useState<AtrasoResponsabilidade | ''>(
+    delivery?.atrasoResponsabilidade || ((delivery && (ocorrenciasByDeliveryId.get(delivery.id)?.length ?? 0) > 0) ? 'cliente' : '')
+  );
   const [remetente, setRemetente] = useState(delivery?.remetente ?? '');
   const [remetenteCnpj, setRemetenteCnpj] = useState(delivery?.remetenteCnpj ?? '');
   const [remetenteEndereco, setRemetenteEndereco] = useState(delivery?.remetenteEndereco ?? '');
@@ -181,6 +186,7 @@ export default function EdicaoEntregaScreen({
     setIsRegistrandoOcorrencia(true);
     try {
       await onAddOcorrencia(delivery.id, novoTipoOcorrencia, novaDataOcorrencia);
+      setAtrasoResponsabilidade('cliente');
       setNovoTipoOcorrencia('');
     } catch (err) {
       alert(err instanceof Error ? `Não foi possível registrar a ocorrência: ${err.message}` : 'Não foi possível registrar a ocorrência.');
@@ -215,7 +221,7 @@ export default function EdicaoEntregaScreen({
       if (status === 'ENTREGUE') setStatus('EM ROTA');
       return;
     }
-    if (foraDoPrazo(value, previsao)) setAtrasoResponsabilidade('');
+    if (foraDoPrazo(value, previsao)) setAtrasoResponsabilidade(deliveryOcorrencias.length > 0 ? 'cliente' : '');
     setStatus('ENTREGUE');
   };
 
@@ -236,7 +242,7 @@ export default function EdicaoEntregaScreen({
   // atrasada — mesma lógica de obrigar a reconfirmar quem é o responsável.
   const handlePrevisaoChange = (value: string) => {
     setPrevisao(value);
-    if (foraDoPrazo(dataEntrega, value)) setAtrasoResponsabilidade('');
+    if (foraDoPrazo(dataEntrega, value)) setAtrasoResponsabilidade(deliveryOcorrencias.length > 0 ? 'cliente' : '');
   };
 
   const handleSave = async (e: React.FormEvent) => {
@@ -353,6 +359,7 @@ export default function EdicaoEntregaScreen({
         onUsuarios={user.profileType === 'master' ? () => onNavigate('usuarios') : undefined}
         onIntegracoes={user.profileType === 'master' ? () => onNavigate('integracoes') : undefined}
         onCubagem={user.profileType === 'master' ? () => onNavigate('cubagem') : undefined}
+        onFaturamento={user.profileType === 'operador' || user.profileType === 'master' ? () => onNavigate('faturamento') : undefined}
       />
 
       <div className="flex-1 flex flex-col min-w-0">
@@ -701,6 +708,7 @@ export default function EdicaoEntregaScreen({
                       status === 'ENTREGUE' ? 'border-green-300 bg-green-50 text-green-800' :
                       status === 'EM ROTA' ? 'border-blue-300 bg-blue-50 text-blue-800' :
                       status === 'EM ATRASO' ? 'border-amber-300 bg-amber-50 text-amber-800' :
+                      status === 'EM DEVOLUÇÃO' ? 'border-orange-300 bg-orange-50 text-orange-800' :
                       status === 'DEVOLVIDO' ? 'border-gray-300 bg-gray-50 text-gray-800' :
                       status === 'AGUARDANDO EXPEDIÇÃO' ? 'border-purple-300 bg-purple-50 text-purple-800' :
                       'border-red-300 bg-red-50 text-red-800'
@@ -711,6 +719,7 @@ export default function EdicaoEntregaScreen({
                     <option value="EM ROTA">🚚 EM ROTA</option>
                     <option value="EM ATRASO">⚠️ EM ATRASO</option>
                     <option value="FALHA">🛑 FALHA</option>
+                    <option value="EM DEVOLUÇÃO">📦 EM DEVOLUÇÃO</option>
                     <option value="DEVOLVIDO">↩️ DEVOLVIDO</option>
                   </select>
                 </div>

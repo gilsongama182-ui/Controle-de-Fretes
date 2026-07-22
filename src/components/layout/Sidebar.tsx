@@ -1,4 +1,4 @@
-import { LayoutDashboard, Truck, Users, FileUp, PlusCircle, Settings, LogOut, Ruler, Handshake } from 'lucide-react';
+import { LayoutDashboard, Truck, Users, FileUp, PlusCircle, Settings, LogOut, Ruler, Handshake, Receipt } from 'lucide-react';
 import { ActivePage } from '../../types';
 
 interface SidebarProps {
@@ -10,6 +10,7 @@ interface SidebarProps {
   onUsuarios?: () => void;
   onIntegracoes?: () => void;
   onCubagem?: () => void;
+  onFaturamento?: () => void;
   // Operador Log só enxerga a tela de Cubagem — os outros itens dependem de
   // escrita em "deliveries"/importação, que a RLS bloqueia pra esse papel.
   restrictedToCubagem?: boolean;
@@ -24,6 +25,7 @@ export default function Sidebar({
   onUsuarios,
   onIntegracoes,
   onCubagem,
+  onFaturamento,
   restrictedToCubagem,
 }: SidebarProps) {
   const navItemClass = (page: ActivePage) =>
@@ -73,6 +75,13 @@ export default function Sidebar({
               <Handshake className="w-5 h-5" />
               <span>Agregados e Parceiros</span>
             </button>
+
+            {onFaturamento && (
+              <button onClick={onFaturamento} className={navItemClass('faturamento')}>
+                <Receipt className="w-5 h-5" />
+                <span>Faturamento</span>
+              </button>
+            )}
           </>
         )}
 

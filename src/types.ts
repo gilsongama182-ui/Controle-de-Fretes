@@ -1,4 +1,4 @@
-export type DeliveryStatus = 'AGUARDANDO EXPEDIÇÃO' | 'ENTREGUE' | 'EM ROTA' | 'EM ATRASO' | 'FALHA' | 'DEVOLVIDO';
+export type DeliveryStatus = 'AGUARDANDO EXPEDIÇÃO' | 'ENTREGUE' | 'EM ROTA' | 'EM ATRASO' | 'FALHA' | 'EM DEVOLUÇÃO' | 'DEVOLVIDO';
 export type AtrasoResponsabilidade = 'proprio' | 'cliente';
 
 export interface Delivery {
@@ -51,6 +51,8 @@ export interface Delivery {
   loggiLastSyncAt: string; // ISO datetime da última sincronização com a Loggi, vazio se nunca sincronizado
   motoristaId: string; // uuid do profile do motorista responsável pela entrega, vazio se não atribuída
   motoristaNome: string; // denormalizado, mesmo padrão de remetente/cliente
+  invoiceId: string; // uuid da fatura em que essa entrega foi agrupada, vazio se ainda pendente de faturar
+  valorFreteCalculado: number | null; // cálculo automático (peso/cubagem x tabela de frete + GRIS/Ad-Valorem/Tx Fluvial), null se nunca calculado
   updatedAt: string; // ISO datetime da última atualização da linha
 }
 
@@ -80,4 +82,5 @@ export type ActivePage =
   | 'cubagem'
   | 'parceiros'
   | 'cadastro-parceiro'
-  | 'motorista';
+  | 'motorista'
+  | 'faturamento';

@@ -21,6 +21,15 @@ import { syncLoggiTracking, LoggiSyncItemResult } from './lib/loggi';
 import { fetchAllVolumes, saveVolumesForDelivery, Volume, VolumeInput } from './lib/deliveryVolumes';
 import { fetchAllComprovantes, uploadComprovante, removeComprovante, DeliveryComprovante } from './lib/comprovantes';
 import { fetchAllOcorrencias, addOcorrencia, removeOcorrencia, DeliveryOcorrencia, TipoOcorrencia } from './lib/deliveryOcorrencias';
+import {
+  fetchFreightRates,
+  createFreightRate,
+  updateFreightRate,
+  deleteFreightRate,
+  FreightRate,
+  FreightRateInput,
+} from './lib/freightRates';
+import { fetchInvoices, createInvoice, removeInvoice, Invoice } from './lib/invoices';
 
 // Import Screen Components
 import LoginScreen from './components/LoginScreen';
@@ -37,6 +46,7 @@ import CubagemScreen from './components/CubagemScreen';
 import ParceirosScreen from './components/ParceirosScreen';
 import CadastroParceiroScreen from './components/CadastroParceiroScreen';
 import MotoristaScreen from './components/MotoristaScreen';
+import FaturamentoScreen from './components/FaturamentoScreen';
 
 function LoadingScreen() {
   return (
@@ -78,6 +88,8 @@ function AppShell() {
   const [volumes, setVolumes] = useState<Volume[]>([]);
   const [comprovantes, setComprovantes] = useState<DeliveryComprovante[]>([]);
   const [ocorrencias, setOcorrencias] = useState<DeliveryOcorrencia[]>([]);
+  const [freightRates, setFreightRates] = useState<FreightRate[]>([]);
+  const [invoices, setInvoices] = useState<Invoice[]>([]);
   const [selectedDelivery, setSelectedDelivery] = useState<Delivery | null>(null);
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const lastHandledSessionId = useRef<string | null>(null);
@@ -153,6 +165,16 @@ function AppShell() {
         if (active) setOcorrencias(rows);
       })
       .catch((err) => console.error('Falha ao buscar ocorrências:', err));
+    fetchFreightRates()
+      .then((rows) => {
+        if (active) setFreightRates(rows);
+      })
+      .catch((err) => console.error('Falha ao buscar tabela de frete:', err));
+    fetchInvoices()
+      .then((rows) => {
+        if (active) setInvoices(rows);
+      })
+      .catch((err) => console.error('Falha ao buscar faturas:', err));
     return () => {
       active = false;
     };
@@ -170,6 +192,8 @@ function AppShell() {
     let volumesTimer: ReturnType<typeof setTimeout> | undefined;
     let comprovantesTimer: ReturnType<typeof setTimeout> | undefined;
     let ocorrenciasTimer: ReturnType<typeof setTimeout> | undefined;
+    let freightRatesTimer: ReturnType<typeof setTimeout> | undefined;
+    let invoicesTimer: ReturnType<typeof setTimeout> | undefined;
 
     const channel = supabase
       .channel('realtime-deliveries')
@@ -205,6 +229,22 @@ function AppShell() {
             .catch((err) => console.error('Falha ao sincronizar ocorrências:', err));
         }, 400);
       })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'freight_rates' }, () => {
+        clearTimeout(freightRatesTimer);
+        freightRatesTimer = setTimeout(() => {
+          fetchFreightRates()
+            .then((rows) => { if (active) setFreightRates(rows); })
+            .catch((err) => console.error('Falha ao sincronizar tabela de frete:', err));
+        }, 400);
+      })
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'invoices' }, () => {
+        clearTimeout(invoicesTimer);
+        invoicesTimer = setTimeout(() => {
+          fetchInvoices()
+            .then((rows) => { if (active) setInvoices(rows); })
+            .catch((err) => console.error('Falha ao sincronizar faturas:', err));
+        }, 400);
+      })
       .subscribe();
 
     return () => {
@@ -213,6 +253,8 @@ function AppShell() {
       clearTimeout(volumesTimer);
       clearTimeout(comprovantesTimer);
       clearTimeout(ocorrenciasTimer);
+      clearTimeout(freightRatesTimer);
+      clearTimeout(invoicesTimer);
       supabase.removeChannel(channel);
     };
   }, [session?.user.id, profile?.id]);
@@ -325,6 +367,38 @@ function AppShell() {
   const handleRemoveOcorrencia = async (id: string) => {
     await removeOcorrencia(id);
     setOcorrencias((prev) => prev.filter((o) => o.id !== id));
+  };
+
+  const handleCreateFreightRate = async (input: FreightRateInput) => {
+    const created = await createFreightRate(input);
+    setFreightRates((prev) => [...prev, created]);
+  };
+
+  const handleUpdateFreightRate = async (id: string, input: FreightRateInput) => {
+    const updated = await updateFreightRate(id, input);
+    setFreightRates((prev) => prev.map((r) => (r.id === id ? updated : r)));
+  };
+
+  const handleDeleteFreightRate = async (id: string) => {
+    await deleteFreightRate(id);
+    setFreightRates((prev) => prev.filter((r) => r.id !== id));
+  };
+
+  // Marca a fatura no cabeçalho + vincula as entregas (invoice_id) numa
+  // transação só no banco — refetch das duas listas depois, mais simples
+  // que tentar reconciliar o resultado da RPC nos dois estados locais.
+  const handleCreateInvoice = async (numero: string, deliveryIds: string[]) => {
+    await createInvoice(numero, deliveryIds);
+    const [novasEntregas, novasFaturas] = await Promise.all([fetchDeliveries(), fetchInvoices()]);
+    setDeliveries(novasEntregas);
+    setInvoices(novasFaturas);
+  };
+
+  const handleRemoveInvoice = async (id: string) => {
+    await removeInvoice(id);
+    const [novasEntregas, novasFaturas] = await Promise.all([fetchDeliveries(), fetchInvoices()]);
+    setDeliveries(novasEntregas);
+    setInvoices(novasFaturas);
   };
 
   const handleSyncTracking = async (ids: string[]): Promise<SyncItemResult[]> => {
@@ -510,6 +584,26 @@ function AppShell() {
           onLogout={handleLogout}
           onBaixarEntrega={handleBaixarEntregaMotorista}
           onUploadComprovante={handleUploadComprovante}
+        />
+      );
+
+    case 'faturamento':
+      if (!profile) return <LoadingScreen />;
+      return (
+        <FaturamentoScreen
+          onNavigate={setActivePage}
+          onLogout={handleLogout}
+          user={profile}
+          deliveries={deliveries}
+          volumesByDeliveryId={volumesByDeliveryId}
+          freightRates={freightRates}
+          invoices={invoices}
+          onUpdateDelivery={handleUpdateDelivery}
+          onCreateInvoice={handleCreateInvoice}
+          onRemoveInvoice={handleRemoveInvoice}
+          onCreateFreightRate={handleCreateFreightRate}
+          onUpdateFreightRate={handleUpdateFreightRate}
+          onDeleteFreightRate={handleDeleteFreightRate}
         />
       );
 

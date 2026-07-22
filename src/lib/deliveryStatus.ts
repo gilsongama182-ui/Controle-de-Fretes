@@ -28,7 +28,7 @@ export function hojeIso(): string {
 // ainda nem foi expedida também não conta — o prazo só começa a valer depois
 // que ela sai.
 export function isAtrasadoEfetivo(d: Delivery): boolean {
-  if (d.status === 'ENTREGUE' || d.status === 'FALHA' || d.status === 'DEVOLVIDO' || d.status === 'AGUARDANDO EXPEDIÇÃO') return false;
+  if (d.status === 'ENTREGUE' || d.status === 'FALHA' || d.status === 'EM DEVOLUÇÃO' || d.status === 'DEVOLVIDO' || d.status === 'AGUARDANDO EXPEDIÇÃO') return false;
   if (d.atrasoResponsabilidade === 'cliente') return false;
   const previsaoIso = toIsoDate(d.previsao);
   if (!previsaoIso) return false;
