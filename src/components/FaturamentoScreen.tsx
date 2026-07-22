@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
-import { ChevronRight, Receipt, ListChecks, History, Table2, Trash2, Plus, Pencil, X, ChevronDown, Printer } from 'lucide-react';
+import { ChevronRight, Receipt, ListChecks, History, Table2, Trash2, Plus, Pencil, X, ChevronDown, Printer, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { ActivePage, Delivery, DeliveryStatus, User } from '../types';
-import { Volume } from '../lib/deliveryVolumes';
+import { Volume, VolumeInput } from '../lib/deliveryVolumes';
 import { FreightRate, FreightRateInput, TipoTarifa } from '../lib/freightRates';
 import { Invoice, fetchProximoNumeroFatura } from '../lib/invoices';
-import { calcularFrete } from '../lib/freightCalc';
+import { calcularFrete, ResultadoFrete } from '../lib/freightCalc';
 import { formatNfe } from '../lib/formatNfe';
 import { UFS_BR } from '../lib/ufs';
 import Sidebar from './layout/Sidebar';
 import OperadorTopBar from './layout/OperadorTopBar';
 import FaturaPrintView from './layout/FaturaPrintView';
+import CubagemModal from './layout/CubagemModal';
 
 interface FaturamentoScreenProps {
   onNavigate: (page: ActivePage) => void;
@@ -25,11 +26,18 @@ interface FaturamentoScreenProps {
   onCreateFreightRate: (input: FreightRateInput) => Promise<void>;
   onUpdateFreightRate: (id: string, input: FreightRateInput) => Promise<void>;
   onDeleteFreightRate: (id: string) => Promise<void>;
+  onSaveVolumes: (deliveryId: string, volumes: VolumeInput[]) => Promise<void>;
 }
 
 type Aba = 'pendentes' | 'historico' | 'tabela';
 
+type CampoOrdenavel =
+  | 'nfe' | 'nomeRazaoSocial' | 'uf'
+  | 'pesoReal' | 'pesoCubado' | 'pesoConsiderado'
+  | 'valorBase' | 'gris' | 'adValorem' | 'txFluvial' | 'valorTotal';
+
 const EMPTY_VOLUMES: Volume[] = [];
+const VOLUME_VAZIO: VolumeInput = { peso: 0, altura: 0, largura: 0, comprimento: 0 };
 
 function formatMoeda(valor: number): string {
   return valor.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
@@ -39,6 +47,22 @@ function formatDataHora(iso: string): string {
   const d = new Date(iso);
   if (Number.isNaN(d.getTime())) return iso;
   return d.toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' });
+}
+
+function valorOrdenavel(d: Delivery, calc: ResultadoFrete, campo: CampoOrdenavel): string | number {
+  switch (campo) {
+    case 'nfe': return d.nfe;
+    case 'nomeRazaoSocial': return d.nomeRazaoSocial;
+    case 'uf': return d.uf;
+    case 'pesoReal': return calc.pesoReal;
+    case 'pesoCubado': return calc.pesoCubado;
+    case 'pesoConsiderado': return calc.pesoConsiderado;
+    case 'valorBase': return calc.valorBase;
+    case 'gris': return calc.gris;
+    case 'adValorem': return calc.adValorem;
+    case 'txFluvial': return calc.txFluvial;
+    case 'valorTotal': return calc.valorTotal;
+  }
 }
 
 const STATUS_FATURAVEIS: DeliveryStatus[] = ['ENTREGUE', 'DEVOLVIDO', 'FALHA'];
@@ -57,6 +81,7 @@ export default function FaturamentoScreen({
   onCreateFreightRate,
   onUpdateFreightRate,
   onDeleteFreightRate,
+  onSaveVolumes,
 }: FaturamentoScreenProps) {
   const [aba, setAba] = useState<Aba>('pendentes');
   const [erro, setErro] = useState('');
@@ -69,6 +94,9 @@ export default function FaturamentoScreen({
   const [gerandoFatura, setGerandoFatura] = useState(false);
   const [proximoNumero, setProximoNumero] = useState('');
   const [faturaAberta, setFaturaAberta] = useState<{ invoice: Invoice; deliveries: Delivery[] } | null>(null);
+  const [ordenarPor, setOrdenarPor] = useState<CampoOrdenavel | null>(null);
+  const [ordenarDirecao, setOrdenarDirecao] = useState<'asc' | 'desc'>('asc');
+  const [cubagemDeliveryId, setCubagemDeliveryId] = useState<string | null>(null);
 
   const carregarProximoNumero = () => {
     fetchProximoNumeroFatura().then(setProximoNumero).catch((err) => console.error('Falha ao buscar próximo número:', err));
@@ -106,6 +134,70 @@ export default function FaturamentoScreen({
     }
     return map;
   }, [pendentes, volumesByDeliveryId, freightRates]);
+
+  // Ordenação por coluna — clicar num cabeçalho ordena por aquele campo
+  // (inclusive os calculados: peso/frete/taxas), clicar de novo inverte.
+  const pendentesOrdenadas = useMemo(() => {
+    if (!ordenarPor) return pendentes;
+    const arr = [...pendentes];
+    arr.sort((a, b) => {
+      const av = valorOrdenavel(a, calculosPendentes.get(a.id)!, ordenarPor);
+      const bv = valorOrdenavel(b, calculosPendentes.get(b.id)!, ordenarPor);
+      const cmp = typeof av === 'number' && typeof bv === 'number'
+        ? av - bv
+        : String(av).localeCompare(String(bv), 'pt-BR', { numeric: true });
+      return ordenarDirecao === 'asc' ? cmp : -cmp;
+    });
+    return arr;
+  }, [pendentes, calculosPendentes, ordenarPor, ordenarDirecao]);
+
+  const handleOrdenar = (campo: CampoOrdenavel) => {
+    if (ordenarPor === campo) {
+      setOrdenarDirecao((prev) => (prev === 'asc' ? 'desc' : 'asc'));
+    } else {
+      setOrdenarPor(campo);
+      setOrdenarDirecao('asc');
+    }
+  };
+
+  function ThOrdenavel({ campo, label, className = 'px-4 py-3' }: { campo: CampoOrdenavel; label: string; className?: string }) {
+    return (
+      <th
+        onClick={() => handleOrdenar(campo)}
+        title={`Ordenar por ${label}`}
+        className={`cursor-pointer select-none hover:text-primary transition-colors ${className}`}
+      >
+        <span className="inline-flex items-center gap-1">
+          {label}
+          {ordenarPor === campo ? (
+            ordenarDirecao === 'asc' ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />
+          ) : (
+            <ArrowUpDown className="w-3 h-3 opacity-30" />
+          )}
+        </span>
+      </th>
+    );
+  }
+
+  // Edição rápida do 1º volume direto na tabela — cobre o caso comum de 1
+  // volume por entrega, sem precisar abrir a tela de Cubagem. Entregas com
+  // mais de um volume mostram um aviso e usam o modal completo (mesma tela
+  // de Cubagem, reaproveitada) pra não truncar os demais volumes.
+  const handleEditarVolumeInline = async (deliveryId: string, campo: keyof VolumeInput, valorStr: string) => {
+    const valor = Number(valorStr.replace(',', '.'));
+    if (!Number.isFinite(valor) || valor < 0) return;
+    const atuais = volumesByDeliveryId.get(deliveryId) ?? [];
+    const primeiro: VolumeInput = atuais[0]
+      ? { peso: atuais[0].peso, altura: atuais[0].altura, largura: atuais[0].largura, comprimento: atuais[0].comprimento }
+      : { ...VOLUME_VAZIO };
+    if (primeiro[campo] === valor) return;
+    const resto = atuais.slice(1).map((v) => ({ peso: v.peso, altura: v.altura, largura: v.largura, comprimento: v.comprimento }));
+    try {
+      await onSaveVolumes(deliveryId, [{ ...primeiro, [campo]: valor }, ...resto]);
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível salvar a cubagem.');
+    }
+  };
 
   // Resolve por id contra TODAS as entregas (não só as visíveis em "pendentes"
   // no momento) — a seleção persiste enquanto o usuário digita na busca, então
@@ -428,23 +520,31 @@ export default function FaturamentoScreen({
                           onChange={toggleTodasPendentes}
                         />
                       </th>
-                      <th className="px-4 py-3">NF-e</th>
-                      <th className="px-4 py-3">Destinatário</th>
-                      <th className="px-4 py-3">UF/CEP</th>
-                      <th className="px-4 py-3 text-right">Peso Real</th>
-                      <th className="px-4 py-3 text-right">Peso Cubado</th>
-                      <th className="px-4 py-3 text-right">Peso Consid.</th>
-                      <th className="px-4 py-3 text-right">Frete Base</th>
-                      <th className="px-4 py-3 text-right">GRIS</th>
-                      <th className="px-4 py-3 text-right">Ad Valorem</th>
-                      <th className="px-4 py-3 text-right">Tx Fluvial</th>
-                      <th className="px-4 py-3 text-right">Total</th>
+                      <ThOrdenavel campo="nfe" label="NF-e" />
+                      <ThOrdenavel campo="nomeRazaoSocial" label="Destinatário" />
+                      <ThOrdenavel campo="uf" label="UF/CEP" />
+                      <ThOrdenavel campo="pesoReal" label="Peso Real" className="px-4 py-3 text-right" />
+                      <th className="px-3 py-3 text-right" title="Altura do volume (cm) — apurada na Cubagem">Alt.(cm)</th>
+                      <th className="px-3 py-3 text-right" title="Largura do volume (cm) — apurada na Cubagem">Larg.(cm)</th>
+                      <th className="px-3 py-3 text-right" title="Comprimento do volume (cm) — apurado na Cubagem">Compr.(cm)</th>
+                      <ThOrdenavel campo="pesoCubado" label="Peso Cubado" className="px-4 py-3 text-right" />
+                      <ThOrdenavel campo="pesoConsiderado" label="Peso Consid." className="px-4 py-3 text-right" />
+                      <ThOrdenavel campo="valorBase" label="Frete Base" className="px-4 py-3 text-right" />
+                      <ThOrdenavel campo="gris" label="GRIS" className="px-4 py-3 text-right" />
+                      <ThOrdenavel campo="adValorem" label="Ad Valorem" className="px-4 py-3 text-right" />
+                      <ThOrdenavel campo="txFluvial" label="Tx Fluvial" className="px-4 py-3 text-right" />
+                      <ThOrdenavel campo="valorTotal" label="Total" className="px-4 py-3 text-right" />
+                      <th className="px-3 py-3 text-right">Cubagem</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-outline-variant">
-                    {pendentes.length > 0 ? (
-                      pendentes.map((d) => {
+                    {pendentesOrdenadas.length > 0 ? (
+                      pendentesOrdenadas.map((d) => {
                         const calc = calculosPendentes.get(d.id)!;
+                        const volumes = volumesByDeliveryId.get(d.id) ?? EMPTY_VOLUMES;
+                        const primeiroVolume = volumes[0];
+                        const temMultiplosVolumes = volumes.length > 1;
+                        const inputClass = 'w-16 px-1.5 py-1 border border-transparent hover:border-outline-variant focus:border-primary rounded text-xs text-right font-mono outline-none bg-transparent focus:bg-white';
                         return (
                           <tr key={d.id} className={`hover:bg-primary/5 transition-colors ${!calc.tarifaEncontrada ? 'bg-error-container/10' : ''}`}>
                             <td className="px-4 py-3">
@@ -453,7 +553,54 @@ export default function FaturamentoScreen({
                             <td className="px-4 py-3 font-mono text-xs text-primary font-bold whitespace-nowrap">{formatNfe(d.nfe)}</td>
                             <td className="px-4 py-3 text-xs text-on-surface whitespace-nowrap max-w-[220px] truncate" title={d.nomeRazaoSocial}>{d.nomeRazaoSocial}</td>
                             <td className="px-4 py-3 text-xs whitespace-nowrap">{d.uf} · {d.cep || '—'}</td>
-                            <td className="px-4 py-3 text-xs text-right">{calc.pesoReal.toFixed(2)} kg</td>
+                            <td className="px-4 py-3 text-xs text-right">
+                              <input
+                                key={`${d.id}-peso`}
+                                type="number"
+                                step="0.01"
+                                defaultValue={primeiroVolume?.peso ?? ''}
+                                onBlur={(e) => handleEditarVolumeInline(d.id, 'peso', e.target.value)}
+                                disabled={temMultiplosVolumes}
+                                title={temMultiplosVolumes ? 'Múltiplos volumes — edite pelo botão de Cubagem' : 'Peso (kg) do volume'}
+                                className={inputClass}
+                              />
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              <input
+                                key={`${d.id}-altura`}
+                                type="number"
+                                step="0.01"
+                                defaultValue={primeiroVolume?.altura ?? ''}
+                                onBlur={(e) => handleEditarVolumeInline(d.id, 'altura', e.target.value)}
+                                disabled={temMultiplosVolumes}
+                                title={temMultiplosVolumes ? 'Múltiplos volumes — edite pelo botão de Cubagem' : 'Altura (cm) do volume'}
+                                className={inputClass}
+                              />
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              <input
+                                key={`${d.id}-largura`}
+                                type="number"
+                                step="0.01"
+                                defaultValue={primeiroVolume?.largura ?? ''}
+                                onBlur={(e) => handleEditarVolumeInline(d.id, 'largura', e.target.value)}
+                                disabled={temMultiplosVolumes}
+                                title={temMultiplosVolumes ? 'Múltiplos volumes — edite pelo botão de Cubagem' : 'Largura (cm) do volume'}
+                                className={inputClass}
+                              />
+                            </td>
+                            <td className="px-3 py-3 text-right">
+                              <input
+                                key={`${d.id}-comprimento`}
+                                type="number"
+                                step="0.01"
+                                defaultValue={primeiroVolume?.comprimento ?? ''}
+                                onBlur={(e) => handleEditarVolumeInline(d.id, 'comprimento', e.target.value)}
+                                disabled={temMultiplosVolumes}
+                                title={temMultiplosVolumes ? 'Múltiplos volumes — edite pelo botão de Cubagem' : 'Comprimento (cm) do volume'}
+                                className={inputClass}
+                              />
+                            </td>
                             <td className="px-4 py-3 text-xs text-right">{calc.pesoCubado.toFixed(2)} kg</td>
                             <td className="px-4 py-3 text-xs text-right font-bold">{calc.pesoConsiderado.toFixed(2)} kg</td>
                             <td className="px-4 py-3 text-xs text-right">
@@ -465,12 +612,22 @@ export default function FaturamentoScreen({
                             <td className="px-4 py-3 text-xs text-right">R$ {formatMoeda(calc.adValorem)}</td>
                             <td className="px-4 py-3 text-xs text-right">R$ {formatMoeda(calc.txFluvial)}</td>
                             <td className="px-4 py-3 text-xs text-right font-bold text-primary whitespace-nowrap">R$ {formatMoeda(calc.valorTotal)}</td>
+                            <td className="px-3 py-3 text-right">
+                              <button
+                                onClick={() => setCubagemDeliveryId(d.id)}
+                                title={temMultiplosVolumes ? `${volumes.length} volumes — editar todos` : 'Editar cubagem completa'}
+                                className="inline-flex items-center gap-1 p-1.5 border border-outline text-on-surface-variant rounded-lg hover:bg-secondary-container transition-colors"
+                              >
+                                <Pencil className="w-3.5 h-3.5" />
+                                {temMultiplosVolumes && <span className="text-[10px] font-bold">+{volumes.length}</span>}
+                              </button>
+                            </td>
                           </tr>
                         );
                       })
                     ) : (
                       <tr>
-                        <td colSpan={12} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={16} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega pendente de faturar com esse filtro.
                         </td>
                       </tr>
@@ -708,6 +865,13 @@ export default function FaturamentoScreen({
           onClose={() => setFaturaAberta(null)}
         />
       )}
+
+      <CubagemModal
+        delivery={cubagemDeliveryId ? deliveries.find((d) => d.id === cubagemDeliveryId) ?? null : null}
+        volumes={(cubagemDeliveryId && volumesByDeliveryId.get(cubagemDeliveryId)) || EMPTY_VOLUMES}
+        onClose={() => setCubagemDeliveryId(null)}
+        onSave={onSaveVolumes}
+      />
     </div>
   );
 }

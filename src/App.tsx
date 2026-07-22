@@ -607,6 +607,7 @@ function AppShell() {
           onCreateFreightRate={handleCreateFreightRate}
           onUpdateFreightRate={handleUpdateFreightRate}
           onDeleteFreightRate={handleDeleteFreightRate}
+          onSaveVolumes={handleSaveVolumes}
         />
       );
 
