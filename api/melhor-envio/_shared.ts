@@ -356,11 +356,24 @@ export function matchAndBuildPatch(
 // típico de rastreio e ainda não foram vistos numa resposta real — por
 // isso qualquer status não reconhecido retorna null de propósito, pra
 // nunca sobrescrever o status de uma entrega com um valor adivinhado.
+//
+// Achado (rastreio 888030802070541, reportado pelo usuário): "undelivered"
+// contém "delivered", e "não entregue" contém "entregue" — testar a forma
+// positiva (ENTREGUE) antes da negada (FALHA) classificava um pacote NÃO
+// entregue como Entregue. Por isso as formas negadas/malsucedidas são
+// conferidas primeiro, igual já era feito no mapeamento equivalente da
+// Loggi (mapLoggiStatus).
 export function mapTrackingStatus(meStatus: string): DeliveryStatus | null {
   const s = meStatus.toLowerCase();
-  if (s.includes('delivered') || s.includes('entregue')) return 'ENTREGUE';
+  if (
+    s.includes('não entregue') ||
+    s.includes('nao entregue') ||
+    s.includes('undelivered') ||
+    s.includes('failed') ||
+    s.includes('insucesso')
+  ) return 'FALHA';
   if (s.includes('devolvido') || s.includes('returned')) return 'DEVOLVIDO';
-  if (s.includes('undelivered') || s.includes('failed')) return 'FALHA';
+  if (s.includes('delivered') || s.includes('entregue')) return 'ENTREGUE';
   if (
     s.includes('received') ||
     s.includes('posted') ||
