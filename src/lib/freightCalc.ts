@@ -15,6 +15,14 @@ const FATOR_CUBAGEM = 300;
 const GRIS_PCT = 0.0008; // 0,08% sobre o valor total da Nota Fiscal
 const AD_VALOREM_PCT = 0.003; // 0,30% sobre o valor total da Nota Fiscal
 
+// Acréscimos sobre o frete base (valorBase) em situações operacionais:
+// reentrega é um flag manual (a entrega pode ter tido reentrega e mesmo assim
+// terminar ENTREGUE); devolução já usa o status existente (EM DEVOLUÇÃO/
+// DEVOLVIDO), sem precisar de flag novo.
+const REENTREGA_PCT = 0.5; // 50% do frete base
+const DEVOLUCAO_PCT = 1; // 100% do frete base
+export const STATUS_DEVOLUCAO: Delivery['status'][] = ['EM DEVOLUÇÃO', 'DEVOLVIDO'];
+
 function cepParaNumero(cep: string): number {
   return Number(cep.replace(/\D/g, '')) || 0;
 }
@@ -79,6 +87,8 @@ export interface ResultadoFrete {
   valorBase: number;
   gris: number;
   adValorem: number;
+  acrescimoReentrega: number;
+  acrescimoDevolucao: number;
   valorTotal: number;
 }
 
@@ -94,6 +104,9 @@ export function calcularFrete(delivery: Delivery, volumes: Volume[], tarifas: Fr
   const gris = arredondar(valorNota * GRIS_PCT);
   const adValorem = arredondar(valorNota * AD_VALOREM_PCT);
 
+  const acrescimoReentrega = delivery.reentrega ? arredondar(valorBase * REENTREGA_PCT) : 0;
+  const acrescimoDevolucao = STATUS_DEVOLUCAO.includes(delivery.status) ? arredondar(valorBase * DEVOLUCAO_PCT) : 0;
+
   return {
     tarifaEncontrada: tarifa !== null,
     pesoReal,
@@ -102,6 +115,8 @@ export function calcularFrete(delivery: Delivery, volumes: Volume[], tarifas: Fr
     valorBase,
     gris,
     adValorem,
-    valorTotal: arredondar(valorBase + gris + adValorem),
+    acrescimoReentrega,
+    acrescimoDevolucao,
+    valorTotal: arredondar(valorBase + gris + adValorem + acrescimoReentrega + acrescimoDevolucao),
   };
 }

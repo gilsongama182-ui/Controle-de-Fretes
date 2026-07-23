@@ -4,7 +4,7 @@ import { ActivePage, Delivery, DeliveryStatus, User } from '../types';
 import { Volume, VolumeInput } from '../lib/deliveryVolumes';
 import { FreightRate, FreightRateInput, TipoTarifa } from '../lib/freightRates';
 import { Invoice, fetchProximoNumeroFatura } from '../lib/invoices';
-import { arredondar, calcularFrete, ResultadoFrete } from '../lib/freightCalc';
+import { arredondar, calcularFrete, ResultadoFrete, STATUS_DEVOLUCAO } from '../lib/freightCalc';
 import { formatNfe } from '../lib/formatNfe';
 import { UFS_BR } from '../lib/ufs';
 import Sidebar from './layout/Sidebar';
@@ -241,6 +241,16 @@ export default function FaturamentoScreen({
       await onUpdateDelivery(deliveryId, { valorAcordado: novoValor });
     } catch (err) {
       setErro(err instanceof Error ? err.message : 'Não foi possível salvar o valor acordado.');
+    }
+  };
+
+  // Reentrega é um flag manual — devolução usa o status EM DEVOLUÇÃO/DEVOLVIDO
+  // já existente, sem precisar de flag (por isso não tem handler equivalente).
+  const handleToggleReentrega = async (deliveryId: string, valor: boolean) => {
+    try {
+      await onUpdateDelivery(deliveryId, { reentrega: valor });
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível atualizar a reentrega.');
     }
   };
 
@@ -591,6 +601,7 @@ export default function FaturamentoScreen({
                       <ThOrdenavel campo="valorBase" label="Frete Base" className="px-4 py-3 text-right" />
                       <ThOrdenavel campo="gris" label="GRIS" className="px-4 py-3 text-right" />
                       <ThOrdenavel campo="adValorem" label="Ad Valorem" className="px-4 py-3 text-right" />
+                      <th className="px-3 py-3 text-center" title="Reentrega soma 50% do frete base (manual); devolução soma 100% automaticamente pelo status">Reentrega</th>
                       <th className="px-3 py-3 text-right" title="Frete negociado manualmente — quando preenchido, substitui o total calculado dessa linha">Valor Acordado</th>
                       <ThOrdenavel campo="valorTotal" label="Total" className="px-4 py-3 text-right" />
                       <th className="px-3 py-3 text-right">Cubagem</th>
@@ -672,6 +683,18 @@ export default function FaturamentoScreen({
                             </td>
                             <td className="px-4 py-3 text-xs text-right">R$ {formatMoeda(calc.gris)}</td>
                             <td className="px-4 py-3 text-xs text-right">R$ {formatMoeda(calc.adValorem)}</td>
+                            <td className="px-3 py-3 text-center">
+                              {STATUS_DEVOLUCAO.includes(d.status) ? (
+                                <span className="text-[9px] font-bold text-orange-700 uppercase" title="Devolução: soma 100% do frete base automaticamente pelo status">Devolução auto</span>
+                              ) : (
+                                <input
+                                  type="checkbox"
+                                  checked={d.reentrega}
+                                  onChange={() => handleToggleReentrega(d.id, !d.reentrega)}
+                                  title="Houve reentrega? soma 50% do frete base"
+                                />
+                              )}
+                            </td>
                             <td className="px-3 py-3 text-right">
                               <input
                                 key={`${d.id}-valor-acordado`}
@@ -687,6 +710,8 @@ export default function FaturamentoScreen({
                             <td className="px-4 py-3 text-xs text-right font-bold text-primary whitespace-nowrap">
                               R$ {formatMoeda(valorFinal(d, calc))}
                               {d.valorAcordado != null && <span className="ml-1 text-[9px] font-bold text-secondary uppercase">acordado</span>}
+                              {d.valorAcordado == null && calc.acrescimoReentrega > 0 && <span className="ml-1 text-[9px] font-bold text-amber-700 uppercase">+reentrega</span>}
+                              {d.valorAcordado == null && calc.acrescimoDevolucao > 0 && <span className="ml-1 text-[9px] font-bold text-orange-700 uppercase">+devolução</span>}
                             </td>
                             <td className="px-3 py-3 text-right">
                               <button
@@ -703,7 +728,7 @@ export default function FaturamentoScreen({
                       })
                     ) : (
                       <tr>
-                        <td colSpan={17} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={18} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega pendente de faturar com esse filtro.
                         </td>
                       </tr>
@@ -781,7 +806,11 @@ export default function FaturamentoScreen({
                                 <td className="px-4 py-2 font-mono text-xs text-primary font-bold">{formatNfe(d.nfe)}</td>
                                 <td className="px-4 py-2 text-xs">{d.nomeRazaoSocial}</td>
                                 <td className="px-4 py-2 text-xs">{d.status}</td>
-                                <td className="px-4 py-2 text-xs text-right font-bold">R$ {formatMoeda(d.valorFreteCalculado ?? 0)}</td>
+                                <td className="px-4 py-2 text-xs text-right font-bold">
+                                  R$ {formatMoeda(d.valorFreteCalculado ?? 0)}
+                                  {d.reentrega && <span className="ml-1 text-[9px] font-bold text-amber-700 uppercase">+reentrega</span>}
+                                  {STATUS_DEVOLUCAO.includes(d.status) && <span className="ml-1 text-[9px] font-bold text-orange-700 uppercase">+devolução</span>}
+                                </td>
                               </tr>
                             ))}
                           </tbody>

@@ -123,6 +123,10 @@ export default function EdicaoEntregaScreen({
   const [codigoRastreio, setCodigoRastreio] = useState(delivery?.codigoRastreio ?? '');
   const [motoristaId, setMotoristaId] = useState(delivery?.motoristaId ?? '');
   const [motoristas, setMotoristas] = useState<ProfileRecord[]>([]);
+  // Custo adicional de reentrega (+50% do frete no Faturamento) — pré-marcado
+  // automaticamente quando o status vira ENTREGUE com ocorrência já registrada
+  // (ver handleStatusChange), mas fica editável manualmente aqui também.
+  const [reentrega, setReentrega] = useState(delivery?.reentrega ?? false);
 
   useEffect(() => {
     fetchMotoristas()
@@ -205,6 +209,20 @@ export default function EdicaoEntregaScreen({
   };
 
   const foraDoPrazo = (entrega: string, prev: string) => !!entrega && !!prev && entrega > prev;
+
+  // Só pergunta ao ENTRAR em ENTREGUE (não em toda seleção repetida) e só se
+  // já existe ocorrência registrada — sinal de que o pacote provavelmente
+  // precisou de uma nova tentativa antes de ser entregue. Não pergunta de novo
+  // se já estava marcado, pra não incomodar o operador.
+  const handleStatusChange = (value: DeliveryStatus) => {
+    if (value === 'ENTREGUE' && status !== 'ENTREGUE' && deliveryOcorrencias.length > 0 && !reentrega) {
+      const confirmar = window.confirm(
+        'Essa entrega tem ocorrência registrada antes de ser marcada como ENTREGUE. Considerar custo adicional de reentrega (+50% do frete) no faturamento?'
+      );
+      if (confirmar) setReentrega(true);
+    }
+    setStatus(value);
+  };
 
   // Ao preencher a Data de Entrega, o status vira ENTREGUE sempre — a carga
   // foi entregue, independente de ter sido dentro ou fora do prazo. EM ATRASO
@@ -290,7 +308,8 @@ export default function EdicaoEntregaScreen({
         melhorEnvioId,
         codigoRastreio,
         motoristaId: motoristaId || '',
-        motoristaNome
+        motoristaNome,
+        reentrega
       });
       alert('Informações atualizadas com sucesso!');
       onNavigate('gestao-entregas');
@@ -703,7 +722,7 @@ export default function EdicaoEntregaScreen({
                   <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Status Atual da Carga</label>
                   <select
                     value={status}
-                    onChange={(e) => setStatus(e.target.value as DeliveryStatus)}
+                    onChange={(e) => handleStatusChange(e.target.value as DeliveryStatus)}
                     className={`w-full p-3 border rounded-xl font-bold text-sm outline-none focus:ring-2 focus:ring-primary/20 cursor-pointer ${
                       status === 'ENTREGUE' ? 'border-green-300 bg-green-50 text-green-800' :
                       status === 'EM ROTA' ? 'border-blue-300 bg-blue-50 text-blue-800' :
@@ -722,6 +741,10 @@ export default function EdicaoEntregaScreen({
                     <option value="EM DEVOLUÇÃO">📦 EM DEVOLUÇÃO</option>
                     <option value="DEVOLVIDO">↩️ DEVOLVIDO</option>
                   </select>
+                  <label className="flex items-center gap-2 pt-1 text-xs font-semibold text-amber-800 cursor-pointer">
+                    <input type="checkbox" checked={reentrega} onChange={(e) => setReentrega(e.target.checked)} />
+                    Considerar custo adicional de reentrega (+50% do frete no faturamento)
+                  </label>
                 </div>
 
                 {/* Registro de ocorrências tipificadas (com data), acumulativo */}

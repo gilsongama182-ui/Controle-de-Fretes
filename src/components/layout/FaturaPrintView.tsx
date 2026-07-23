@@ -2,6 +2,7 @@ import { X, Printer } from 'lucide-react';
 import { Delivery } from '../../types';
 import { Invoice } from '../../lib/invoices';
 import { formatNfe } from '../../lib/formatNfe';
+import { STATUS_DEVOLUCAO } from '../../lib/freightCalc';
 
 interface FaturaPrintViewProps {
   invoice: Invoice;
@@ -74,6 +75,7 @@ export default function FaturaPrintView({ invoice, deliveries, onClose }: Fatura
         table.fatura-tabela thead th.fatura-col-valor { text-align: right; }
         table.fatura-tabela tbody td { font-size: 9.5pt; padding: 2.5mm 3mm; border-bottom: 0.5pt solid #e4e7ec; }
         table.fatura-tabela tbody td.fatura-col-valor { text-align: right; font-weight: 600; }
+        .fatura-tag-acrescimo { display: block; font-size: 6.5pt; font-weight: 800; text-transform: uppercase; color: #b45309; letter-spacing: 0.3px; }
         table.fatura-tabela tbody tr:nth-child(even) { background: #f7f9fc; }
         .fatura-total-row { display: flex; justify-content: flex-end; gap: 4mm; padding: 3mm 3mm 0; }
         .fatura-total-label { font-size: 11pt; font-weight: 700; color: #333; }
@@ -147,7 +149,11 @@ export default function FaturaPrintView({ invoice, deliveries, onClose }: Fatura
                   <td>{formatNfe(d.nfe)}</td>
                   <td>{d.nomeRazaoSocial}</td>
                   <td>{d.municipio}/{d.uf}</td>
-                  <td className="fatura-col-valor">R$ {formatMoeda(d.valorFreteCalculado ?? 0)}</td>
+                  <td className="fatura-col-valor">
+                    R$ {formatMoeda(d.valorFreteCalculado ?? 0)}
+                    {d.reentrega && <span className="fatura-tag-acrescimo">+ reentrega</span>}
+                    {STATUS_DEVOLUCAO.includes(d.status) && <span className="fatura-tag-acrescimo">+ devolução</span>}
+                  </td>
                 </tr>
               ))}
             </tbody>
