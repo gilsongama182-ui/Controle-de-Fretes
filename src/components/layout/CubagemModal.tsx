@@ -57,11 +57,10 @@ export default function CubagemModal({ delivery, volumes, onClose, onSave }: Cub
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4" onClick={onClose}>
-      <div
-        className="w-full max-w-lg bg-white rounded-xl shadow-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto"
-        onClick={(e) => e.stopPropagation()}
-      >
+    // Fecha só pelo X — clicar no fundo escurecido não fecha mais, pra não
+    // perder medidas já digitadas sem querer.
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+      <div className="w-full max-w-lg bg-white rounded-xl shadow-xl p-5 space-y-4 max-h-[90vh] overflow-y-auto">
         <div className="flex items-start justify-between">
           <div>
             <h2 className="text-sm font-bold text-primary">Cubagem</h2>

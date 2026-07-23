@@ -107,7 +107,8 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
   return (
     <div className="fixed inset-0 z-50 overflow-hidden" aria-labelledby="slide-over-title" role="dialog" aria-modal="true">
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute inset-0 bg-black/50 transition-opacity" onClick={onClose}></div>
+        {/* Fecha só pelo X — clicar no fundo escurecido não fecha mais, pra não perder o formulário preenchido sem querer. */}
+        <div className="absolute inset-0 bg-black/50 transition-opacity"></div>
         <div className="pointer-events-none fixed inset-y-0 right-0 flex max-w-full pl-10">
           <div className="pointer-events-auto w-screen max-w-md">
             <div className="flex h-full flex-col overflow-y-scroll bg-white py-6 shadow-xl">
