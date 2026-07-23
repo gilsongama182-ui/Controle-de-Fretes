@@ -6,6 +6,7 @@ import {
   scrapeShipments,
   buildShipmentIndex,
   matchAndBuildPatch,
+  buscarDataEntregaReal,
   captureDebug,
   readAuthorized,
   DeliveryTrackingRow,
@@ -23,6 +24,14 @@ import {
 // por execução, e todas as entregas candidatas são casadas contra essa
 // mesma leitura (login por entrega seria inviável).
 const MAX_DELIVERIES_PER_RUN = 300;
+
+// Limite de quantos painéis de detalhe (data real de entrega) essa execução
+// abre — cada um é bem mais lento que ler a tabela inteira, e a function tem
+// só 60s no total (maxDuration). Como o cron só reconsulta entregas ainda
+// EM ROTA/EM ATRASO, qualquer uma que vire ENTREGUE aqui é sempre uma
+// transição nova (nunca uma re-checagem); as que excederem o limite num
+// pico de entregas caem no fallback de usar a data/hora do sync.
+const MAX_DETALHES_POR_EXECUCAO = 15;
 
 export default async function handler(req: IncomingMessage, res: ServerResponse) {
   if (!readAuthorized(req)) {
@@ -97,41 +106,51 @@ export default async function handler(req: IncomingMessage, res: ServerResponse)
       });
       return;
     }
+
+    const nowIso = new Date().toISOString();
+    let updated = 0;
+    let notFound = 0;
+    let failed = 0;
+    let detalhesAbertos = 0;
+    const details: Record<string, unknown>[] = [];
+
+    for (const delivery of deliveries) {
+      const outcome = matchAndBuildPatch(delivery, shipmentIndex, nowIso);
+      if (!outcome.ok || !outcome.patch) {
+        notFound++;
+        if (debugMode) details.push({ id: delivery.id, codigoRastreio: delivery.codigo_rastreio, result: 'notFound', error: outcome.error });
+        continue;
+      }
+
+      // Troca a data "carimbada" (agora) pela data real de entrega lida no
+      // painel de detalhes da Loggi, respeitando o limite por execução.
+      if (outcome.mappedStatus === 'ENTREGUE' && delivery.codigo_rastreio && detalhesAbertos < MAX_DETALHES_POR_EXECUCAO) {
+        detalhesAbertos++;
+        const dataReal = await buscarDataEntregaReal(page, delivery.codigo_rastreio);
+        if (dataReal) outcome.patch.data_entrega = dataReal;
+      }
+
+      const { error: updateError } = await supabase.from('deliveries').update(outcome.patch).eq('id', delivery.id);
+      if (updateError) {
+        failed++;
+        if (debugMode) details.push({ id: delivery.id, codigoRastreio: delivery.codigo_rastreio, result: 'failed', patch: outcome.patch, error: updateError.message });
+      } else {
+        updated++;
+        if (debugMode) details.push({ id: delivery.id, codigoRastreio: delivery.codigo_rastreio, result: 'updated', patch: outcome.patch });
+      }
+    }
+
+    sendJson(res, 200, {
+      checked: deliveries.length,
+      updated,
+      notFound,
+      failed,
+      shipmentsScraped: shipmentIndex.size,
+      scrapedTrackingCodes: debugMode ? Array.from(shipmentIndex.keys()) : undefined,
+      details: debugMode ? details : undefined,
+      afterScrapeDebug,
+    });
   } finally {
     await browser.close();
   }
-
-  const nowIso = new Date().toISOString();
-  let updated = 0;
-  let notFound = 0;
-  let failed = 0;
-  const details: Record<string, unknown>[] = [];
-
-  for (const delivery of deliveries) {
-    const outcome = matchAndBuildPatch(delivery, shipmentIndex, nowIso);
-    if (!outcome.ok || !outcome.patch) {
-      notFound++;
-      if (debugMode) details.push({ id: delivery.id, codigoRastreio: delivery.codigo_rastreio, result: 'notFound', error: outcome.error });
-      continue;
-    }
-    const { error: updateError } = await supabase.from('deliveries').update(outcome.patch).eq('id', delivery.id);
-    if (updateError) {
-      failed++;
-      if (debugMode) details.push({ id: delivery.id, codigoRastreio: delivery.codigo_rastreio, result: 'failed', patch: outcome.patch, error: updateError.message });
-    } else {
-      updated++;
-      if (debugMode) details.push({ id: delivery.id, codigoRastreio: delivery.codigo_rastreio, result: 'updated', patch: outcome.patch });
-    }
-  }
-
-  sendJson(res, 200, {
-    checked: deliveries.length,
-    updated,
-    notFound,
-    failed,
-    shipmentsScraped: shipmentIndex.size,
-    scrapedTrackingCodes: debugMode ? Array.from(shipmentIndex.keys()) : undefined,
-    details: debugMode ? details : undefined,
-    afterScrapeDebug,
-  });
 }

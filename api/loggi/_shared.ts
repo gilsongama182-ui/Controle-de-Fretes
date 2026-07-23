@@ -1,6 +1,6 @@
 import type { IncomingMessage, ServerResponse } from 'http';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import puppeteer, { Browser, Page } from 'puppeteer-core';
+import puppeteer, { Browser, ElementHandle, Page } from 'puppeteer-core';
 import chromium from '@sparticuz/chromium-min';
 import type { DeliveryStatus } from '../../src/types';
 
@@ -51,6 +51,17 @@ const LOGGI_ROW_SELECTOR = process.env.LOGGI_ROW_SELECTOR || 'tbody tr.MuiTableR
 const LOGGI_PRAZO_SELECTOR = process.env.LOGGI_PRAZO_SELECTOR || 'td:nth-child(4)';
 const LOGGI_TRACKING_SELECTOR = process.env.LOGGI_TRACKING_SELECTOR || 'td:nth-child(5)';
 const LOGGI_STATUS_SELECTOR = process.env.LOGGI_STATUS_SELECTOR || 'td:nth-child(6)';
+
+// Botão "⋮" (mais opções) de cada linha, que abre o menu com "Compartilhar"/
+// "Ver detalhes" — confirmado visualmente (print do usuário) como o único
+// botão da linha, na última célula. Ainda não confirmado via inspeção real
+// do HTML (só o print) — mesmo aviso de fragilidade dos outros seletores.
+const LOGGI_ROW_MENU_BUTTON_SELECTOR = process.env.LOGGI_ROW_MENU_BUTTON_SELECTOR || 'button';
+const LOGGI_VER_DETALHES_TEXT = process.env.LOGGI_VER_DETALHES_TEXT || 'Ver detalhes';
+// Trecho fixo que antecede a data real de entrega no painel de detalhes
+// ("O pacote foi entregue em 17 jul, 2026") — usado tanto pra confirmar que
+// o painel carregou quanto pra achar a frase certa em meio ao resto do texto.
+const LOGGI_ENTREGUE_EM_TEXTO = process.env.LOGGI_ENTREGUE_EM_TEXTO || 'entregue em';
 
 // Curto de propósito: a function tem 60s no total (maxDuration, limite do
 // plano da Vercel) e passa por várias esperas em sequência (login,
@@ -350,6 +361,55 @@ export async function scrapeShipments(page: Page): Promise<LoggiShipment[]> {
   );
 }
 
+// Abre o painel de detalhes de um envio (clique no "⋮" da linha -> "Ver
+// detalhes") pra ler a data REAL de entrega ("O pacote foi entregue em 17
+// jul, 2026") em vez de carimbar a data/hora em que o sync rodou. Só deve
+// ser chamada pras entregas que estão virando ENTREGUE nessa execução (ver
+// limite no chamador) — abrir o painel de cada envio é bem mais lento que
+// ler a tabela inteira de uma vez só, e a function tem só 60s no total.
+// Nunca lança: qualquer falha aqui cai no fallback de usar a data/hora do
+// sync (melhor um valor aproximado do que travar a execução inteira).
+export async function buscarDataEntregaReal(page: Page, trackingCode: string): Promise<string | null> {
+  try {
+    const rows = await page.$$(LOGGI_ROW_SELECTOR);
+    let linhaAlvo: ElementHandle<Element> | null = null;
+    for (const row of rows) {
+      const texto = await row.$eval(LOGGI_TRACKING_SELECTOR, (el) => el.textContent?.trim() ?? '').catch(() => '');
+      if (texto === trackingCode) {
+        linhaAlvo = row;
+        break;
+      }
+    }
+    if (!linhaAlvo) return null;
+
+    const botaoMenu = await linhaAlvo.$(LOGGI_ROW_MENU_BUTTON_SELECTOR);
+    if (!botaoMenu) return null;
+    await botaoMenu.click();
+    await settle(400);
+    await clickButtonByText(page, LOGGI_VER_DETALHES_TEXT, `abrindo detalhes de ${trackingCode}`);
+    await settle(600);
+
+    await page.waitForFunction(
+      (trecho) => document.body.innerText.toLowerCase().includes(trecho),
+      { timeout: NAV_TIMEOUT_MS },
+      LOGGI_ENTREGUE_EM_TEXTO,
+    );
+
+    const bodyText = await page.evaluate(() => document.body.innerText);
+    const idx = bodyText.toLowerCase().indexOf(LOGGI_ENTREGUE_EM_TEXTO);
+    const dataReal = idx >= 0
+      ? parseDataAbreviadaPt(bodyText.slice(idx, idx + LOGGI_ENTREGUE_EM_TEXTO.length + 20), false)
+      : null;
+
+    await page.keyboard.press('Escape').catch(() => undefined);
+    await settle(400);
+    return dataReal;
+  } catch {
+    await page.keyboard.press('Escape').catch(() => undefined);
+    return null;
+  }
+}
+
 export function buildShipmentIndex(shipments: LoggiShipment[]): Map<string, LoggiShipment> {
   const byTrackingCode = new Map<string, LoggiShipment>();
   for (const shipment of shipments) {
@@ -389,6 +449,10 @@ export function matchAndBuildPatch(
   const patch: Record<string, unknown> = { loggi_last_sync_at: nowIso };
   if (mappedStatus) {
     patch.status = mappedStatus;
+    // Fallback: a Loggi não expõe data real de entrega na lista, só no
+    // painel de detalhes de cada envio (via buscarDataEntregaReal, chamada
+    // pelo caller em sync.ts/cron-sync.ts). Isso aqui é só o valor usado
+    // quando essa busca falha ou estoura o limite por execução.
     if (mappedStatus === 'ENTREGUE') patch.data_entrega = nowIso.split('T')[0];
   }
 
@@ -410,16 +474,25 @@ const MESES_PT: Record<string, string> = {
   jul: '07', ago: '08', set: '09', out: '10', nov: '11', dez: '12',
 };
 
+// Converte "21 jul, 2026" (ou variações sem vírgula/ponto) pro formato ISO.
+// Usada tanto pro texto isolado da coluna "Prazo" (âncora no início/fim da
+// string) quanto pra achar a data embutida no meio de uma frase, como
+// "O pacote foi entregue em 17 jul, 2026" do painel de detalhes.
+function parseDataAbreviadaPt(texto: string, ancorada: boolean): string | null {
+  const padrao = /(\d{1,2})\s+([a-zçã]{3,4})\.?,?\s+(\d{4})/i;
+  const match = (ancorada ? new RegExp(`^${padrao.source}$`, 'i') : padrao).exec(texto.trim());
+  if (!match) return null;
+  const [, day, monthAbbr, year] = match;
+  const month = MESES_PT[monthAbbr.toLowerCase().slice(0, 3)];
+  if (!month) return null;
+  return `${year}-${month}-${day.padStart(2, '0')}`;
+}
+
 // A coluna "Prazo" da Loggi mostra datas como "21 jul, 2026", ou texto como
 // "A definir" quando não há prazo (ex: envio cancelado) — nesse caso retorna
 // null e a previsão simplesmente não é tocada.
 export function parsePrazoLoggi(rawPrazo: string): string | null {
-  const match = /^(\d{1,2})\s+([a-zçã]{3})\.?,?\s+(\d{4})$/i.exec(rawPrazo.trim());
-  if (!match) return null;
-  const [, day, monthAbbr, year] = match;
-  const month = MESES_PT[monthAbbr.toLowerCase()];
-  if (!month) return null;
-  return `${year}-${month}-${day.padStart(2, '0')}`;
+  return parseDataAbreviadaPt(rawPrazo, true);
 }
 
 // Qualquer status não reconhecido retorna null de propósito (só atualiza
