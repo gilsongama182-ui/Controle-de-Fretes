@@ -972,6 +972,8 @@ export default function FaturamentoScreen({
         <FaturaPrintView
           invoice={faturaAberta.invoice}
           deliveries={faturaAberta.deliveries}
+          volumesByDeliveryId={volumesByDeliveryId}
+          freightRates={freightRates}
           onClose={() => setFaturaAberta(null)}
         />
       )}
