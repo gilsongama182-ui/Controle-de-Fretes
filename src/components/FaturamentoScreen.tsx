@@ -34,7 +34,7 @@ type Aba = 'pendentes' | 'historico' | 'tabela';
 type CampoOrdenavel =
   | 'nfe' | 'nomeRazaoSocial' | 'uf'
   | 'pesoReal' | 'pesoCubado' | 'pesoConsiderado'
-  | 'valorBase' | 'gris' | 'adValorem' | 'valorTotal';
+  | 'valorBase' | 'gris' | 'adValorem' | 'icms' | 'valorTotal';
 
 // O valor "acordado" manualmente substitui o total calculado quando
 // preenchido — usado tanto pra exibir/ordenar quanto na hora de faturar.
@@ -66,6 +66,7 @@ function valorOrdenavel(d: Delivery, calc: ResultadoFrete, campo: CampoOrdenavel
     case 'valorBase': return calc.valorBase;
     case 'gris': return calc.gris;
     case 'adValorem': return calc.adValorem;
+    case 'icms': return calc.icms;
     case 'valorTotal': return valorFinal(d, calc);
   }
 }
@@ -601,6 +602,7 @@ export default function FaturamentoScreen({
                       <ThOrdenavel campo="valorBase" label="Frete Base" className="px-4 py-3 text-right" />
                       <ThOrdenavel campo="gris" label="GRIS" className="px-4 py-3 text-right" />
                       <ThOrdenavel campo="adValorem" label="Ad Valorem" className="px-4 py-3 text-right" />
+                      <ThOrdenavel campo="icms" label="ICMS" className="px-4 py-3 text-right" />
                       <th className="px-3 py-3 text-center" title="Reentrega soma 50% do frete base (manual); devolução soma 100% automaticamente pelo status">Reentrega</th>
                       <th className="px-3 py-3 text-right" title="Frete negociado manualmente — quando preenchido, substitui o total calculado dessa linha">Valor Acordado</th>
                       <ThOrdenavel campo="valorTotal" label="Total" className="px-4 py-3 text-right" />
@@ -683,6 +685,9 @@ export default function FaturamentoScreen({
                             </td>
                             <td className="px-4 py-3 text-xs text-right">R$ {formatMoeda(calc.gris)}</td>
                             <td className="px-4 py-3 text-xs text-right">R$ {formatMoeda(calc.adValorem)}</td>
+                            <td className="px-4 py-3 text-xs text-right" title={`Alíquota aplicada: ${(calc.aliquotaIcms * 100).toFixed(0)}% (origem SP → destino ${d.uf})`}>
+                              R$ {formatMoeda(calc.icms)}
+                            </td>
                             <td className="px-3 py-3 text-center">
                               {STATUS_DEVOLUCAO.includes(d.status) ? (
                                 <span className="text-[9px] font-bold text-orange-700 uppercase" title="Devolução: soma 100% do frete base automaticamente pelo status">Devolução auto</span>
@@ -728,7 +733,7 @@ export default function FaturamentoScreen({
                       })
                     ) : (
                       <tr>
-                        <td colSpan={18} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={19} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega pendente de faturar com esse filtro.
                         </td>
                       </tr>

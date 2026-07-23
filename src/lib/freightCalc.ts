@@ -23,6 +23,25 @@ const REENTREGA_PCT = 0.5; // 50% do frete base
 const DEVOLUCAO_PCT = 1; // 100% do frete base
 export const STATUS_DEVOLUCAO: Delivery['status'][] = ['EM DEVOLUÇÃO', 'DEVOLVIDO'];
 
+// ICMS sobre a prestação de serviço de transporte — origem é sempre SP (único
+// CD da operação), então a alíquota interestadual já é fixa por Resolução do
+// Senado 22/89 (não varia por legislação estadual, ao contrário da alíquota
+// interna de mercadoria): 18% dentro de SP, 12% pra outros estados do
+// Sul/Sudeste, 7% pro restante (Norte/Nordeste/Centro-Oeste e ES). Base de
+// cálculo inclui os acessórios da prestação (GRIS, Ad Valorem, reentrega,
+// devolução), conforme art. 13 §1º da LC 87/96.
+const ALIQUOTA_ICMS_SP = 0.18;
+const ALIQUOTA_ICMS_SUL_SUDESTE = 0.12;
+const ALIQUOTA_ICMS_DEMAIS = 0.07;
+const UFS_SUL_SUDESTE_EXCETO_SP: string[] = ['MG', 'RJ', 'PR', 'RS', 'SC'];
+
+export function aliquotaIcms(destinoUf: string): number {
+  const uf = destinoUf.trim().toUpperCase();
+  if (uf === 'SP') return ALIQUOTA_ICMS_SP;
+  if (UFS_SUL_SUDESTE_EXCETO_SP.includes(uf)) return ALIQUOTA_ICMS_SUL_SUDESTE;
+  return ALIQUOTA_ICMS_DEMAIS;
+}
+
 function cepParaNumero(cep: string): number {
   return Number(cep.replace(/\D/g, '')) || 0;
 }
@@ -89,6 +108,8 @@ export interface ResultadoFrete {
   adValorem: number;
   acrescimoReentrega: number;
   acrescimoDevolucao: number;
+  aliquotaIcms: number;
+  icms: number;
   valorTotal: number;
 }
 
@@ -107,6 +128,10 @@ export function calcularFrete(delivery: Delivery, volumes: Volume[], tarifas: Fr
   const acrescimoReentrega = delivery.reentrega ? arredondar(valorBase * REENTREGA_PCT) : 0;
   const acrescimoDevolucao = STATUS_DEVOLUCAO.includes(delivery.status) ? arredondar(valorBase * DEVOLUCAO_PCT) : 0;
 
+  const aliq = aliquotaIcms(delivery.uf);
+  const baseIcms = valorBase + gris + adValorem + acrescimoReentrega + acrescimoDevolucao;
+  const icms = arredondar(baseIcms * aliq);
+
   return {
     tarifaEncontrada: tarifa !== null,
     pesoReal,
@@ -117,6 +142,8 @@ export function calcularFrete(delivery: Delivery, volumes: Volume[], tarifas: Fr
     adValorem,
     acrescimoReentrega,
     acrescimoDevolucao,
-    valorTotal: arredondar(valorBase + gris + adValorem + acrescimoReentrega + acrescimoDevolucao),
+    aliquotaIcms: aliq,
+    icms,
+    valorTotal: arredondar(baseIcms + icms),
   };
 }
