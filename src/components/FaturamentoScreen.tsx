@@ -4,7 +4,7 @@ import { ActivePage, Delivery, DeliveryStatus, User } from '../types';
 import { Volume, VolumeInput } from '../lib/deliveryVolumes';
 import { FreightRate, FreightRateInput, TipoTarifa } from '../lib/freightRates';
 import { Invoice, fetchProximoNumeroFatura } from '../lib/invoices';
-import { calcularFrete, ResultadoFrete } from '../lib/freightCalc';
+import { arredondar, calcularFrete, ResultadoFrete } from '../lib/freightCalc';
 import { formatNfe } from '../lib/formatNfe';
 import { UFS_BR } from '../lib/ufs';
 import Sidebar from './layout/Sidebar';
@@ -234,8 +234,9 @@ export default function FaturamentoScreen({
   // o valor calculado); preenchido, substitui o total dessa linha.
   const handleEditarValorAcordado = async (deliveryId: string, valorStr: string) => {
     const texto = valorStr.trim();
-    const novoValor = texto === '' ? null : Number(texto.replace(',', '.'));
-    if (novoValor !== null && (!Number.isFinite(novoValor) || novoValor < 0)) return;
+    const bruto = texto === '' ? null : Number(texto.replace(',', '.'));
+    if (bruto !== null && (!Number.isFinite(bruto) || bruto < 0)) return;
+    const novoValor = bruto !== null ? arredondar(bruto) : null;
     try {
       await onUpdateDelivery(deliveryId, { valorAcordado: novoValor });
     } catch (err) {

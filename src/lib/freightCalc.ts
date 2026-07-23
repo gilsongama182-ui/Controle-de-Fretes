@@ -19,6 +19,17 @@ function cepParaNumero(cep: string): number {
   return Number(cep.replace(/\D/g, '')) || 0;
 }
 
+// Arredonda pra centavos ANTES de somar/exibir — sem isso, cada valor na
+// tela já vem arredondado pro usuário (via formatMoeda), mas o número por
+// trás guarda casas decimais a mais (ex: GRIS/Ad Valorem sobre um valor de
+// nota com centavos quebrados). Somar os valores "crus" e só arredondar o
+// total no final faz o total bater diferente da soma manual dos valores já
+// arredondados mostrados linha a linha — daí arredondar aqui, na origem.
+// Exportada porque o "Valor Acordado" (digitado à mão) usa a mesma regra.
+export function arredondar(valor: number): number {
+  return Math.round(valor * 100) / 100;
+}
+
 export function pesoCubadoVolume(v: Pick<Volume, 'altura' | 'largura' | 'comprimento'>): number {
   return (v.altura / 100) * (v.largura / 100) * (v.comprimento / 100) * FATOR_CUBAGEM;
 }
@@ -77,11 +88,11 @@ export function calcularFrete(delivery: Delivery, volumes: Volume[], tarifas: Fr
   const peso = Math.max(pesoReal, pesoCubado);
 
   const tarifa = buscarTarifa(delivery.uf, delivery.cep, tarifas);
-  const valorBase = tarifa ? valorBasePorPeso(tarifa, peso) : 0;
+  const valorBase = arredondar(tarifa ? valorBasePorPeso(tarifa, peso) : 0);
 
   const valorNota = delivery.valorTotalNota || 0;
-  const gris = valorNota * GRIS_PCT;
-  const adValorem = valorNota * AD_VALOREM_PCT;
+  const gris = arredondar(valorNota * GRIS_PCT);
+  const adValorem = arredondar(valorNota * AD_VALOREM_PCT);
 
   return {
     tarifaEncontrada: tarifa !== null,
@@ -91,6 +102,6 @@ export function calcularFrete(delivery: Delivery, volumes: Volume[], tarifas: Fr
     valorBase,
     gris,
     adValorem,
-    valorTotal: valorBase + gris + adValorem,
+    valorTotal: arredondar(valorBase + gris + adValorem),
   };
 }
