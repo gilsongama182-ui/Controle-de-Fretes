@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { ChevronRight, Receipt, ListChecks, History, Table2, Trash2, Plus, Pencil, X, ChevronDown, Printer, ArrowUp, ArrowDown, ArrowUpDown } from 'lucide-react';
 import { ActivePage, Delivery, DeliveryStatus, User } from '../types';
 import { Volume, VolumeInput } from '../lib/deliveryVolumes';
@@ -65,7 +65,9 @@ function valorOrdenavel(d: Delivery, calc: ResultadoFrete, campo: CampoOrdenavel
   }
 }
 
-const STATUS_FATURAVEIS: DeliveryStatus[] = ['ENTREGUE', 'DEVOLVIDO', 'FALHA'];
+const ALL_STATUS: DeliveryStatus[] = [
+  'AGUARDANDO EXPEDIÇÃO', 'EM ROTA', 'EM ATRASO', 'ENTREGUE', 'FALHA', 'EM DEVOLUÇÃO', 'DEVOLVIDO',
+];
 
 export default function FaturamentoScreen({
   onNavigate,
@@ -87,7 +89,9 @@ export default function FaturamentoScreen({
   const [erro, setErro] = useState('');
 
   // --- Pendentes ---
-  const [statusFiltro, setStatusFiltro] = useState<DeliveryStatus>('ENTREGUE');
+  const [statusFiltro, setStatusFiltro] = useState<Set<DeliveryStatus>>(new Set(['ENTREGUE']));
+  const [statusDropdownAberto, setStatusDropdownAberto] = useState(false);
+  const statusDropdownRef = useRef<HTMLDivElement>(null);
   const [remetenteFiltro, setRemetenteFiltro] = useState('');
   const [buscaPendentes, setBuscaPendentes] = useState('');
   const [selecionadas, setSelecionadas] = useState<Set<string>>(new Set());
@@ -104,11 +108,33 @@ export default function FaturamentoScreen({
 
   useEffect(carregarProximoNumero, []);
 
+  // Fecha o dropdown de status ao clicar fora dele.
+  useEffect(() => {
+    function aoClicarFora(event: MouseEvent) {
+      if (statusDropdownRef.current && !statusDropdownRef.current.contains(event.target as Node)) {
+        setStatusDropdownAberto(false);
+      }
+    }
+    document.addEventListener('mousedown', aoClicarFora);
+    return () => document.removeEventListener('mousedown', aoClicarFora);
+  }, []);
+
+  const toggleStatusFiltro = (status: DeliveryStatus) => {
+    setStatusFiltro((prev) => {
+      const next = new Set(prev);
+      if (next.has(status)) next.delete(status);
+      else next.add(status);
+      return next;
+    });
+    setRemetenteFiltro('');
+    setSelecionadas(new Set());
+  };
+
   // Cada fatura deve ser de um remetente só (cada cliente recebe a sua) —
   // esse select existe justamente pra guiar a seleção nessa direção.
   const remetentesDisponiveis = useMemo(() => {
     const set = new Set(
-      deliveries.filter((d) => !d.invoiceId && d.status === statusFiltro).map((d) => d.remetente).filter(Boolean),
+      deliveries.filter((d) => !d.invoiceId && statusFiltro.has(d.status)).map((d) => d.remetente).filter(Boolean),
     );
     return Array.from(set).sort();
   }, [deliveries, statusFiltro]);
@@ -116,7 +142,7 @@ export default function FaturamentoScreen({
   const pendentes = useMemo(() => {
     const termo = buscaPendentes.toLowerCase().trim();
     return deliveries
-      .filter((d) => !d.invoiceId && d.status === statusFiltro)
+      .filter((d) => !d.invoiceId && statusFiltro.has(d.status))
       .filter((d) => !remetenteFiltro || d.remetente === remetenteFiltro)
       .filter(
         (d) =>
@@ -477,15 +503,26 @@ export default function FaturamentoScreen({
             <div className="bg-white rounded-xl border border-outline-variant shadow-sm overflow-hidden flex flex-col">
               <div className="p-4 border-b border-outline-variant flex flex-wrap gap-3 items-center justify-between bg-surface-container-low/30">
                 <div className="flex flex-wrap items-center gap-3">
-                  <select
-                    value={statusFiltro}
-                    onChange={(e) => { setStatusFiltro(e.target.value as DeliveryStatus); setRemetenteFiltro(''); setSelecionadas(new Set()); }}
-                    className="px-3 py-2 border border-outline-variant rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none cursor-pointer"
-                  >
-                    {STATUS_FATURAVEIS.map((s) => (
-                      <option key={s} value={s}>{s}</option>
-                    ))}
-                  </select>
+                  <div className="relative" ref={statusDropdownRef}>
+                    <button
+                      type="button"
+                      onClick={() => setStatusDropdownAberto((prev) => !prev)}
+                      className="inline-flex items-center gap-2 px-3 py-2 border border-outline-variant rounded-lg text-xs bg-white focus:ring-2 focus:ring-primary outline-none cursor-pointer"
+                    >
+                      Status: {statusFiltro.size === 0 ? 'Nenhum' : statusFiltro.size === 1 ? Array.from(statusFiltro)[0] : `${statusFiltro.size} selecionados`}
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform ${statusDropdownAberto ? 'rotate-180' : ''}`} />
+                    </button>
+                    {statusDropdownAberto && (
+                      <div className="absolute left-0 top-full z-20 mt-1 w-64 bg-white border border-outline-variant rounded-lg shadow-lg py-1.5">
+                        {ALL_STATUS.map((s) => (
+                          <label key={s} className="flex items-center gap-2 px-3 py-1.5 text-xs cursor-pointer hover:bg-surface-container-low">
+                            <input type="checkbox" checked={statusFiltro.has(s)} onChange={() => toggleStatusFiltro(s)} />
+                            {s}
+                          </label>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                   <select
                     value={remetenteFiltro}
                     onChange={(e) => { setRemetenteFiltro(e.target.value); setSelecionadas(new Set()); }}
