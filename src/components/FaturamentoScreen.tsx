@@ -561,6 +561,7 @@ export default function FaturamentoScreen({
                       <ThOrdenavel campo="nomeRazaoSocial" label="Destinatário" />
                       <ThOrdenavel campo="uf" label="UF/CEP" />
                       <ThOrdenavel campo="pesoReal" label="Peso Real" className="px-4 py-3 text-right" />
+                      <th className="px-3 py-3 text-right" title="Peso do volume (kg) — apurado na Cubagem">Peso (kg)</th>
                       <th className="px-3 py-3 text-right" title="Altura do volume (cm) — apurada na Cubagem">Alt.(cm)</th>
                       <th className="px-3 py-3 text-right" title="Largura do volume (cm) — apurada na Cubagem">Larg.(cm)</th>
                       <th className="px-3 py-3 text-right" title="Comprimento do volume (cm) — apurado na Cubagem">Compr.(cm)</th>
@@ -590,7 +591,10 @@ export default function FaturamentoScreen({
                             <td className="px-4 py-3 font-mono text-xs text-primary font-bold whitespace-nowrap">{formatNfe(d.nfe)}</td>
                             <td className="px-4 py-3 text-xs text-on-surface whitespace-nowrap max-w-[220px] truncate" title={d.nomeRazaoSocial}>{d.nomeRazaoSocial}</td>
                             <td className="px-4 py-3 text-xs whitespace-nowrap">{d.uf} · {d.cep || '—'}</td>
-                            <td className="px-4 py-3 text-xs text-right">
+                            {/* Soma o peso de TODOS os volumes (calc.pesoReal) — só leitura,
+                                diferente da coluna "Peso (kg)" ao lado, que edita o volume 1. */}
+                            <td className="px-4 py-3 text-xs text-right">{calc.pesoReal.toFixed(2)} kg</td>
+                            <td className="px-3 py-3 text-right">
                               <input
                                 key={`${d.id}-peso`}
                                 type="number"
@@ -664,7 +668,7 @@ export default function FaturamentoScreen({
                       })
                     ) : (
                       <tr>
-                        <td colSpan={16} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={17} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega pendente de faturar com esse filtro.
                         </td>
                       </tr>
