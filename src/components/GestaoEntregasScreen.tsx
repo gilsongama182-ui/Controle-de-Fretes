@@ -729,6 +729,7 @@ export default function GestaoEntregasScreen({
                       <SortableTh sortField="foneFax" label="Fone / Fax" />
                       <SortableTh sortField="motoristaNome" label="Motorista" />
                       <SortableTh sortField="status" label="Status / Observações" />
+                      <th className="px-4 py-3 sticky top-0 z-10 bg-surface-container-low border-b border-outline-variant">Última Ocorrência</th>
                       <SortableTh sortField="valorCobranca" label="Valor Cobrança" className="px-4 text-right" />
                       <SortableTh sortField="valorPagamento" label="Valor Pagto" className="px-4 text-right" />
                       <th className="px-4 py-3 text-right sticky top-0 right-0 z-20 bg-surface-container-low border-b border-outline-variant shadow-[-4px_0_12px_rgba(0,0,0,0.05)]">Ações</th>
@@ -783,6 +784,19 @@ export default function GestaoEntregasScreen({
                               </span>
                             </div>
                           </td>
+                          <td className="px-4 py-4">
+                            {(() => {
+                              const ultimaOcorrencia = ocorrenciasByDeliveryId.get(del.id)?.[0];
+                              return ultimaOcorrencia ? (
+                                <div className="flex flex-col">
+                                  <span className="text-xs font-bold text-amber-800">{ultimaOcorrencia.tipo}</span>
+                                  <span className="text-[10px] text-on-surface-variant">{formatDateBR(ultimaOcorrencia.dataOcorrencia)}</span>
+                                </div>
+                              ) : (
+                                <span className="text-xs text-on-surface-variant">—</span>
+                              );
+                            })()}
+                          </td>
                           <td className="px-4 py-4 text-right font-mono text-xs text-primary font-bold">
                             R$ {del.valorCobranca.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                           </td>
@@ -819,7 +833,7 @@ export default function GestaoEntregasScreen({
                       ))
                     ) : (
                       <tr>
-                        <td colSpan={24} className="text-center py-8 text-sm text-secondary font-medium">
+                        <td colSpan={25} className="text-center py-8 text-sm text-secondary font-medium">
                           Nenhuma entrega corresponde aos filtros de busca aplicados.
                         </td>
                       </tr>
