@@ -53,8 +53,6 @@ const EXPORT_ONLY_FIELDS: { key: keyof Delivery; label: string }[] = [
 // entram à parte, não por DELIVERY_FIELDS/excludeKeys. Só aparecem quando o
 // chamador passa o mapa de volumes; a exportação do cliente nunca passa esse
 // mapa, então essas colunas nunca aparecem pra esse perfil.
-const VOLUME_HEADERS = ['Qtd Volumes', 'Peso (kg)', 'Altura (cm)', 'Largura (cm)', 'Comprimento (cm)'];
-
 function formatVolumeColumn(volumes: Volume[], pick: (v: Volume) => number): string {
   return volumes.map((v) => pick(v).toFixed(2).replace('.', ',')).join(' | ');
 }
@@ -68,10 +66,16 @@ function formatUltimaOcorrenciaRegistrada(ocorrencias: DeliveryOcorrencia[]): st
   return `${ultima.tipo} (${formatDateBR(ultima.dataOcorrencia)})`;
 }
 
+interface Coluna {
+  label: string;
+  getValue: (d: Delivery) => unknown;
+}
+
 // Separador ";" (não ",") porque o Excel em pt-BR usa vírgula como separador
 // decimal e só quebra colunas automaticamente com ponto e vírgula. Os mesmos
 // rótulos de coluna são usados na importação (lib/importCsv.ts), então um
-// arquivo exportado pode ser editado e reimportado diretamente.
+// arquivo exportado pode ser editado e reimportado diretamente (a ordem das
+// colunas não importa pra reimportação — ela casa por nome do cabeçalho).
 export function exportDeliveriesToCsv(
   deliveries: Delivery[],
   filename: string,
@@ -82,36 +86,52 @@ export function exportDeliveriesToCsv(
   comprovantesByDeliveryId?: Map<string, DeliveryComprovante[]>,
   ocorrenciasByDeliveryId?: Map<string, DeliveryOcorrencia[]>
 ) {
-  const headers = [...DELIVERY_FIELDS, ...EXPORT_ONLY_FIELDS].filter((h) => !excludeKeys.includes(h.key));
-  const extraHeaders = [
-    ...(volumesByDeliveryId ? VOLUME_HEADERS : []),
-    ...(comprovantesByDeliveryId ? ['Possui Anexo'] : []),
-    ...(ocorrenciasByDeliveryId ? ['Última Ocorrência Registrada'] : []),
-  ];
-  const headerRow = [...headers.map((h) => h.label), ...extraHeaders].join(';');
+  // Observações (campo "ocorrencia") sai da posição natural em DELIVERY_FIELDS
+  // e vira sempre a ÚLTIMA coluna do relatório — pedido do usuário, tratada à
+  // parte em vez de por excludeKeys porque continua fazendo parte do export
+  // (só muda de lugar).
+  const colunas: Coluna[] = [...DELIVERY_FIELDS, ...EXPORT_ONLY_FIELDS]
+    .filter((h) => h.key !== 'ocorrencia')
+    .filter((h) => !excludeKeys.includes(h.key))
+    .map((h) => ({ label: h.label, getValue: (d: Delivery) => cellValue(d, h.key) }));
+
+  // "Última Ocorrência Registrada" entra logo depois de Status — pedido do
+  // usuário, em vez de ficar sempre no fim do relatório.
+  if (ocorrenciasByDeliveryId) {
+    const colunaUltimaOcorrencia: Coluna = {
+      label: 'Última Ocorrência Registrada',
+      getValue: (d) => formatUltimaOcorrenciaRegistrada(ocorrenciasByDeliveryId.get(d.id) ?? []),
+    };
+    const idxStatus = colunas.findIndex((c) => c.label === 'Status');
+    colunas.splice(idxStatus >= 0 ? idxStatus + 1 : colunas.length, 0, colunaUltimaOcorrencia);
+  }
+
+  if (volumesByDeliveryId) {
+    colunas.push(
+      { label: 'Qtd Volumes', getValue: (d) => String((volumesByDeliveryId.get(d.id) ?? []).length) },
+      { label: 'Peso (kg)', getValue: (d) => formatVolumeColumn(volumesByDeliveryId.get(d.id) ?? [], (v) => v.peso) },
+      { label: 'Altura (cm)', getValue: (d) => formatVolumeColumn(volumesByDeliveryId.get(d.id) ?? [], (v) => v.altura) },
+      { label: 'Largura (cm)', getValue: (d) => formatVolumeColumn(volumesByDeliveryId.get(d.id) ?? [], (v) => v.largura) },
+      { label: 'Comprimento (cm)', getValue: (d) => formatVolumeColumn(volumesByDeliveryId.get(d.id) ?? [], (v) => v.comprimento) }
+    );
+  }
+
+  if (comprovantesByDeliveryId) {
+    colunas.push({
+      label: 'Possui Anexo',
+      getValue: (d) => ((comprovantesByDeliveryId.get(d.id)?.length ?? 0) > 0 ? 'Sim' : 'Não'),
+    });
+  }
+
+  const campoObservacoes = DELIVERY_FIELDS.find((f) => f.key === 'ocorrencia');
+  if (campoObservacoes && !excludeKeys.includes('ocorrencia')) {
+    colunas.push({ label: campoObservacoes.label, getValue: (d) => cellValue(d, 'ocorrencia') });
+  }
+
+  const headerRow = colunas.map((c) => c.label).join(';');
   const rows = [
     headerRow,
-    ...deliveries.map((d) => {
-      const cells = headers.map((h) => escapeCsvValue(cellValue(d, h.key)));
-      if (volumesByDeliveryId) {
-        const volumes = volumesByDeliveryId.get(d.id) ?? [];
-        cells.push(
-          String(volumes.length),
-          escapeCsvValue(formatVolumeColumn(volumes, (v) => v.peso)),
-          escapeCsvValue(formatVolumeColumn(volumes, (v) => v.altura)),
-          escapeCsvValue(formatVolumeColumn(volumes, (v) => v.largura)),
-          escapeCsvValue(formatVolumeColumn(volumes, (v) => v.comprimento))
-        );
-      }
-      if (comprovantesByDeliveryId) {
-        const temAnexo = (comprovantesByDeliveryId.get(d.id)?.length ?? 0) > 0;
-        cells.push(temAnexo ? 'Sim' : 'Não');
-      }
-      if (ocorrenciasByDeliveryId) {
-        cells.push(escapeCsvValue(formatUltimaOcorrenciaRegistrada(ocorrenciasByDeliveryId.get(d.id) ?? [])));
-      }
-      return cells.join(';');
-    }),
+    ...deliveries.map((d) => colunas.map((c) => escapeCsvValue(c.getValue(d))).join(';')),
   ];
   // BOM no início para o Excel reconhecer acentuação em UTF-8 corretamente.
   const csvContent = '﻿' + rows.join('\r\n');
