@@ -34,7 +34,13 @@ type Aba = 'pendentes' | 'historico' | 'tabela';
 type CampoOrdenavel =
   | 'nfe' | 'nomeRazaoSocial' | 'uf'
   | 'pesoReal' | 'pesoCubado' | 'pesoConsiderado'
-  | 'valorBase' | 'gris' | 'adValorem' | 'txFluvial' | 'valorTotal';
+  | 'valorBase' | 'gris' | 'adValorem' | 'valorTotal';
+
+// O valor "acordado" manualmente substitui o total calculado quando
+// preenchido — usado tanto pra exibir/ordenar quanto na hora de faturar.
+function valorFinal(d: Delivery, calc: ResultadoFrete): number {
+  return d.valorAcordado ?? calc.valorTotal;
+}
 
 const EMPTY_VOLUMES: Volume[] = [];
 const VOLUME_VAZIO: VolumeInput = { peso: 0, altura: 0, largura: 0, comprimento: 0 };
@@ -60,8 +66,7 @@ function valorOrdenavel(d: Delivery, calc: ResultadoFrete, campo: CampoOrdenavel
     case 'valorBase': return calc.valorBase;
     case 'gris': return calc.gris;
     case 'adValorem': return calc.adValorem;
-    case 'txFluvial': return calc.txFluvial;
-    case 'valorTotal': return calc.valorTotal;
+    case 'valorTotal': return valorFinal(d, calc);
   }
 }
 
@@ -225,6 +230,19 @@ export default function FaturamentoScreen({
     }
   };
 
+  // Frete negociado manualmente — campo vazio remove o acordo (volta a usar
+  // o valor calculado); preenchido, substitui o total dessa linha.
+  const handleEditarValorAcordado = async (deliveryId: string, valorStr: string) => {
+    const texto = valorStr.trim();
+    const novoValor = texto === '' ? null : Number(texto.replace(',', '.'));
+    if (novoValor !== null && (!Number.isFinite(novoValor) || novoValor < 0)) return;
+    try {
+      await onUpdateDelivery(deliveryId, { valorAcordado: novoValor });
+    } catch (err) {
+      setErro(err instanceof Error ? err.message : 'Não foi possível salvar o valor acordado.');
+    }
+  };
+
   // Resolve por id contra TODAS as entregas (não só as visíveis em "pendentes"
   // no momento) — a seleção persiste enquanto o usuário digita na busca, então
   // não pode depender da lista filtrada pra não quebrar quando um item
@@ -238,7 +256,8 @@ export default function FaturamentoScreen({
   const totalSelecionado = useMemo(() => {
     let soma = 0;
     for (const id of selecionadas) {
-      soma += calcularPorId(id)?.calc.valorTotal ?? 0;
+      const item = calcularPorId(id);
+      if (item) soma += valorFinal(item.delivery, item.calc);
     }
     return soma;
   }, [selecionadas, deliveries, volumesByDeliveryId, freightRates]);
@@ -276,10 +295,11 @@ export default function FaturamentoScreen({
 
     setGerandoFatura(true);
     try {
-      // Grava o valor calculado em cada entrega antes de vincular à fatura,
-      // pra "congelar" o valor faturado mesmo que a tabela de frete mude depois.
+      // Grava o valor final (acordado manualmente, se houver, senão o
+      // calculado) em cada entrega antes de vincular à fatura, pra "congelar"
+      // o valor faturado mesmo que a tabela de frete mude depois.
       await Promise.all(
-        selecionadasComCalculo.map(({ delivery, calc }) => onUpdateDelivery(delivery.id, { valorFreteCalculado: calc.valorTotal })),
+        selecionadasComCalculo.map(({ delivery, calc }) => onUpdateDelivery(delivery.id, { valorFreteCalculado: valorFinal(delivery, calc) })),
       );
       const created = await onCreateInvoice(ids);
 
@@ -287,7 +307,7 @@ export default function FaturamentoScreen({
       // (a prop só chega atualizada no próximo render deste componente).
       const deliveriesFaturadas = selecionadasComCalculo.map(({ delivery, calc }) => ({
         ...delivery,
-        valorFreteCalculado: calc.valorTotal,
+        valorFreteCalculado: valorFinal(delivery, calc),
         invoiceId: created.id,
       }));
 
@@ -570,7 +590,7 @@ export default function FaturamentoScreen({
                       <ThOrdenavel campo="valorBase" label="Frete Base" className="px-4 py-3 text-right" />
                       <ThOrdenavel campo="gris" label="GRIS" className="px-4 py-3 text-right" />
                       <ThOrdenavel campo="adValorem" label="Ad Valorem" className="px-4 py-3 text-right" />
-                      <ThOrdenavel campo="txFluvial" label="Tx Fluvial" className="px-4 py-3 text-right" />
+                      <th className="px-3 py-3 text-right" title="Frete negociado manualmente — quando preenchido, substitui o total calculado dessa linha">Valor Acordado</th>
                       <ThOrdenavel campo="valorTotal" label="Total" className="px-4 py-3 text-right" />
                       <th className="px-3 py-3 text-right">Cubagem</th>
                     </tr>
@@ -651,8 +671,22 @@ export default function FaturamentoScreen({
                             </td>
                             <td className="px-4 py-3 text-xs text-right">R$ {formatMoeda(calc.gris)}</td>
                             <td className="px-4 py-3 text-xs text-right">R$ {formatMoeda(calc.adValorem)}</td>
-                            <td className="px-4 py-3 text-xs text-right">R$ {formatMoeda(calc.txFluvial)}</td>
-                            <td className="px-4 py-3 text-xs text-right font-bold text-primary whitespace-nowrap">R$ {formatMoeda(calc.valorTotal)}</td>
+                            <td className="px-3 py-3 text-right">
+                              <input
+                                key={`${d.id}-valor-acordado`}
+                                type="number"
+                                step="0.01"
+                                defaultValue={d.valorAcordado ?? ''}
+                                onBlur={(e) => handleEditarValorAcordado(d.id, e.target.value)}
+                                placeholder="—"
+                                title="Frete negociado manualmente — substitui o total calculado quando preenchido"
+                                className={inputClass}
+                              />
+                            </td>
+                            <td className="px-4 py-3 text-xs text-right font-bold text-primary whitespace-nowrap">
+                              R$ {formatMoeda(valorFinal(d, calc))}
+                              {d.valorAcordado != null && <span className="ml-1 text-[9px] font-bold text-secondary uppercase">acordado</span>}
+                            </td>
                             <td className="px-3 py-3 text-right">
                               <button
                                 onClick={() => setCubagemDeliveryId(d.id)}

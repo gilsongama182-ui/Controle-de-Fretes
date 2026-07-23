@@ -9,11 +9,11 @@ const FATOR_CUBAGEM = 300;
 
 // "Generalidades" da tabela de frete que têm fórmula fixa (sem decisão
 // humana) — as demais (Ajudante, Reentrega, Devolução, Hora Parada,
-// Agendamento, Escolta) ficam de fora do cálculo automático de propósito.
+// Agendamento, Escolta, Tx Fluvial — essa removida do cálculo automático a
+// pedido do usuário) ficam de fora, e entram como "Valor Acordado" manual
+// na tela de Faturamento quando fizer sentido pra aquela entrega.
 const GRIS_PCT = 0.0008; // 0,08% sobre o valor total da Nota Fiscal
 const AD_VALOREM_PCT = 0.003; // 0,30% sobre o valor total da Nota Fiscal
-const TX_FLUVIAL_PCT = 0.08; // 8% sobre o valor total da NF, só nos estados abaixo
-const UFS_TX_FLUVIAL = ['AM', 'AP', 'TO'];
 
 function cepParaNumero(cep: string): number {
   return Number(cep.replace(/\D/g, '')) || 0;
@@ -68,7 +68,6 @@ export interface ResultadoFrete {
   valorBase: number;
   gris: number;
   adValorem: number;
-  txFluvial: number;
   valorTotal: number;
 }
 
@@ -83,7 +82,6 @@ export function calcularFrete(delivery: Delivery, volumes: Volume[], tarifas: Fr
   const valorNota = delivery.valorTotalNota || 0;
   const gris = valorNota * GRIS_PCT;
   const adValorem = valorNota * AD_VALOREM_PCT;
-  const txFluvial = UFS_TX_FLUVIAL.includes(delivery.uf.trim().toUpperCase()) ? valorNota * TX_FLUVIAL_PCT : 0;
 
   return {
     tarifaEncontrada: tarifa !== null,
@@ -93,7 +91,6 @@ export function calcularFrete(delivery: Delivery, volumes: Volume[], tarifas: Fr
     valorBase,
     gris,
     adValorem,
-    txFluvial,
-    valorTotal: valorBase + gris + adValorem + txFluvial,
+    valorTotal: valorBase + gris + adValorem,
   };
 }

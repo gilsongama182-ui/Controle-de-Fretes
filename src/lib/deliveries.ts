@@ -4,9 +4,10 @@ import { formatNfe } from './formatNfe';
 import { formatPhoneBR } from './formatPhone';
 import { TipoOcorrencia } from './deliveryOcorrencias';
 
-// invoiceId/valorFreteCalculado ficam de fora — nascem vazios/null (default
-// do banco) e só são preenchidos depois, pela tela de Faturamento.
-export type NewDeliveryInput = Omit<Delivery, 'id' | 'updatedAt' | 'invoiceId' | 'valorFreteCalculado'>;
+// invoiceId/valorFreteCalculado/valorAcordado ficam de fora — nascem vazios/
+// null (default do banco) e só são preenchidos depois, pela tela de
+// Faturamento.
+export type NewDeliveryInput = Omit<Delivery, 'id' | 'updatedAt' | 'invoiceId' | 'valorFreteCalculado' | 'valorAcordado'>;
 
 interface DeliveryRow {
   id: string;
@@ -54,6 +55,7 @@ interface DeliveryRow {
   motorista_nome: string | null;
   invoice_id: string | null;
   valor_frete_calculado: number | null;
+  valor_acordado: number | null;
   updated_at: string;
 }
 
@@ -104,6 +106,7 @@ function fromRow(row: DeliveryRow): Delivery {
     motoristaNome: row.motorista_nome ?? '',
     invoiceId: row.invoice_id ?? '',
     valorFreteCalculado: row.valor_frete_calculado,
+    valorAcordado: row.valor_acordado,
     updatedAt: row.updated_at,
   };
 }
@@ -159,6 +162,9 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.motoristaNome !== undefined) row.motorista_nome = upper(input.motoristaNome) || null;
   if ('valorFreteCalculado' in input && input.valorFreteCalculado !== undefined) {
     row.valor_frete_calculado = input.valorFreteCalculado;
+  }
+  if ('valorAcordado' in input && input.valorAcordado !== undefined) {
+    row.valor_acordado = input.valorAcordado;
   }
   // invoiceId de propósito NÃO entra aqui — só as RPCs criar_fatura/remover_fatura
   // (lib/invoices.ts) podem vincular/desvincular uma entrega de uma fatura,

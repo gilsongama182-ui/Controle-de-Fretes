@@ -65,7 +65,8 @@ create table if not exists public.deliveries (
   motorista_id uuid references public.profiles(id), -- quem vai fazer a entrega (perfil motorista)
   motorista_nome text,            -- denormalizado, mesmo padrão de remetente/cliente
   invoice_id uuid,                -- fatura em que essa entrega foi agrupada (null = pendente de faturar)
-  valor_frete_calculado numeric(10, 2), -- cálculo automático (peso/cubagem x tabela de frete + GRIS/Ad-Valorem/Tx Fluvial), separado de valor_cobranca
+  valor_frete_calculado numeric(10, 2), -- cálculo automático (peso/cubagem x tabela de frete + GRIS/Ad-Valorem), separado de valor_cobranca
+  valor_acordado numeric(10, 2),  -- frete negociado manualmente; quando preenchido, substitui o valor calculado dessa entrega
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );

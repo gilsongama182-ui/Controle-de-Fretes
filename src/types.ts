@@ -52,7 +52,8 @@ export interface Delivery {
   motoristaId: string; // uuid do profile do motorista responsável pela entrega, vazio se não atribuída
   motoristaNome: string; // denormalizado, mesmo padrão de remetente/cliente
   invoiceId: string; // uuid da fatura em que essa entrega foi agrupada, vazio se ainda pendente de faturar
-  valorFreteCalculado: number | null; // cálculo automático (peso/cubagem x tabela de frete + GRIS/Ad-Valorem/Tx Fluvial), null se nunca calculado
+  valorFreteCalculado: number | null; // cálculo automático (peso/cubagem x tabela de frete + GRIS/Ad-Valorem), null se nunca calculado
+  valorAcordado: number | null; // frete negociado manualmente; quando preenchido, substitui o valor calculado dessa entrega
   updatedAt: string; // ISO datetime da última atualização da linha
 }
 

@@ -2,7 +2,6 @@ import { X, Printer } from 'lucide-react';
 import { Delivery } from '../../types';
 import { Invoice } from '../../lib/invoices';
 import { formatNfe } from '../../lib/formatNfe';
-import { formatDateBR } from '../../lib/formatDate';
 
 interface FaturaPrintViewProps {
   invoice: Invoice;
@@ -139,7 +138,6 @@ export default function FaturaPrintView({ invoice, deliveries, onClose }: Fatura
                 <th>NF-e</th>
                 <th>Destinatário</th>
                 <th>Cidade / UF</th>
-                <th>Data Entrega</th>
                 <th className="fatura-col-valor">Valor</th>
               </tr>
             </thead>
@@ -149,7 +147,6 @@ export default function FaturaPrintView({ invoice, deliveries, onClose }: Fatura
                   <td>{formatNfe(d.nfe)}</td>
                   <td>{d.nomeRazaoSocial}</td>
                   <td>{d.municipio}/{d.uf}</td>
-                  <td>{formatDateBR(d.dataEntrega) || '—'}</td>
                   <td className="fatura-col-valor">R$ {formatMoeda(d.valorFreteCalculado ?? 0)}</td>
                 </tr>
               ))}
