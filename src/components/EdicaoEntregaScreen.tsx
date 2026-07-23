@@ -748,6 +748,11 @@ export default function EdicaoEntregaScreen({
                         onChange={(e) => setNovaDataOcorrencia(e.target.value)}
                         className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
                       />
+                      {/* Escolher o tipo não salva nada sozinho — deixa isso explícito
+                          pra não parecer que a ocorrência já foi registrada. */}
+                      <p className="text-[11px] text-secondary">
+                        Confira a data e clique em <strong>Registrar</strong> para salvar essa ocorrência.
+                      </p>
                       <button
                         type="button"
                         onClick={handleRegistrarOcorrencia}
@@ -755,7 +760,7 @@ export default function EdicaoEntregaScreen({
                         className="w-full flex items-center justify-center gap-1 py-2.5 px-4 bg-secondary-container text-secondary rounded-lg text-xs font-bold hover:opacity-90 transition-all disabled:opacity-50"
                       >
                         <Plus className="w-3.5 h-3.5" />
-                        <span>Registrar</span>
+                        <span>{isRegistrandoOcorrencia ? 'Registrando...' : 'Registrar'}</span>
                       </button>
                     </>
                   )}
