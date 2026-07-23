@@ -333,6 +333,7 @@ export default function DashboardClienteScreen({
                     <th className="px-6 py-4">DESTINATÁRIO</th>
                     <th className="px-6 py-4">CIDADE/UF</th>
                     <th className="px-6 py-4">STATUS</th>
+                    <th className="px-6 py-4">ÚLTIMA OCORRÊNCIA</th>
                     <th className="px-6 py-4">PREVISÃO</th>
                     <th className="px-6 py-4">DATA DE ENTREGA</th>
                     <th className="px-6 py-4">COMPROVANTE</th>
@@ -342,6 +343,8 @@ export default function DashboardClienteScreen({
                   {filteredDeliveries.length > 0 ? (
                     filteredDeliveries.map((del) => {
                       const comprovantes = comprovantesByDeliveryId.get(del.id) ?? [];
+                      // Ordenado por data desc (fetchAllOcorrencias) — o primeiro item já é o mais recente.
+                      const ultimaOcorrencia = ocorrenciasByDeliveryId.get(del.id)?.[0];
                       return (
                       <tr key={del.id} className="hover:bg-surface-container-low/50 transition-colors">
                         <td className="px-6 py-4 font-mono text-xs font-bold text-primary">{formatNfe(del.nfe)}</td>
@@ -359,6 +362,16 @@ export default function DashboardClienteScreen({
                           }`}>
                             {del.status}
                           </span>
+                        </td>
+                        <td className="px-6 py-4">
+                          {ultimaOcorrencia ? (
+                            <div className="flex flex-col">
+                              <span className="text-xs font-bold text-amber-800">{ultimaOcorrencia.tipo}</span>
+                              <span className="text-[11px] text-on-surface-variant">{formatDateBR(ultimaOcorrencia.dataOcorrencia)}</span>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-on-surface-variant">—</span>
+                          )}
                         </td>
                         <td className="px-6 py-4 text-sm text-on-surface-variant font-medium">{formatDateBR(del.previsao)}</td>
                         <td className="px-6 py-4 text-sm text-on-surface-variant font-medium">{del.dataEntrega ? formatDateBR(del.dataEntrega) : '—'}</td>
@@ -390,7 +403,7 @@ export default function DashboardClienteScreen({
                     })
                   ) : (
                     <tr>
-                      <td colSpan={7} className="text-center py-8 text-sm text-secondary">
+                      <td colSpan={8} className="text-center py-8 text-sm text-secondary">
                         Nenhuma entrega encontrada para a sua busca.
                       </td>
                     </tr>
