@@ -750,7 +750,7 @@ export default function EdicaoEntregaScreen({
                       />
                       {/* Escolher o tipo não salva nada sozinho — deixa isso explícito
                           pra não parecer que a ocorrência já foi registrada. */}
-                      <p className="text-[11px] text-secondary">
+                      <p className="text-[11px] text-error font-semibold">
                         Confira a data e clique em <strong>Registrar</strong> para salvar essa ocorrência.
                       </p>
                       <button
