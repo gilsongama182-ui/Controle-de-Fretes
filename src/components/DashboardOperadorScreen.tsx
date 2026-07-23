@@ -359,6 +359,7 @@ export default function DashboardOperadorScreen({
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">DESTINATÁRIO</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">CIDADE/UF</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">STATUS</th>
+                      <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">ÚLTIMA OCORRÊNCIA</th>
                       <th className="px-5 py-3 text-xs font-semibold uppercase tracking-wider text-secondary">PREVISÃO</th>
                     </tr>
                   </thead>
@@ -384,6 +385,19 @@ export default function DashboardOperadorScreen({
                           }`}>
                             {del.status}
                           </span>
+                        </td>
+                        <td className="px-5 py-4">
+                          {(() => {
+                            const ultimaOcorrencia = ocorrenciasByDeliveryId.get(del.id)?.[0];
+                            return ultimaOcorrencia ? (
+                              <div className="flex flex-col">
+                                <span className="text-xs font-bold text-amber-800">{ultimaOcorrencia.tipo}</span>
+                                <span className="text-[11px] text-on-surface-variant">{formatDateBR(ultimaOcorrencia.dataOcorrencia)}</span>
+                              </div>
+                            ) : (
+                              <span className="text-xs text-on-surface-variant">—</span>
+                            );
+                          })()}
                         </td>
                         <td className="px-5 py-4 text-sm text-on-surface-variant font-medium">{formatDateBR(del.previsao)}</td>
                       </tr>
