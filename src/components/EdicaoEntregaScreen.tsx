@@ -6,6 +6,7 @@ import { ActivePage, AtrasoResponsabilidade, Delivery, DeliveryStatus, User } fr
 import { NewDeliveryInput } from '../lib/deliveries';
 import { fetchMotoristas, ProfileRecord } from '../lib/profiles';
 import { fetchPartners, Partner } from '../lib/partners';
+import { getErrorMessage } from '../lib/errorMessage';
 import { formatNfe } from '../lib/formatNfe';
 import { formatDateBR } from '../lib/formatDate';
 import { SyncItemResult } from '../lib/melhorEnvio';
@@ -231,7 +232,7 @@ export default function EdicaoEntregaScreen({
       setAtrasoResponsabilidade('cliente');
       setNovoTipoOcorrencia('');
     } catch (err) {
-      alert(err instanceof Error ? `Não foi possível registrar a ocorrência: ${err.message}` : 'Não foi possível registrar a ocorrência.');
+      alert(`Não foi possível registrar a ocorrência: ${getErrorMessage(err, 'erro desconhecido')}`);
     } finally {
       setIsRegistrandoOcorrencia(false);
     }
@@ -242,7 +243,7 @@ export default function EdicaoEntregaScreen({
     try {
       await onRemoveOcorrencia(id);
     } catch (err) {
-      alert(err instanceof Error ? `Não foi possível remover a ocorrência: ${err.message}` : 'Não foi possível remover a ocorrência.');
+      alert(`Não foi possível remover a ocorrência: ${getErrorMessage(err, 'erro desconhecido')}`);
     }
   };
 
@@ -354,7 +355,7 @@ export default function EdicaoEntregaScreen({
       alert('Informações atualizadas com sucesso!');
       onNavigate('gestao-entregas');
     } catch (err) {
-      alert(err instanceof Error ? `Não foi possível salvar: ${err.message}` : 'Não foi possível salvar as alterações.');
+      alert(`Não foi possível salvar: ${getErrorMessage(err, 'erro desconhecido')}`);
     } finally {
       setIsSaving(false);
     }
@@ -377,7 +378,7 @@ export default function EdicaoEntregaScreen({
         alert(`Rastreio consultado — ${parts.join('; ')}.`);
       }
     } catch (err) {
-      alert(err instanceof Error ? `Não foi possível sincronizar: ${err.message}` : 'Não foi possível sincronizar o rastreio.');
+      alert(`Não foi possível sincronizar: ${getErrorMessage(err, 'erro desconhecido')}`);
     } finally {
       setIsSyncing(false);
     }
@@ -400,7 +401,7 @@ export default function EdicaoEntregaScreen({
         alert(`Rastreio consultado na Loggi — status "${result.rawStatus ?? '(vazio)'}" ainda não é reconhecido pelo sistema.`);
       }
     } catch (err) {
-      alert(err instanceof Error ? `Não foi possível sincronizar com a Loggi: ${err.message}` : 'Não foi possível sincronizar com a Loggi.');
+      alert(`Não foi possível sincronizar com a Loggi: ${getErrorMessage(err, 'erro desconhecido')}`);
     } finally {
       setIsSyncingLoggi(false);
     }
