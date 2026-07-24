@@ -53,6 +53,8 @@ interface DeliveryRow {
   loggi_last_sync_at: string | null;
   motorista_id: string | null;
   motorista_nome: string | null;
+  parceiro_id: string | null;
+  parceiro_nome: string | null;
   invoice_id: string | null;
   valor_frete_calculado: number | null;
   valor_acordado: number | null;
@@ -105,6 +107,8 @@ function fromRow(row: DeliveryRow): Delivery {
     loggiLastSyncAt: row.loggi_last_sync_at ?? '',
     motoristaId: row.motorista_id ?? '',
     motoristaNome: row.motorista_nome ?? '',
+    parceiroId: row.parceiro_id ?? '',
+    parceiroNome: row.parceiro_nome ?? '',
     invoiceId: row.invoice_id ?? '',
     valorFreteCalculado: row.valor_frete_calculado,
     valorAcordado: row.valor_acordado,
@@ -162,6 +166,8 @@ function toRow(input: NewDeliveryInput | Partial<Delivery>) {
   if (input.loggiLastSyncAt !== undefined) row.loggi_last_sync_at = input.loggiLastSyncAt || null;
   if (input.motoristaId !== undefined) row.motorista_id = input.motoristaId || null;
   if (input.motoristaNome !== undefined) row.motorista_nome = upper(input.motoristaNome) || null;
+  if (input.parceiroId !== undefined) row.parceiro_id = input.parceiroId || null;
+  if (input.parceiroNome !== undefined) row.parceiro_nome = upper(input.parceiroNome) || null;
   if ('valorFreteCalculado' in input && input.valorFreteCalculado !== undefined) {
     row.valor_frete_calculado = input.valorFreteCalculado;
   }

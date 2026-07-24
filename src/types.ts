@@ -51,6 +51,8 @@ export interface Delivery {
   loggiLastSyncAt: string; // ISO datetime da última sincronização com a Loggi, vazio se nunca sincronizado
   motoristaId: string; // uuid do profile do motorista responsável pela entrega, vazio se não atribuída
   motoristaNome: string; // denormalizado, mesmo padrão de remetente/cliente
+  parceiroId: string; // uuid do agregado/parceiro (tela de Parceiros) vinculado a essa entrega, vazio se nenhum
+  parceiroNome: string; // denormalizado (nome fantasia, ou nome, do parceiro) — auto-preenchido por MELHOR ENVIO/LOGGI quando aplicável
   invoiceId: string; // uuid da fatura em que essa entrega foi agrupada, vazio se ainda pendente de faturar
   valorFreteCalculado: number | null; // cálculo automático (peso/cubagem x tabela de frete + GRIS/Ad-Valorem), null se nunca calculado
   valorAcordado: number | null; // frete negociado manualmente; quando preenchido, substitui o valor calculado dessa entrega

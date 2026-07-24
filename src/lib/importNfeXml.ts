@@ -151,6 +151,8 @@ export async function parseNfeXmlFile(file: File): Promise<ParsedXmlFile> {
     loggiLastSyncAt: '',
     motoristaId: '',
     motoristaNome: '',
+    parceiroId: '',
+    parceiroNome: '',
   };
 
   return { fileName, data, errors: [] };

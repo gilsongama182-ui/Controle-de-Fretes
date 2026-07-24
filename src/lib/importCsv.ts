@@ -160,6 +160,8 @@ export function parseDeliveriesCsv(text: string): ParsedRow[] {
       loggiLastSyncAt: '',
       motoristaId: '',
       motoristaNome: '',
+      parceiroId: '',
+      parceiroNome: '',
     };
 
     return { line: i + 2, data, errors: [] };

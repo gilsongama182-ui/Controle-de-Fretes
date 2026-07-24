@@ -5,6 +5,7 @@ import {
 import { ActivePage, AtrasoResponsabilidade, Delivery, DeliveryStatus, User } from '../types';
 import { NewDeliveryInput } from '../lib/deliveries';
 import { fetchMotoristas, ProfileRecord } from '../lib/profiles';
+import { fetchPartners, Partner } from '../lib/partners';
 import { formatNfe } from '../lib/formatNfe';
 import { formatDateBR } from '../lib/formatDate';
 import { SyncItemResult } from '../lib/melhorEnvio';
@@ -127,6 +128,43 @@ export default function EdicaoEntregaScreen({
   // automaticamente quando o status vira ENTREGUE com ocorrência já registrada
   // (ver handleStatusChange), mas fica editável manualmente aqui também.
   const [reentrega, setReentrega] = useState(delivery?.reentrega ?? false);
+  const [parceiroId, setParceiroId] = useState(delivery?.parceiroId ?? '');
+  const [parceiroNome, setParceiroNome] = useState(delivery?.parceiroNome ?? '');
+  const [parceiros, setParceiros] = useState<Partner[]>([]);
+
+  useEffect(() => {
+    fetchPartners()
+      .then(setParceiros)
+      .catch((err) => console.error('Falha ao buscar agregados/parceiros:', err));
+  }, []);
+
+  // Resolve o texto digitado/selecionado pro id real do parceiro cadastrado
+  // (quando bate por nome fantasia ou nome) — mantém o vínculo relacional
+  // sempre que possível, sem travar o operador a só nomes já cadastrados.
+  const resolverParceiro = (valor: string) => {
+    setParceiroNome(valor);
+    const encontrado = parceiros.find(
+      (p) => (p.nomeFantasia || p.nome).toLowerCase() === valor.trim().toLowerCase(),
+    );
+    setParceiroId(encontrado?.id ?? '');
+  };
+
+  // Auto-preenche o parceiro pelo rastreio, só quando o campo ainda está vazio
+  // (não sobrescreve uma escolha manual já feita): rastreio da Melhor Envio
+  // (melhorEnvioId preenchido) indica MELHOR ENVIO; código de rastreio
+  // começando com "LG" é padrão da Loggi. Depende da lista de parceiros já
+  // carregada pra resolver o id junto (senão fica só o nome, sem vínculo).
+  useEffect(() => {
+    if (parceiroNome || parceiros.length === 0) return;
+    if (melhorEnvioId) {
+      resolverParceiro('MELHOR ENVIO');
+      return;
+    }
+    if (codigoRastreio && /^lg/i.test(codigoRastreio.trim())) {
+      resolverParceiro('LOGGI');
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [melhorEnvioId, codigoRastreio, parceiros]);
 
   useEffect(() => {
     fetchMotoristas()
@@ -309,7 +347,9 @@ export default function EdicaoEntregaScreen({
         codigoRastreio,
         motoristaId: motoristaId || '',
         motoristaNome,
-        reentrega
+        reentrega,
+        parceiroId: parceiroId || '',
+        parceiroNome
       });
       alert('Informações atualizadas com sucesso!');
       onNavigate('gestao-entregas');
@@ -994,6 +1034,25 @@ export default function EdicaoEntregaScreen({
                       className="w-full p-2 bg-surface border border-outline-variant rounded-lg text-xs font-mono font-bold text-secondary outline-none focus:ring-2 focus:ring-primary"
                     />
                   </div>
+                </div>
+
+                {/* Agregado/Parceiro vinculado — auto-sugerido pelo rastreio
+                    (Melhor Envio / Loggi), mas pode ser trocado livremente. */}
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-secondary uppercase tracking-wider block">Agregado / Parceiro</label>
+                  <input
+                    type="text"
+                    list="parceiros-sugestoes"
+                    value={parceiroNome}
+                    onChange={(e) => resolverParceiro(e.target.value)}
+                    placeholder="Digite pra buscar um agregado ou parceiro cadastrado"
+                    className="w-full p-3 bg-surface border border-outline-variant rounded-lg text-sm outline-none focus:ring-2 focus:ring-primary font-medium"
+                  />
+                  <datalist id="parceiros-sugestoes">
+                    {parceiros.map((p) => (
+                      <option key={p.id} value={p.nomeFantasia || p.nome} />
+                    ))}
+                  </datalist>
                 </div>
 
                 {/* Action Trigger Buttons */}

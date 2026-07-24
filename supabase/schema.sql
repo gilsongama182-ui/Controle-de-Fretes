@@ -68,6 +68,8 @@ create table if not exists public.deliveries (
   valor_frete_calculado numeric(10, 2), -- cálculo automático (peso/cubagem x tabela de frete + GRIS/Ad-Valorem), separado de valor_cobranca
   valor_acordado numeric(10, 2),  -- frete negociado manualmente; quando preenchido, substitui o valor calculado dessa entrega
   reentrega boolean not null default false, -- houve tentativa de reentrega? soma 50% do frete calculado
+  parceiro_id uuid, -- agregado/parceiro vinculado (fk pra public.partners, adicionada depois — ver abaixo, partners é criada mais tarde neste arquivo)
+  parceiro_nome text, -- denormalizado, mesmo padrão de motorista_nome
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
@@ -167,6 +169,9 @@ create table if not exists public.partners (
 create index if not exists partners_tipo_idx on public.partners (tipo);
 create index if not exists partners_status_idx on public.partners (status);
 alter table public.partners enable row level security;
+
+alter table public.deliveries
+  add constraint deliveries_parceiro_id_fkey foreign key (parceiro_id) references public.partners(id);
 
 -- Documentos anexos de cada Agregado/Parceiro (1:N) — rótulo + arquivo.
 create table if not exists public.partner_documents (

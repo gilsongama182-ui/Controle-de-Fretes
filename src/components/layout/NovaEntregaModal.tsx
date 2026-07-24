@@ -90,6 +90,8 @@ export default function NovaEntregaModal({ open, onClose, onCreate }: NovaEntreg
       loggiLastSyncAt: '',
       motoristaId: '',
       motoristaNome: '',
+      parceiroId: '',
+      parceiroNome: '',
     };
 
     setIsSubmitting(true);
